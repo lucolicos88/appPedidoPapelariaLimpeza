@@ -1256,15 +1256,8 @@ function initializeSystem() {
         
         // Atualizar interface
         updateUserInterface();
-        
-        // Carregar dashboard
-        try {
-          loadDashboard();
-        } catch (e) {
-          console.error('Erro ao carregar dashboard:', e);
-        }
-        
-        // Configurar navegação
+
+        // Configurar navegação (v6.0.1: dashboard será carregado no setupNavigation com delay)
         setupNavigation();
         
         // Verificar permissões
@@ -1316,17 +1309,22 @@ function initializeSystem() {
      */
     function setupNavigation() {
       const navItems = document.querySelectorAll('.nav-item');
-      
+
       navItems.forEach(item => {
         item.addEventListener('click', function() {
           const pageName = this.dataset.page;
           navigateTo(pageName);
         });
       });
+
+      // CORREÇÃO v6.0.1: Carregar dashboard com delay para evitar HTTP 429
+      setTimeout(() => {
+        loadDashboard();
+      }, 500);
     }
     
     /**
-     * Navega para uma página
+     * Navega para uma página (v6.0.1 - COM DELAY)
      */
     function navigateTo(pageName) {
       // Atualizar navegação ativa
@@ -1336,34 +1334,37 @@ function initializeSystem() {
           item.classList.add('active');
         }
       });
-      
+
       // Mostrar página
       document.querySelectorAll('.page-section').forEach(section => {
         section.classList.remove('active');
       });
       document.getElementById('page-' + pageName).classList.add('active');
-      
-      // Carregar dados da página
-      switch(pageName) {
-        case 'dashboard':
-          loadDashboard();
-          break;
-        case 'pedidos':
-          loadPedidos();
-          break;
-        case 'produtos':
-          loadProdutos();
-          break;
-        case 'estoque':
-          loadEstoque();
-          break;
-        case 'gerenciamento':
-          loadGerenciamento();
-          break;
-        case 'configuracoes':
-          loadConfiguracoes();
-          break;
-      }
+
+      // CORREÇÃO v6.0.1: Adicionar pequeno delay antes de carregar dados
+      // Isso evita HTTP 429 ao navegar rapidamente entre páginas
+      setTimeout(() => {
+        switch(pageName) {
+          case 'dashboard':
+            loadDashboard();
+            break;
+          case 'pedidos':
+            loadPedidos();
+            break;
+          case 'produtos':
+            loadProdutos();
+            break;
+          case 'estoque':
+            loadEstoque();
+            break;
+          case 'gerenciamento':
+            loadGerenciamento();
+            break;
+          case 'configuracoes':
+            loadConfiguracoes();
+            break;
+        }
+      }, 300);
     }
     
     /**
