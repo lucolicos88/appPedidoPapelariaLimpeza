@@ -1,0 +1,2883 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema Neoformula v6.0</title>
+  
+  <style>
+    /* ========================================
+     * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v6.0
+     * Estilos CSS
+     * ======================================== */
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    :root {
+      --primary: #00A651;
+      --primary-dark: #008542;
+      --secondary: #2C3E50;
+      --accent: #FF6B35;
+      --success: #4CAF50;
+      --warning: #FFC107;
+      --danger: #F44336;
+      --info: #2196F3;
+      --light: #F5F5F5;
+      --dark: #333;
+      --border: #DDD;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--light);
+      color: var(--dark);
+      line-height: 1.6;
+    }
+    
+    /* Header - BARRA BRANCA */
+    .header {
+      background: white;
+      color: var(--secondary);
+      padding: 15px 0;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 3px solid var(--primary);
+    }
+
+    
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .logo {
+      height: 50px;
+      width: auto;
+    }
+
+    .system-name {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--secondary); /* Texto escuro para contraste com fundo branco */
+    }
+
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary); /* Verde Neoformula */
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+
+    .user-details {
+      text-align: right;
+    }
+
+    .user-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--secondary); /* Texto escuro */
+    }
+
+    .user-role {
+      font-size: 0.8rem;
+      color: #666; /* Cinza para contraste */
+    }
+    
+    /* Navigation */
+    .navigation {
+      background: white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      position: sticky;
+      top: 80px;
+      z-index: 999;
+    }
+    
+    .nav-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    
+    .nav-menu {
+      display: flex;
+      list-style: none;
+      gap: 10px;
+      overflow-x: auto;
+    }
+    
+    .nav-item {
+      padding: 15px 20px;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+      white-space: nowrap;
+    }
+    
+    .nav-item:hover {
+      background: var(--light);
+      border-bottom-color: var(--primary);
+    }
+    
+    .nav-item.active {
+      border-bottom-color: var(--primary);
+      color: var(--primary);
+      font-weight: 600;
+    }
+    
+    /* Main Content */
+    .container {
+      max-width: 1400px;
+      margin: 20px auto;
+      padding: 0 20px;
+    }
+    
+    .page-section {
+      display: none;
+    }
+    
+    .page-section.active {
+      display: block;
+    }
+    
+    /* Cards */
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--light);
+    }
+    
+    .card-title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--secondary);
+    }
+    
+    /* KPI Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .kpi-card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      border-left: 4px solid var(--primary);
+      transition: transform 0.3s;
+    }
+    
+    .kpi-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    }
+    
+    .kpi-label {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--secondary);
+    }
+    
+    .kpi-change {
+      font-size: 0.85rem;
+      margin-top: 5px;
+    }
+    
+    .kpi-change.positive {
+      color: var(--success);
+    }
+    
+    .kpi-change.negative {
+      color: var(--danger);
+    }
+    
+    /* Buttons */
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+    
+    .btn-secondary {
+      background: var(--secondary);
+      color: white;
+    }
+    
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+    
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+    
+    .btn-outline {
+      background: white;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+    
+    /* Forms */
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--secondary);
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid var(--border);
+      border-radius: 5px;
+      font-size: 0.95rem;
+      transition: border-color 0.3s;
+    }
+    
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+    
+    thead {
+      background: var(--primary);
+      color: white;
+    }
+    
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    tbody tr:hover {
+      background: var(--light);
+    }
+    
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    
+    .badge-success {
+      background: var(--success);
+      color: white;
+    }
+    
+    .badge-warning {
+      background: var(--warning);
+      color: var(--dark);
+    }
+    
+    .badge-danger {
+      background: var(--danger);
+      color: white;
+    }
+    
+    .badge-info {
+      background: var(--info);
+      color: white;
+    }
+    
+    .badge-secondary {
+      background: var(--secondary);
+      color: white;
+    }
+    
+    /* Filters */
+    .filters {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      align-items: end;
+    }
+    
+    /* Modals */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .modal.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 10px;
+      padding: 30px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid var(--light);
+    }
+    
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--secondary);
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #999;
+    }
+    
+    .modal-close:hover {
+      color: var(--danger);
+    }
+    
+    /* Loading */
+    .loading {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.9);
+      z-index: 99999;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .loading.active {
+      display: flex;
+    }
+    
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid var(--light);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Alerts */
+    .alert {
+      padding: 15px 20px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      border-left: 4px solid var(--success);
+    }
+    
+    .alert-danger {
+      background: #f8d7da;
+      color: #721c24;
+      border-left: 4px solid var(--danger);
+    }
+    
+    .alert-warning {
+      background: #fff3cd;
+      color: #856404;
+      border-left: 4px solid var(--warning);
+    }
+    
+    .alert-info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border-left: 4px solid var(--info);
+    }
+    
+    /* Image Preview */
+    .image-preview {
+      width: 150px;
+      height: 150px;
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    
+    .image-preview img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: cover;
+    }
+    
+    .image-preview-placeholder {
+      color: #999;
+      text-align: center;
+      padding: 10px;
+    }
+    
+    /* Product List Items */
+    .product-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      background: var(--light);
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    
+    .product-list-item-info {
+      flex: 1;
+    }
+    
+    .product-list-item-name {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    
+    .product-list-item-details {
+      font-size: 0.85rem;
+      color: #666;
+    }
+    
+    .product-list-item-actions {
+      display: flex;
+      gap: 10px;
+    }
+    
+    /* Charts Container */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+    
+    .chart-card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    
+    .chart-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: var(--secondary);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header-content {
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      .nav-menu {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+      }
+      
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+      
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .modal-content {
+        width: 95%;
+        padding: 20px;
+      }
+    }
+    
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+    
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      opacity: 0.5;
+    }
+    
+    .empty-state-title {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+    
+    .empty-state-text {
+      font-size: 1rem;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Loading Overlay -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <div class="logo-container">
+        <img src="<?= logoUrl ?>" alt="Neoformula" class="logo">
+        <div class="system-name">Sistema de Controle de Pedidos v<?= versao ?></div>
+      </div>
+      <div class="user-info">
+        <div class="user-details">
+          <div class="user-name" id="userName">Carregando...</div>
+          <div class="user-role" id="userRole">...</div>
+        </div>
+        <div class="user-avatar" id="userAvatar">?</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="navigation">
+    <div class="nav-container">
+      <ul class="nav-menu">
+        <li class="nav-item active" data-page="dashboard">📊 Dashboard</li>
+        <li class="nav-item" data-page="pedidos">🛒 Pedidos</li>
+        <li class="nav-item" data-page="produtos">📦 Produtos</li>
+        <li class="nav-item" data-page="estoque">📊 Estoque</li>
+        <li class="nav-item" data-page="gerenciamento">📈 Gerenciamento</li>
+        <li class="nav-item" data-page="relatorios">📄 Relatórios</li>
+        <li class="nav-item" data-page="configuracoes">⚙️ Configurações</li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <div class="container">
+    
+    <!-- Dashboard Page -->
+    <section class="page-section active" id="page-dashboard">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Dashboard</h2>
+          <button class="btn btn-primary" onclick="refreshDashboard()">🔄 Atualizar</button>
+        </div>
+        
+        <!-- Filters -->
+        <div class="filters">
+          <div class="filter-grid">
+            <div class="form-group">
+              <label class="form-label">Data Início</label>
+              <input type="date" class="form-control" id="dashFilterDataInicio">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Data Fim</label>
+              <input type="date" class="form-control" id="dashFilterDataFim">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tipo</label>
+              <select class="form-control" id="dashFilterTipo">
+                <option value="">Todos</option>
+                <option value="Papelaria">Papelaria</option>
+                <option value="Limpeza">Limpeza</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              <select class="form-control" id="dashFilterStatus">
+                <option value="">Todos</option>
+                <option value="Solicitado">Solicitado</option>
+                <option value="Em Compra">Em Compra</option>
+                <option value="Finalizado">Finalizado</option>
+                <option value="Cancelado">Cancelado</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <button class="btn btn-primary" onclick="applyDashboardFilters()" style="width: 100%;">
+                Aplicar Filtros
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- KPIs -->
+        <div class="kpi-grid" id="kpiGrid">
+          <!-- KPIs serão inseridos aqui via JavaScript -->
+        </div>
+        
+        <!-- Charts -->
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h3 class="chart-title">Pedidos por Status</h3>
+            <canvas id="chartStatus"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3 class="chart-title">Valor por Tipo</h3>
+            <canvas id="chartTipo"></canvas>
+          </div>
+        </div>
+        
+        <!-- Alerts -->
+        <div style="margin-top: 30px;">
+          <h3 style="margin-bottom: 15px;">⚠️ Alertas de Estoque</h3>
+          <div id="alertasEstoque">
+            <!-- Alertas serão inseridos aqui -->
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Pedidos Page -->
+    <section class="page-section" id="page-pedidos">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Meus Pedidos</h2>
+          <button class="btn btn-primary" onclick="openModalNovoPedido()">➕ Novo Pedido</button>
+        </div>
+        
+        <!-- Filters -->
+        <div class="filters">
+          <div class="filter-grid">
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              <select class="form-control" id="pedidosFilterStatus">
+                <option value="">Todos</option>
+                <option value="Solicitado">Solicitado</option>
+                <option value="Em Compra">Em Compra</option>
+                <option value="Finalizado">Finalizado</option>
+                <option value="Cancelado">Cancelado</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tipo</label>
+              <select class="form-control" id="pedidosFilterTipo">
+                <option value="">Todos</option>
+                <option value="Papelaria">Papelaria</option>
+                <option value="Limpeza">Limpeza</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <button class="btn btn-primary" onclick="loadPedidos()" style="width: 100%;">
+                Filtrar
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Table -->
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Número</th>
+                <th>Tipo</th>
+                <th>Data</th>
+                <th>Valor</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="pedidosTableBody">
+              <!-- Pedidos serão inseridos aqui -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Produtos Page -->
+    <section class="page-section" id="page-produtos">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Produtos</h2>
+          <div id="produtosActions">
+            <!-- Botões serão inseridos se usuário for gestor -->
+          </div>
+        </div>
+        
+        <!-- Search -->
+        <div class="filters">
+          <div class="filter-grid">
+            <div class="form-group">
+              <label class="form-label">Buscar</label>
+              <input type="text" class="form-control" id="produtosSearch" placeholder="Nome, código ou categoria...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tipo</label>
+              <select class="form-control" id="produtosFilterTipo">
+                <option value="">Todos</option>
+                <option value="Papelaria">Papelaria</option>
+                <option value="Limpeza">Limpeza</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <button class="btn btn-primary" onclick="loadProdutos()" style="width: 100%;">
+                Buscar
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Table -->
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Imagem</th>
+                <th>Código</th>
+                <th>Nome</th>
+                <th>Tipo</th>
+                <th>Categoria</th>
+                <th>Preço</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="produtosTableBody">
+              <!-- Produtos serão inseridos aqui -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Estoque Page -->
+    <section class="page-section" id="page-estoque">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Controle de Estoque</h2>
+          <div id="estoqueActions">
+            <!-- Botões serão inseridos se usuário for gestor -->
+          </div>
+        </div>
+        
+        <!-- KPIs Estoque -->
+        <div class="kpi-grid" id="estoqueKpiGrid">
+          <!-- KPIs serão inseridos aqui -->
+        </div>
+        
+        <!-- Table -->
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Qtd Atual</th>
+                <th>Qtd Reservada</th>
+                <th>Disponível</th>
+                <th>Estoque Mínimo</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="estoqueTableBody">
+              <!-- Estoque será inserido aqui -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gerenciamento Page (NOVO v6.0) -->
+    <section class="page-section" id="page-gerenciamento">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Gerenciamento de Produtos</h2>
+        </div>
+        
+        <div style="margin-bottom: 30px;">
+          <h3>📊 Análise de Produtos</h3>
+          <div class="kpi-grid" id="gerenciamentoKpiGrid">
+            <!-- KPIs serão inseridos aqui -->
+          </div>
+        </div>
+        
+        <div style="margin-bottom: 30px;">
+          <h3>⚠️ Produtos em Alerta</h3>
+          <div id="produtosAlerta">
+            <!-- Produtos em alerta serão inseridos aqui -->
+          </div>
+        </div>
+        
+        <div>
+          <h3>📈 Histórico de Movimentações</h3>
+          <div class="filters">
+            <div class="filter-grid">
+              <div class="form-group">
+                <label class="form-label">Tipo Movimentação</label>
+                <select class="form-control" id="movimentacaoFilterTipo">
+                  <option value="">Todas</option>
+                  <option value="ENTRADA">Entrada</option>
+                  <option value="SAIDA">Saída</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <button class="btn btn-primary" onclick="loadHistoricoMovimentacoes()" style="width: 100%;">
+                  Filtrar
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data/Hora</th>
+                  <th>Tipo</th>
+                  <th>Produto</th>
+                  <th>Quantidade</th>
+                  <th>Estoque Anterior</th>
+                  <th>Estoque Atual</th>
+                  <th>Responsável</th>
+                </tr>
+              </thead>
+              <tbody id="movimentacoesTableBody">
+                <!-- Movimentações serão inseridas aqui -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Relatórios Page -->
+    <section class="page-section" id="page-relatorios">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Relatórios</h2>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+          <div class="card" style="background: var(--light);">
+            <h3>📊 Relatório de Pedidos</h3>
+            <p>Gere relatórios detalhados de pedidos com filtros personalizados.</p>
+            <button class="btn btn-primary" onclick="exportarRelatorioPedidos()" style="width: 100%; margin-top: 15px;">
+              📥 Exportar CSV
+            </button>
+          </div>
+          
+          <div class="card" style="background: var(--light);">
+            <h3>📦 Relatório de Produtos</h3>
+            <p>Liste todos os produtos cadastrados no sistema.</p>
+            <button class="btn btn-primary" onclick="exportarRelatorioProdutos()" style="width: 100%; margin-top: 15px;">
+              📥 Exportar CSV
+            </button>
+          </div>
+          
+          <div class="card" style="background: var(--light);">
+            <h3>📊 Relatório de Estoque</h3>
+            <p>Visualize o estoque atual de todos os produtos.</p>
+            <button class="btn btn-primary" onclick="exportarRelatorioEstoque()" style="width: 100%; margin-top: 15px;">
+              📥 Exportar CSV
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Configurações Page -->
+    <section class="page-section" id="page-configuracoes">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Configurações do Sistema</h2>
+        </div>
+        
+        <div id="configContent">
+          <!-- Conteúdo de configurações (apenas para admin) -->
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Modal: Novo Pedido -->
+  <div class="modal" id="modalNovoPedido">
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="modal-header">
+        <h3 class="modal-title">➕ Novo Pedido</h3>
+        <button class="modal-close" onclick="closeModal('modalNovoPedido')">&times;</button>
+      </div>
+      
+      <form id="formNovoPedido" onsubmit="submitNovoPedido(event)">
+        <div class="form-group">
+          <label class="form-label">Tipo de Pedido *</label>
+          <select class="form-control" id="novoPedidoTipo" required>
+            <option value="">Selecione...</option>
+            <option value="Papelaria">Papelaria</option>
+            <option value="Limpeza">Limpeza</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Produtos *</label>
+          <div id="produtosListaPedido">
+            <!-- Lista de produtos será inserida aqui -->
+          </div>
+          <button type="button" class="btn btn-outline" onclick="adicionarProdutoPedido()">
+            ➕ Adicionar Produto
+          </button>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Observações</label>
+          <textarea class="form-control" id="novoPedidoObs" rows="3" placeholder="Observações opcionais..."></textarea>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="submit" class="btn btn-success" style="flex: 1;">✅ Criar Pedido</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modalNovoPedido')" style="flex: 1;">❌ Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Novo Produto -->
+  <div class="modal" id="modalNovoProduto">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">➕ Novo Produto</h3>
+        <button class="modal-close" onclick="closeModal('modalNovoProduto')">&times;</button>
+      </div>
+      
+      <form id="formNovoProduto" onsubmit="submitNovoProduto(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Código *</label>
+            <input type="text" class="form-control" id="novoProdutoCodigo" required>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Nome *</label>
+            <input type="text" class="form-control" id="novoProdutoNome" required>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tipo *</label>
+            <select class="form-control" id="novoProdutoTipo" required>
+              <option value="">Selecione...</option>
+              <option value="Papelaria">Papelaria</option>
+              <option value="Limpeza">Limpeza</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Categoria</label>
+            <input type="text" class="form-control" id="novoProdutoCategoria">
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Unidade</label>
+            <select class="form-control" id="novoProdutoUnidade">
+              <option value="UN">Unidade (UN)</option>
+              <option value="CX">Caixa (CX)</option>
+              <option value="PCT">Pacote (PCT)</option>
+              <option value="KG">Quilograma (KG)</option>
+              <option value="L">Litro (L)</option>
+              <option value="RESMA">Resma</option>
+              <option value="PAR">Par</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Preço Unitário (R$)</label>
+            <input type="number" class="form-control" id="novoProdutoPreco" step="0.01" min="0">
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Estoque Mínimo</label>
+            <input type="number" class="form-control" id="novoProdutoEstoqueMin" min="0" value="0">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Ponto de Pedido</label>
+            <input type="number" class="form-control" id="novoProdutoPontoPedido" min="0" value="0">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Fornecedor</label>
+          <input type="text" class="form-control" id="novoProdutoFornecedor">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Imagem do Produto</label>
+          <input type="file" class="form-control" id="novoProdutoImagem" accept="image/*" onchange="previewImage(event, 'previewNovoProduto')">
+          <div class="image-preview" id="previewNovoProduto">
+            <div class="image-preview-placeholder">Nenhuma imagem selecionada</div>
+          </div>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="submit" class="btn btn-success" style="flex: 1;">✅ Cadastrar</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modalNovoProduto')" style="flex: 1;">❌ Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Movimentação de Estoque -->
+  <div class="modal" id="modalMovimentacaoEstoque">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="tituloMovimentacao">📦 Movimentação de Estoque</h3>
+        <button class="modal-close" onclick="closeModal('modalMovimentacaoEstoque')">&times;</button>
+      </div>
+      
+      <form id="formMovimentacao" onsubmit="submitMovimentacao(event)">
+        <input type="hidden" id="movimentacaoTipo">
+        <input type="hidden" id="movimentacaoProdutoId">
+        
+        <div class="form-group">
+          <label class="form-label">Produto</label>
+          <input type="text" class="form-control" id="movimentacaoProdutoNome" readonly>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Quantidade *</label>
+          <input type="number" class="form-control" id="movimentacaoQuantidade" min="1" required>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Observações</label>
+          <textarea class="form-control" id="movimentacaoObs" rows="3"></textarea>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="submit" class="btn btn-success" style="flex: 1;">✅ Confirmar</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modalMovimentacaoEstoque')" style="flex: 1;">❌ Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <script>
+    /**
+     * ========================================
+     * SISTEMA NEOFORMULA v6.0 - JavaScript
+     * ========================================
+     */
+    
+    // Variáveis Globais
+    let currentUser = null;
+    let systemConfig = null;
+    let allProdutos = [];
+    let produtosPedido = [];
+    
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('🚀 Iniciando Sistema Neoformula v6.0...');
+      initializeSystem();
+    });
+    
+    /**
+     * Inicializa o sistema
+     */
+    /**
+ * Inicializa o sistema (CORRIGIDO v6.0.1)
+ */
+function initializeSystem() {
+  showLoading();
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      try {
+        // Verificar se response existe e tem a estrutura esperada
+        if (!response) {
+          console.error('❌ Resposta vazia do servidor');
+          hideLoading();
+          showError('Erro: Resposta vazia do servidor. Tente recarregar a página.');
+          return;
+        }
+        
+        // Verificar se data existe
+        if (!response.data) {
+          console.error('❌ Dados não encontrados na resposta');
+          hideLoading();
+          showError('Erro ao carregar dados. Verifique se o setup foi executado.');
+          return;
+        }
+        
+        // Atribuir dados
+        currentUser = response.data.user;
+        systemConfig = response.data.config;
+        
+        // Se não conseguiu obter usuário, criar um básico
+        if (!currentUser) {
+          console.warn('⚠️ Usuário não encontrado, usando dados padrão');
+          currentUser = {
+            nome: 'Usuário',
+            email: 'usuario@exemplo.com',
+            permissao: 'USUARIO',
+            setor: 'Sem Setor'
+          };
+        }
+        
+        // Atualizar interface
+        updateUserInterface();
+        
+        // Carregar dashboard
+        try {
+          loadDashboard();
+        } catch (e) {
+          console.error('Erro ao carregar dashboard:', e);
+        }
+        
+        // Configurar navegação
+        setupNavigation();
+        
+        // Verificar permissões
+        checkUserPermissions();
+        
+        hideLoading();
+        console.log('✅ Sistema inicializado com sucesso');
+        
+      } catch (error) {
+        console.error('❌ Erro ao processar resposta:', error);
+        hideLoading();
+        showError('Erro ao processar dados: ' + error.message);
+      }
+    })
+    .withFailureHandler(function(error) {
+      console.error('❌ Erro de conexão:', error);
+      hideLoading();
+      
+      // Tentar inicializar com dados mínimos
+      currentUser = {
+        nome: 'Usuário',
+        email: 'usuario@exemplo.com',
+        permissao: 'USUARIO',
+        setor: 'Sem Setor'
+      };
+      
+      updateUserInterface();
+      setupNavigation();
+      
+      showError('Erro de conexão. Algumas funcionalidades podem não estar disponíveis.\n\n' + error.message);
+    })
+    .getInitialData();
+}
+
+    
+    /**
+     * Atualiza interface com dados do usuário
+     */
+    function updateUserInterface() {
+      if (!currentUser) return;
+      
+      document.getElementById('userName').textContent = currentUser.nome;
+      document.getElementById('userRole').textContent = currentUser.permissao;
+      document.getElementById('userAvatar').textContent = currentUser.nome.charAt(0).toUpperCase();
+    }
+    
+    /**
+     * Configura navegação entre páginas
+     */
+    function setupNavigation() {
+      const navItems = document.querySelectorAll('.nav-item');
+      
+      navItems.forEach(item => {
+        item.addEventListener('click', function() {
+          const pageName = this.dataset.page;
+          navigateTo(pageName);
+        });
+      });
+    }
+    
+    /**
+     * Navega para uma página
+     */
+    function navigateTo(pageName) {
+      // Atualizar navegação ativa
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.page === pageName) {
+          item.classList.add('active');
+        }
+      });
+      
+      // Mostrar página
+      document.querySelectorAll('.page-section').forEach(section => {
+        section.classList.remove('active');
+      });
+      document.getElementById('page-' + pageName).classList.add('active');
+      
+      // Carregar dados da página
+      switch(pageName) {
+        case 'dashboard':
+          loadDashboard();
+          break;
+        case 'pedidos':
+          loadPedidos();
+          break;
+        case 'produtos':
+          loadProdutos();
+          break;
+        case 'estoque':
+          loadEstoque();
+          break;
+        case 'gerenciamento':
+          loadGerenciamento();
+          break;
+        case 'configuracoes':
+          loadConfiguracoes();
+          break;
+      }
+    }
+    
+    /**
+     * Verifica permissões do usuário
+     */
+    function checkUserPermissions() {
+      if (!currentUser) return;
+      
+      const isGestor = currentUser.permissao === 'GESTOR' || currentUser.permissao === 'ADMIN';
+      const isAdmin = currentUser.permissao === 'ADMIN';
+      
+      // Produtos: apenas gestor/admin pode cadastrar
+      if (isGestor) {
+        document.getElementById('produtosActions').innerHTML = `
+          <button class="btn btn-primary" onclick="openModalNovoProduto()">➕ Novo Produto</button>
+          <button class="btn btn-outline" onclick="exportarRelatorioProdutos()">📥 Exportar</button>
+        `;
+      }
+      
+      // Estoque: apenas gestor/admin pode movimentar
+      if (isGestor) {
+        document.getElementById('estoqueActions').innerHTML = `
+          <button class="btn btn-success" onclick="abrirModalEntrada()">⬆️ Entrada</button>
+          <button class="btn btn-danger" onclick="abrirModalSaida()">⬇️ Saída</button>
+        `;
+      }
+    }
+    
+    /**
+ * Carrega Dashboard (CORRIGIDO v6.0.1)
+ */
+function loadDashboard() {
+  showLoading();
+  
+  const filtros = {
+    dataInicio: document.getElementById('dashFilterDataInicio')?.value || null,
+    dataFim: document.getElementById('dashFilterDataFim')?.value || null,
+    tipo: document.getElementById('dashFilterTipo')?.value || null,
+    status: document.getElementById('dashFilterStatus')?.value || null
+  };
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      try {
+        if (!response) {
+          console.error('❌ Resposta vazia ao carregar dashboard');
+          hideLoading();
+          return;
+        }
+        
+        if (response.success && response.kpis) {
+          renderKPIs(response.kpis);
+          renderCharts(response.kpis);
+          renderAlertasEstoque(response.kpis);
+        } else {
+          console.error('Erro ao carregar dashboard:', response.error);
+          // Renderizar KPIs vazios
+          renderKPIs({
+            totalPedidos: 0,
+            valorTotalPedidos: 0,
+            ticketMedio: 0,
+            pedidosSolicitados: 0,
+            pedidosEmCompra: 0,
+            pedidosFinalizados: 0,
+            totalProdutos: 0,
+            produtosEstoqueBaixo: 0
+          });
+        }
+      } catch (error) {
+        console.error('❌ Erro ao processar dashboard:', error);
+      }
+      hideLoading();
+    })
+    .withFailureHandler(function(error) {
+      console.error('❌ Erro de conexão no dashboard:', error);
+      hideLoading();
+      showError('Erro ao carregar dashboard: ' + error.message);
+    })
+    .getDashboardData(filtros);
+}
+
+    
+    /**
+     * Renderiza KPIs
+     */
+    function renderKPIs(kpis) {
+      const kpiGrid = document.getElementById('kpiGrid');
+      
+      const kpisHtml = `
+        <div class="kpi-card" style="border-left-color: var(--primary);">
+          <div class="kpi-label">Total de Pedidos</div>
+          <div class="kpi-value">${kpis.totalPedidos || 0}</div>
+        </div>
+        
+        <div class="kpi-card" style="border-left-color: var(--success);">
+          <div class="kpi-label">Valor Total</div>
+          <div class="kpi-value">R$ ${formatMoney(kpis.valorTotalPedidos || 0)}</div>
+        </div>
+        
+        <div class="kpi-card" style="border-left-color: var(--info);">
+          <div class="kpi-label">Ticket Médio</div>
+          <div class="kpi-value">R$ ${formatMoney(kpis.ticketMedio || 0)}</div>
+        </div>
+        
+        <div class="kpi-card" style="border-left-color: var(--warning);">
+          <div class="kpi-label">Solicitados</div>
+          <div class="kpi-value">${kpis.pedidosSolicitados || 0}</div>
+        </div>
+        
+        <div class="kpi-card" style="border-left-color: var(--accent);">
+          <div class="kpi-label">Em Compra</div>
+          <div class="kpi-value">${kpis.pedidosEmCompra || 0}</div>
+        </div>
+        
+        <div class="kpi-card" style="border-left-color: var(--success);">
+          <div class="kpi-label">Finalizados</div>
+          <div class="kpi-value">${kpis.pedidosFinalizados || 0}</div>
+        </div>
+        
+        <div class="kpi-card" style="border-left-color: var(--primary);">
+          <div class="kpi-label">Produtos Cadastrados</div>
+          <div class="kpi-value">${kpis.totalProdutos || 0}</div>
+        </div>
+        
+        <div class="kpi-card" style="border-left-color: var(--danger);">
+          <div class="kpi-label">Estoque Baixo</div>
+          <div class="kpi-value">${kpis.produtosEstoqueBaixo || 0}</div>
+        </div>
+      `;
+      
+      kpiGrid.innerHTML = kpisHtml;
+    }
+    
+    /**
+     * Renderiza gráficos
+     */
+    function renderCharts(kpis) {
+      // Gráfico de Status
+      const ctxStatus = document.getElementById('chartStatus');
+      if (ctxStatus) {
+        new Chart(ctxStatus, {
+          type: 'doughnut',
+          data: {
+            labels: ['Solicitado', 'Em Compra', 'Finalizado', 'Cancelado'],
+            datasets: [{
+              data: [
+                kpis.pedidosSolicitados || 0,
+                kpis.pedidosEmCompra || 0,
+                kpis.pedidosFinalizados || 0,
+                kpis.pedidosCancelados || 0
+              ],
+              backgroundColor: ['#FFC107', '#FF6B35', '#4CAF50', '#F44336']
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: 'bottom'
+              }
+            }
+          }
+        });
+      }
+      
+      // Gráfico de Tipo
+      const ctxTipo = document.getElementById('chartTipo');
+      if (ctxTipo) {
+        new Chart(ctxTipo, {
+          type: 'bar',
+          data: {
+            labels: ['Papelaria', 'Limpeza'],
+            datasets: [{
+              label: 'Valor (R$)',
+              data: [
+                kpis.valorPapelaria || 0,
+                kpis.valorLimpeza || 0
+              ],
+              backgroundColor: ['#00A651', '#2196F3']
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                display: false
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
+        });
+      }
+    }
+    
+    /**
+     * Renderiza alertas de estoque
+     */
+    function renderAlertasEstoque(kpis) {
+      const container = document.getElementById('alertasEstoque');
+      
+      if (!kpis.produtosEstoqueBaixo || kpis.produtosEstoqueBaixo === 0) {
+        container.innerHTML = '<div class="alert alert-success">✅ Nenhum produto com estoque baixo</div>';
+        return;
+      }
+      
+      container.innerHTML = `
+        <div class="alert alert-warning">
+          ⚠️ ${kpis.produtosEstoqueBaixo} produto(s) com estoque baixo. 
+          Acesse a aba <strong>Gerenciamento</strong> para mais detalhes.
+        </div>
+      `;
+    }
+    /**
+     * Aplica filtros no dashboard
+     */
+    function applyDashboardFilters() {
+      loadDashboard();
+    }
+    
+    /**
+     * Recarrega dashboard
+     */
+    function refreshDashboard() {
+      loadDashboard();
+    }
+    
+    /**
+     * Carrega pedidos
+     */
+    /**
+ * Carrega pedidos (CORRIGIDO v6.0.1)
+ */
+function loadPedidos() {
+  showLoading();
+  
+  const filtros = {
+    status: document.getElementById('pedidosFilterStatus')?.value || null,
+    tipo: document.getElementById('pedidosFilterTipo')?.value || null
+  };
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      try {
+        // Verificar se response existe
+        if (!response) {
+          console.error('❌ Resposta vazia ao carregar pedidos');
+          hideLoading();
+          renderPedidosTable([]);
+          showError('Erro ao carregar pedidos: Resposta vazia do servidor');
+          return;
+        }
+        
+        // Verificar se teve sucesso
+        if (response.success) {
+          renderPedidosTable(response.pedidos || []);
+        } else {
+          console.error('Erro ao carregar pedidos:', response.error);
+          renderPedidosTable([]);
+          showError('Erro ao carregar pedidos: ' + (response.error || 'Erro desconhecido'));
+        }
+        
+      } catch (error) {
+        console.error('❌ Erro ao processar pedidos:', error);
+        renderPedidosTable([]);
+        showError('Erro ao processar pedidos: ' + error.message);
+      }
+      
+      hideLoading();
+    })
+    .withFailureHandler(function(error) {
+      console.error('❌ Erro de conexão ao carregar pedidos:', error);
+      hideLoading();
+      renderPedidosTable([]);
+      showError('Erro de conexão ao carregar pedidos: ' + error.message);
+    })
+    .listarPedidos(filtros);
+}
+
+    
+    /**
+     * Renderiza tabela de pedidos
+     */
+    function renderPedidosTable(pedidos) {
+      const tbody = document.getElementById('pedidosTableBody');
+      
+      if (!pedidos || pedidos.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="empty-state">
+              <div class="empty-state-icon">📦</div>
+              <div class="empty-state-title">Nenhum pedido encontrado</div>
+              <div class="empty-state-text">Clique em "Novo Pedido" para criar seu primeiro pedido</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      let html = '';
+      pedidos.forEach(pedido => {
+        const statusBadge = getStatusBadge(pedido.status);
+        const dataFormatada = formatDate(pedido.dataSolicitacao);
+        
+        html += `
+          <tr>
+            <td><strong>${pedido.numeroPedido}</strong></td>
+            <td>${pedido.tipo}</td>
+            <td>${dataFormatada}</td>
+            <td><strong>R$ ${formatMoney(pedido.valorTotal)}</strong></td>
+            <td>${statusBadge}</td>
+            <td>
+              <button class="btn btn-outline" onclick="verDetalhesPedido('${pedido.id}')" style="padding: 5px 10px; font-size: 0.85rem;">
+                👁️ Ver
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      
+      tbody.innerHTML = html;
+    }
+    
+    /**
+     * Ver detalhes do pedido
+     */
+    function verDetalhesPedido(pedidoId) {
+      showLoading();
+      
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            showPedidoDetails(response.pedido);
+          } else {
+            showError('Erro ao carregar pedido: ' + response.error);
+          }
+          hideLoading();
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .getDetalhesPedido(pedidoId);
+    }
+    
+    /**
+     * Mostra detalhes do pedido
+     */
+    function showPedidoDetails(pedido) {
+      const produtosHtml = pedido.produtosDetalhados
+        .map(p => `<li>${p.nome} - Quantidade: ${p.quantidade}</li>`)
+        .join('');
+      
+      const html = `
+        <div class="modal active" id="modalDetalhesPedido" onclick="if(event.target === this) closeModal('modalDetalhesPedido')">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 class="modal-title">📋 Detalhes do Pedido</h3>
+              <button class="modal-close" onclick="closeModal('modalDetalhesPedido')">&times;</button>
+            </div>
+            
+            <div>
+              <p><strong>Número:</strong> ${pedido.numeroPedido}</p>
+              <p><strong>Tipo:</strong> ${pedido.tipo}</p>
+              <p><strong>Solicitante:</strong> ${pedido.solicitanteNome}</p>
+              <p><strong>Setor:</strong> ${pedido.setor}</p>
+              <p><strong>Status:</strong> ${getStatusBadge(pedido.status)}</p>
+              <p><strong>Data Solicitação:</strong> ${formatDate(pedido.dataSolicitacao)}</p>
+              <p><strong>Prazo de Entrega:</strong> ${pedido.prazoEntrega}</p>
+              <p><strong>Valor Total:</strong> <strong style="color: var(--success); font-size: 1.2rem;">R$ ${formatMoney(pedido.valorTotal)}</strong></p>
+              
+              <h4 style="margin-top: 20px; margin-bottom: 10px;">Produtos:</h4>
+              <ul style="margin-left: 20px;">
+                ${produtosHtml}
+              </ul>
+              
+              ${pedido.observacoes ? `<p><strong>Observações:</strong> ${pedido.observacoes}</p>` : ''}
+              
+              <button class="btn btn-secondary" onclick="closeModal('modalDetalhesPedido')" style="width: 100%; margin-top: 20px;">
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.insertAdjacentHTML('beforeend', html);
+    }
+    
+    /**
+     * Abre modal de novo pedido
+     */
+    function openModalNovoPedido() {
+      document.getElementById('modalNovoPedido').classList.add('active');
+      loadProdutosParaPedido();
+    }
+    
+    /**
+     * Carrega produtos para o pedido
+     */
+    function loadProdutosParaPedido() {
+      showLoading();
+      
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            allProdutos = response.produtos;
+            produtosPedido = [];
+            renderProdutosPedido();
+          } else {
+            showError('Erro ao carregar produtos: ' + response.error);
+          }
+          hideLoading();
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .listarProdutos({ ativo: 'Sim' });
+    }
+    
+    /**
+     * Adiciona produto ao pedido
+     */
+    function adicionarProdutoPedido() {
+      produtosPedido.push({
+        produtoId: '',
+        quantidade: 1
+      });
+      renderProdutosPedido();
+    }
+    
+    /**
+     * Remove produto do pedido
+     */
+    function removerProdutoPedido(index) {
+      produtosPedido.splice(index, 1);
+      renderProdutosPedido();
+    }
+    
+    /**
+     * Renderiza lista de produtos do pedido
+     */
+    function renderProdutosPedido() {
+      const container = document.getElementById('produtosListaPedido');
+      
+      if (produtosPedido.length === 0) {
+        container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">Nenhum produto adicionado</p>';
+        return;
+      }
+      
+      let html = '';
+      produtosPedido.forEach((item, index) => {
+        html += `
+          <div class="product-list-item">
+            <div style="flex: 1; display: grid; grid-template-columns: 2fr 1fr; gap: 10px; align-items: center;">
+              <select class="form-control" onchange="produtosPedido[${index}].produtoId = this.value" required>
+                <option value="">Selecione um produto...</option>
+                ${allProdutos.map(p => `
+                  <option value="${p.id}" ${item.produtoId === p.id ? 'selected' : ''}>
+                    ${p.nome} (${p.tipo})
+                  </option>
+                `).join('')}
+              </select>
+              
+              <input type="number" class="form-control" placeholder="Qtd" min="1" value="${item.quantidade}"
+                     onchange="produtosPedido[${index}].quantidade = this.value" required>
+            </div>
+            
+            <button type="button" class="btn btn-danger" onclick="removerProdutoPedido(${index})" style="padding: 8px 12px;">
+              ❌
+            </button>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+    
+    /**
+     * Submete novo pedido
+     */
+    function submitNovoPedido(event) {
+      event.preventDefault();
+      
+      const tipo = document.getElementById('novoPedidoTipo').value;
+      const observacoes = document.getElementById('novoPedidoObs').value;
+      
+      if (produtosPedido.length === 0) {
+        showError('Adicione pelo menos um produto ao pedido');
+        return;
+      }
+      
+      // Validar produtos
+      for (let i = 0; i < produtosPedido.length; i++) {
+        if (!produtosPedido[i].produtoId || !produtosPedido[i].quantidade) {
+          showError('Preencha todos os produtos corretamente');
+          return;
+        }
+      }
+      
+      showLoading();
+      
+      const dadosPedido = {
+        tipo: tipo,
+        produtos: produtosPedido,
+        observacoes: observacoes
+      };
+      
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            showSuccess(`Pedido ${response.numeroPedido} criado com sucesso!`);
+            closeModal('modalNovoPedido');
+            document.getElementById('formNovoPedido').reset();
+            produtosPedido = [];
+            loadPedidos();
+          } else {
+            showError('Erro ao criar pedido: ' + response.error);
+          }
+          hideLoading();
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .criarPedido(dadosPedido);
+    }
+    
+    /**
+ * Carrega produtos (CORRIGIDO v6.0.1)
+ */
+function loadProdutos() {
+  showLoading();
+  
+  const filtros = {
+    busca: document.getElementById('produtosSearch')?.value || null,
+    tipo: document.getElementById('produtosFilterTipo')?.value || null,
+    ativo: 'Sim'
+  };
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      try {
+        if (!response) {
+          console.error('❌ Resposta vazia ao carregar produtos');
+          hideLoading();
+          renderProdutosTable([]);
+          return;
+        }
+        
+        if (response.success) {
+          renderProdutosTable(response.produtos || []);
+        } else {
+          console.error('Erro ao carregar produtos:', response.error);
+          renderProdutosTable([]);
+          showError('Erro ao carregar produtos: ' + (response.error || 'Erro desconhecido'));
+        }
+      } catch (error) {
+        console.error('❌ Erro ao processar produtos:', error);
+        renderProdutosTable([]);
+      }
+      hideLoading();
+    })
+    .withFailureHandler(function(error) {
+      console.error('❌ Erro de conexão ao carregar produtos:', error);
+      hideLoading();
+      renderProdutosTable([]);
+      showError('Erro de conexão: ' + error.message);
+    })
+    .listarProdutos(filtros);
+}
+
+    
+    /**
+     * Renderiza tabela de produtos
+     */
+    function renderProdutosTable(produtos) {
+      const tbody = document.getElementById('produtosTableBody');
+      
+      if (!produtos || produtos.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="empty-state">
+              <div class="empty-state-icon">📦</div>
+              <div class="empty-state-title">Nenhum produto encontrado</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      let html = '';
+      produtos.forEach(produto => {
+        const imagemHtml = produto.imagemURL 
+          ? `<img src="${produto.imagemURL}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">`
+          : '📦';
+        
+        html += `
+          <tr>
+            <td>${imagemHtml}</td>
+            <td>${produto.codigo}</td>
+            <td><strong>${produto.nome}</strong></td>
+            <td>${produto.tipo}</td>
+            <td>${produto.categoria}</td>
+            <td><strong>R$ ${formatMoney(produto.precoUnitario)}</strong></td>
+            <td>
+              <button class="btn btn-outline" onclick="verDetalhesProduto('${produto.id}')" style="padding: 5px 10px; font-size: 0.85rem;">
+                👁️ Ver
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      
+      tbody.innerHTML = html;
+    }
+    
+    /**
+     * Ver detalhes do produto
+     */
+    function verDetalhesProduto(produtoId) {
+      showLoading();
+      
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            showProdutoDetails(response.produto);
+          } else {
+            showError('Erro ao carregar produto: ' + response.error);
+          }
+          hideLoading();
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .buscarProduto(produtoId);
+    }
+    
+    /**
+     * Mostra detalhes do produto
+     */
+    function showProdutoDetails(produto) {
+      const imagemHtml = produto.imagemURL 
+        ? `<img src="${produto.imagemURL}" style="max-width: 200px; border-radius: 10px; margin: 10px 0;">`
+        : '<p style="color: #999;">Sem imagem</p>';
+      
+      const html = `
+        <div class="modal active" id="modalDetalhesProduto" onclick="if(event.target === this) closeModal('modalDetalhesProduto')">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 class="modal-title">📦 Detalhes do Produto</h3>
+              <button class="modal-close" onclick="closeModal('modalDetalhesProduto')">&times;</button>
+            </div>
+            
+            <div>
+              ${imagemHtml}
+              <p><strong>Código:</strong> ${produto.codigo}</p>
+              <p><strong>Nome:</strong> ${produto.nome}</p>
+              <p><strong>Tipo:</strong> ${produto.tipo}</p>
+              <p><strong>Categoria:</strong> ${produto.categoria}</p>
+              <p><strong>Unidade:</strong> ${produto.unidade}</p>
+              <p><strong>Preço Unitário:</strong> R$ ${formatMoney(produto.precoUnitario)}</p>
+              <p><strong>Estoque Mínimo:</strong> ${produto.estoqueMinimo}</p>
+              <p><strong>Ponto de Pedido:</strong> ${produto.pontoPedido}</p>
+              <p><strong>Fornecedor:</strong> ${produto.fornecedor || 'Não informado'}</p>
+              
+              <button class="btn btn-secondary" onclick="closeModal('modalDetalhesProduto')" style="width: 100%; margin-top: 20px;">
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.insertAdjacentHTML('beforeend', html);
+    }
+    
+    /**
+     * Abre modal de novo produto
+     */
+    function openModalNovoProduto() {
+      document.getElementById('modalNovoProduto').classList.add('active');
+    }
+    
+    /**
+     * Preview de imagem
+     */
+    function previewImage(event, previewId) {
+      const file = event.target.files[0];
+      const preview = document.getElementById(previewId);
+      
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          preview.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 100%;">`;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+    
+    /**
+     * Submete novo produto
+     */
+    function submitNovoProduto(event) {
+      event.preventDefault();
+      
+      showLoading();
+      
+      const dadosProduto = {
+        codigo: document.getElementById('novoProdutoCodigo').value,
+        nome: document.getElementById('novoProdutoNome').value,
+        tipo: document.getElementById('novoProdutoTipo').value,
+        categoria: document.getElementById('novoProdutoCategoria').value,
+        unidade: document.getElementById('novoProdutoUnidade').value,
+        precoUnitario: parseFloat(document.getElementById('novoProdutoPreco').value) || 0,
+        estoqueMinimo: parseInt(document.getElementById('novoProdutoEstoqueMin').value) || 0,
+        pontoPedido: parseInt(document.getElementById('novoProdutoPontoPedido').value) || 0,
+        fornecedor: document.getElementById('novoProdutoFornecedor').value
+      };
+      
+      // Processar imagem se houver
+      const imagemInput = document.getElementById('novoProdutoImagem');
+      if (imagemInput.files && imagemInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          dadosProduto.imagemBase64 = e.target.result;
+          dadosProduto.imagemFileName = imagemInput.files[0].name;
+          dadosProduto.imagemMimeType = imagemInput.files[0].type;
+          
+          enviarProduto(dadosProduto);
+        };
+        reader.readAsDataURL(imagemInput.files[0]);
+      } else {
+        enviarProduto(dadosProduto);
+      }
+    }
+    
+    /**
+     * Envia produto para o backend
+     */
+    function enviarProduto(dadosProduto) {
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            showSuccess('Produto cadastrado com sucesso!');
+            closeModal('modalNovoProduto');
+            document.getElementById('formNovoProduto').reset();
+            document.getElementById('previewNovoProduto').innerHTML = '<div class="image-preview-placeholder">Nenhuma imagem selecionada</div>';
+            loadProdutos();
+          } else {
+            showError('Erro ao cadastrar produto: ' + response.error);
+          }
+          hideLoading();
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .cadastrarProduto(dadosProduto);
+    }
+    
+    /**
+ * Carrega estoque (CORRIGIDO v6.0.1)
+ */
+function loadEstoque() {
+  showLoading();
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      try {
+        if (!response) {
+          console.error('❌ Resposta vazia ao carregar estoque');
+          hideLoading();
+          return;
+        }
+        
+        if (response.success) {
+          renderEstoqueTable(response.estoque || []);
+          loadEstoqueKPIs();
+        } else {
+          console.error('Erro ao carregar estoque:', response.error);
+          renderEstoqueTable([]);
+          showError('Erro ao carregar estoque: ' + (response.error || 'Erro desconhecido'));
+        }
+      } catch (error) {
+        console.error('❌ Erro ao processar estoque:', error);
+        renderEstoqueTable([]);
+      }
+      hideLoading();
+    })
+    .withFailureHandler(function(error) {
+      console.error('❌ Erro de conexão ao carregar estoque:', error);
+      hideLoading();
+      renderEstoqueTable([]);
+      showError('Erro de conexão: ' + error.message);
+    })
+    .getEstoqueAtual({});
+}
+
+    
+    /**
+     * Carrega KPIs do estoque
+     */
+    function loadEstoqueKPIs() {
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            renderEstoqueKPIs(response.analise);
+          }
+        })
+        .withFailureHandler(function(error) {
+          console.error('Erro ao carregar KPIs:', error);
+        })
+        .getAnaliseProdutos();
+    }
+    
+    /**
+     * Renderiza KPIs do estoque
+     */
+    function renderEstoqueKPIs(analise) {
+      const kpiGrid = document.getElementById('estoqueKpiGrid');
+      
+      const html = `
+        <div class="kpi-card" style="border-left-color: var(--primary);">
+          <div class="kpi-label">Total de Produtos</div>
+          <div class="kpi-value">${analise.totalProdutos || 0}</div>
+        </div>
+        
+        <div class="kpi-card" style="border-left-color: var(--danger);">
+          <div class="kpi-label">Estoque Baixo</div>
+          <div class="kpi-value">${analise.produtosEstoqueBaixo || 0}</div>
+        </div>
+        
+        <div class="kpi-card" style="border-left-color: var(--warning);">
+          <div class="kpi-label">Ponto de Pedido</div>
+          <div class="kpi-value">${analise.produtosPontoPedido || 0}</div>
+        </div>
+        
+        <div class="kpi-card" style="border-left-color: var(--success);">
+          <div class="kpi-label">Valor Total Estoque</div>
+          <div class="kpi-value">R$ ${formatMoney(analise.valorTotalEstoque || 0)}</div>
+        </div>
+      `;
+      
+      kpiGrid.innerHTML = html;
+    }
+    
+    /**
+     * Renderiza tabela de estoque
+     */
+    function renderEstoqueTable(estoque) {
+      const tbody = document.getElementById('estoqueTableBody');
+      
+      if (!estoque || estoque.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="empty-state">
+              <div class="empty-state-icon">📊</div>
+              <div class="empty-state-title">Nenhum item no estoque</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      // Buscar dados de produtos para comparar com estoque mínimo
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            const produtos = response.produtos;
+            let html = '';
+            
+            estoque.forEach(item => {
+              const produto = produtos.find(p => p.id === item.produtoId);
+              const estoqueMinimo = produto ? produto.estoqueMinimo : 0;
+              
+              let statusBadge = '<span class="badge badge-success">OK</span>';
+              if (estoqueMinimo > 0 && item.quantidadeAtual <= estoqueMinimo) {
+                statusBadge = '<span class="badge badge-danger">Baixo</span>';
+              } else if (produto && produto.pontoPedido > 0 && item.quantidadeAtual <= produto.pontoPedido) {
+                statusBadge = '<span class="badge badge-warning">Atenção</span>';
+              }
+              
+              html += `
+                <tr>
+                  <td><strong>${item.produtoNome}</strong></td>
+                  <td>${item.quantidadeAtual}</td>
+                  <td>${item.quantidadeReservada}</td>
+                  <td><strong>${item.estoqueDisponivel}</strong></td>
+                  <td>${estoqueMinimo}</td>
+                  <td>${statusBadge}</td>
+                  <td>
+                    ${currentUser && (currentUser.permissao === 'GESTOR' || currentUser.permissao === 'ADMIN') ? `
+                      <button class="btn btn-success" onclick="abrirModalEntrada('${item.produtoId}', '${item.produtoNome}')" 
+                              style="padding: 5px 10px; font-size: 0.85rem; margin-right: 5px;">
+                        ⬆️
+                      </button>
+                      <button class="btn btn-danger" onclick="abrirModalSaida('${item.produtoId}', '${item.produtoNome}')" 
+                              style="padding: 5px 10px; font-size: 0.85rem;">
+                        ⬇️
+                      </button>
+                    ` : '—'}
+                  </td>
+                </tr>
+              `;
+            });
+            
+            tbody.innerHTML = html;
+          }
+        })
+        .listarProdutos({});
+    }
+    
+    /**
+     * Abre modal de entrada de estoque
+     */
+    function abrirModalEntrada(produtoId, produtoNome) {
+      document.getElementById('movimentacaoTipo').value = 'ENTRADA';
+      document.getElementById('movimentacaoProdutoId').value = produtoId || '';
+      document.getElementById('movimentacaoProdutoNome').value = produtoNome || '';
+      document.getElementById('tituloMovimentacao').textContent = '⬆️ Entrada de Estoque';
+      
+      if (!produtoId) {
+        // Carregar lista de produtos
+        loadProdutosParaMovimentacao();
+      }
+      
+      document.getElementById('modalMovimentacaoEstoque').classList.add('active');
+    }
+    
+    /**
+     * Abre modal de saída de estoque
+     */
+    function abrirModalSaida(produtoId, produtoNome) {
+      document.getElementById('movimentacaoTipo').value = 'SAIDA';
+      document.getElementById('movimentacaoProdutoId').value = produtoId || '';
+      document.getElementById('movimentacaoProdutoNome').value = produtoNome || '';
+      document.getElementById('tituloMovimentacao').textContent = '⬇️ Saída de Estoque';
+      
+      if (!produtoId) {
+        loadProdutosParaMovimentacao();
+      }
+      
+      document.getElementById('modalMovimentacaoEstoque').classList.add('active');
+    }
+    
+    /**
+     * Carrega produtos para movimentação
+     */
+    function loadProdutosParaMovimentacao() {
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            const select = document.createElement('select');
+            select.className = 'form-control';
+            select.id = 'movimentacaoProdutoSelect';
+            select.innerHTML = '<option value="">Selecione um produto...</option>';
+            
+            response.produtos.forEach(p => {
+              select.innerHTML += `<option value="${p.id}">${p.nome}</option>`;
+            });
+            
+            const nomeInput = document.getElementById('movimentacaoProdutoNome');
+            nomeInput.parentNode.replaceChild(select, nomeInput);
+            
+            select.addEventListener('change', function() {
+              document.getElementById('movimentacaoProdutoId').value = this.value;
+            });
+          }
+        })
+        .listarProdutos({ ativo: 'Sim' });
+    }
+    
+    /**
+     * Submete movimentação de estoque
+     */
+    function submitMovimentacao(event) {
+      event.preventDefault();
+      
+      const tipo = document.getElementById('movimentacaoTipo').value;
+      const produtoId = document.getElementById('movimentacaoProdutoId').value;
+      const quantidade = document.getElementById('movimentacaoQuantidade').value;
+      const observacoes = document.getElementById('movimentacaoObs').value;
+      
+      if (!produtoId) {
+        showError('Selecione um produto');
+        return;
+      }
+      
+      showLoading();
+      
+      const dadosMovimentacao = {
+        produtoId: produtoId,
+        quantidade: parseFloat(quantidade),
+        observacoes: observacoes
+      };
+      
+      const funcao = tipo === 'ENTRADA' ? 'registrarEntradaEstoque' : 'registrarSaidaEstoque';
+      
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            showSuccess(`${tipo === 'ENTRADA' ? 'Entrada' : 'Saída'} registrada com sucesso!`);
+            closeModal('modalMovimentacaoEstoque');
+            document.getElementById('formMovimentacao').reset();
+            loadEstoque();
+          } else {
+            showError('Erro: ' + response.error);
+          }
+          hideLoading();
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        [funcao](dadosMovimentacao);
+    }
+    /**
+ * Carrega página de gerenciamento (CORRIGIDO v6.0.1)
+ */
+function loadGerenciamento() {
+  showLoading();
+  
+  // Carregar KPIs
+  google.script.run
+    .withSuccessHandler(function(response) {
+      try {
+        if (!response) {
+          console.error('❌ Resposta vazia ao carregar gerenciamento');
+          hideLoading();
+          return;
+        }
+        
+        if (response.success && response.analise) {
+          renderGerenciamentoKPIs(response.analise);
+          renderProdutosAlerta(response.analise.produtosEmAlerta || []);
+        } else {
+          console.error('Erro ao carregar gerenciamento:', response.error);
+        }
+      } catch (error) {
+        console.error('❌ Erro ao processar gerenciamento:', error);
+      }
+      hideLoading();
+    })
+    .withFailureHandler(function(error) {
+      console.error('❌ Erro de conexão no gerenciamento:', error);
+      hideLoading();
+      showError('Erro ao carregar gerenciamento: ' + error.message);
+    })
+    .getAnaliseProdutos();
+  
+  // Carregar histórico de movimentações
+  loadHistoricoMovimentacoes();
+}
+
+    
+    /**
+     * Renderiza KPIs de gerenciamento
+     */
+    function renderGerenciamentoKPIs(analise) {
+      const kpiGrid = document.getElementById('gerenciamentoKpiGrid');
+      
+      const html = `
+        <div class="kpi-card" style="border-left-color: var(--primary);">
+          <div class="kpi-label">Total de Produtos</div>
+          <div class="kpi-value">${analise.totalProdutos || 0}</div>
+        </div>
+        
+        <div class="kpi-card" style="border-left-color: var(--success);">
+          <div class="kpi-label">Produtos Ativos</div>
+          <div class="kpi-value">${analise.produtosAtivos || 0}</div>
+        </div>
+        
+        <div class="kpi-card" style="border-left-color: var(--danger);">
+          <div class="kpi-label">Estoque Baixo</div>
+          <div class="kpi-value">${analise.produtosEstoqueBaixo || 0}</div>
+        </div>
+        
+        <div class="kpi-card" style="border-left-color: var(--warning);">
+          <div class="kpi-label">Ponto de Pedido</div>
+          <div class="kpi-value">${analise.produtosPontoPedido || 0}</div>
+        </div>
+        
+        <div class="kpi-card" style="border-left-color: var(--info);">
+          <div class="kpi-label">Valor Total Estoque</div>
+          <div class="kpi-value">R$ ${formatMoney(analise.valorTotalEstoque || 0)}</div>
+        </div>
+      `;
+      
+      kpiGrid.innerHTML = html;
+    }
+    
+    /**
+     * Renderiza produtos em alerta
+     */
+    function renderProdutosAlerta(produtosAlerta) {
+      const container = document.getElementById('produtosAlerta');
+      
+      if (!produtosAlerta || produtosAlerta.length === 0) {
+        container.innerHTML = '<div class="alert alert-success">✅ Nenhum produto em alerta</div>';
+        return;
+      }
+      
+      let html = '';
+      produtosAlerta.forEach(produto => {
+        const alertClass = produto.tipo === 'ESTOQUE_BAIXO' ? 'alert-danger' : 'alert-warning';
+        const alertIcon = produto.tipo === 'ESTOQUE_BAIXO' ? '🚨' : '⚠️';
+        const alertMsg = produto.tipo === 'ESTOQUE_BAIXO' 
+          ? `Estoque abaixo do mínimo (${produto.estoqueMinimo})` 
+          : `Atingiu ponto de pedido (${produto.pontoPedido})`;
+        
+        html += `
+          <div class="alert ${alertClass}">
+            ${alertIcon} <strong>${produto.nome}</strong> - 
+            Quantidade atual: ${produto.qtdAtual} - ${alertMsg}
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+    
+    /**
+     * Carrega histórico de movimentações
+     */
+    function loadHistoricoMovimentacoes() {
+      const filtros = {
+        tipo: document.getElementById('movimentacaoFilterTipo')?.value || null
+      };
+      
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            renderMovimentacoesTable(response.movimentacoes);
+          } else {
+            showError('Erro ao carregar movimentações: ' + response.error);
+          }
+        })
+        .withFailureHandler(function(error) {
+          showError('Erro: ' + error.message);
+        })
+        .getHistoricoMovimentacoes(filtros);
+    }
+    
+    /**
+     * Renderiza tabela de movimentações
+     */
+    function renderMovimentacoesTable(movimentacoes) {
+      const tbody = document.getElementById('movimentacoesTableBody');
+      
+      if (!movimentacoes || movimentacoes.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="empty-state">
+              <div class="empty-state-icon">📊</div>
+              <div class="empty-state-title">Nenhuma movimentação encontrada</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      let html = '';
+      movimentacoes.forEach(mov => {
+        const tipoBadge = mov.tipo === 'ENTRADA' 
+          ? '<span class="badge badge-success">⬆️ ENTRADA</span>' 
+          : '<span class="badge badge-danger">⬇️ SAÍDA</span>';
+        
+        html += `
+          <tr>
+            <td>${formatDateTime(mov.dataHora)}</td>
+            <td>${tipoBadge}</td>
+            <td>${mov.produtoNome}</td>
+            <td><strong>${mov.quantidade}</strong></td>
+            <td>${mov.estoqueAnterior}</td>
+            <td><strong>${mov.estoqueAtual}</strong></td>
+            <td>${mov.responsavel}</td>
+          </tr>
+        `;
+      });
+      
+      tbody.innerHTML = html;
+    }
+    
+    /**
+     * Carrega configurações
+     */
+    function loadConfiguracoes() {
+      if (!currentUser || currentUser.permissao !== 'ADMIN') {
+        document.getElementById('configContent').innerHTML = `
+          <div class="alert alert-warning">
+            ⚠️ Apenas administradores podem acessar as configurações do sistema.
+          </div>
+        `;
+        return;
+      }
+      
+      showLoading();
+      
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            renderConfiguracoes(response.configuracoes);
+          } else {
+            showError('Erro ao carregar configurações: ' + response.error);
+          }
+          hideLoading();
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .obterTodasConfiguracoes();
+    }
+    
+    /**
+     * Renderiza configurações
+     */
+    function renderConfiguracoes(configuracoes) {
+      const container = document.getElementById('configContent');
+      
+      let html = `
+        <div class="alert alert-info">
+          ℹ️ Configure os parâmetros do sistema abaixo. Alterações são salvas automaticamente.
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Email do Gestor</label>
+            <input type="email" class="form-control" id="configEmailGestor" 
+                   value="${configuracoes.EMAIL_GESTOR?.valor || ''}"
+                   onchange="salvarConfiguracao('EMAIL_GESTOR', this.value)">
+            <small style="color: #666;">Email para receber notificações de pedidos</small>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">ID da Pasta de Imagens</label>
+            <input type="text" class="form-control" id="configPastaImagens" 
+                   value="${configuracoes.PASTA_IMAGENS_ID?.valor || ''}"
+                   onchange="salvarConfiguracao('PASTA_IMAGENS_ID', this.value)">
+            <small style="color: #666;">ID da pasta do Google Drive para imagens</small>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tempo de Entrega - Papelaria (dias)</label>
+            <input type="number" class="form-control" id="configTempoPapelaria" 
+                   value="${configuracoes.TEMPO_ENTREGA_PAPELARIA?.valor || 5}"
+                   onchange="salvarConfiguracao('TEMPO_ENTREGA_PAPELARIA', this.value)">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Tempo de Entrega - Limpeza (dias)</label>
+            <input type="number" class="form-control" id="configTempoLimpeza" 
+                   value="${configuracoes.TEMPO_ENTREGA_LIMPEZA?.valor || 7}"
+                   onchange="salvarConfiguracao('TEMPO_ENTREGA_LIMPEZA', this.value)">
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Cor Primária</label>
+            <input type="color" class="form-control" id="configCorPrimary" 
+                   value="${configuracoes.COR_PRIMARY?.valor || '#00A651'}"
+                   onchange="salvarConfiguracao('COR_PRIMARY', this.value)">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Cor Secundária</label>
+            <input type="color" class="form-control" id="configCorSecondary" 
+                   value="${configuracoes.COR_SECONDARY?.valor || '#2C3E50'}"
+                   onchange="salvarConfiguracao('COR_SECONDARY', this.value)">
+          </div>
+        </div>
+        
+        <div style="margin-top: 30px;">
+          <h3>👥 Gerenciar Usuários</h3>
+          <button class="btn btn-primary" onclick="carregarUsuarios()">
+            Ver Usuários
+          </button>
+        </div>
+      `;
+      
+      container.innerHTML = html;
+    }
+    
+    /**
+     * Salva configuração
+     */
+    function salvarConfiguracao(chave, valor) {
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            showSuccess('Configuração salva!');
+          } else {
+            showError('Erro ao salvar: ' + response.error);
+          }
+        })
+        .withFailureHandler(function(error) {
+          showError('Erro: ' + error.message);
+        })
+        .atualizarConfiguracao(chave, valor);
+    }
+    
+    /**
+     * Exporta relatório de pedidos
+     */
+    function exportarRelatorioPedidos() {
+      showLoading();
+      
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            downloadCSV(response.csv, response.fileName);
+            showSuccess('Relatório exportado com sucesso!');
+          } else {
+            showError('Erro ao exportar: ' + response.error);
+          }
+          hideLoading();
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .exportarRelatorioCSV('pedidos', {});
+    }
+    
+    /**
+     * Exporta relatório de produtos
+     */
+    function exportarRelatorioProdutos() {
+      showLoading();
+      
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            downloadCSV(response.csv, response.fileName);
+            showSuccess('Relatório exportado com sucesso!');
+          } else {
+            showError('Erro ao exportar: ' + response.error);
+          }
+          hideLoading();
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .exportarRelatorioCSV('produtos', {});
+    }
+    
+    /**
+     * Exporta relatório de estoque
+     */
+    function exportarRelatorioEstoque() {
+      showLoading();
+      
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            downloadCSV(response.csv, response.fileName);
+            showSuccess('Relatório exportado com sucesso!');
+          } else {
+            showError('Erro ao exportar: ' + response.error);
+          }
+          hideLoading();
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .exportarRelatorioCSV('estoque', {});
+    }
+    
+    /**
+     * Download CSV
+     */
+    function downloadCSV(csvContent, fileName) {
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', fileName);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    
+    // ========================================
+    // FUNÇÕES AUXILIARES
+    // ========================================
+    
+    /**
+     * Fecha modal
+     */
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+      
+      // Remover modais dinâmicos
+      if (modalId === 'modalDetalhesPedido' || modalId === 'modalDetalhesProduto') {
+        const modal = document.getElementById(modalId);
+        if (modal && modal.parentNode) {
+          modal.parentNode.removeChild(modal);
+        }
+      }
+    }
+    
+    /**
+     * Mostra loading
+     */
+    function showLoading() {
+      document.getElementById('loading').classList.add('active');
+    }
+    
+    /**
+     * Esconde loading
+     */
+    function hideLoading() {
+      document.getElementById('loading').classList.remove('active');
+    }
+    
+    /**
+     * Mostra mensagem de erro
+     */
+    function showError(message) {
+      alert('❌ Erro: ' + message);
+      console.error('Erro:', message);
+    }
+    
+    /**
+     * Mostra mensagem de sucesso
+     */
+    function showSuccess(message) {
+      alert('✅ ' + message);
+      console.log('Sucesso:', message);
+    }
+    
+    /**
+     * Formata valor monetário
+     */
+    function formatMoney(value) {
+      return parseFloat(value || 0).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+    
+    /**
+     * Formata data
+     */
+    function formatDate(date) {
+      if (!date) return '';
+      const d = new Date(date);
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+    
+    /**
+     * Formata data e hora
+     */
+    function formatDateTime(date) {
+      if (!date) return '';
+      const d = new Date(date);
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    }
+    
+    /**
+     * Retorna badge de status
+     */
+    function getStatusBadge(status) {
+      const badges = {
+        'Solicitado': '<span class="badge badge-warning">Solicitado</span>',
+        'Em Compra': '<span class="badge badge-info">Em Compra</span>',
+        'Finalizado': '<span class="badge badge-success">Finalizado</span>',
+        'Cancelado': '<span class="badge badge-danger">Cancelado</span>'
+      };
+      
+      return badges[status] || `<span class="badge badge-secondary">${status}</span>`;
+    }
+    
+    // Fechar modal ao clicar fora
+    document.addEventListener('click', function(event) {
+      if (event.target.classList.contains('modal')) {
+        event.target.classList.remove('active');
+      }
+    });
+    
+    // Atalhos de teclado
+    document.addEventListener('keydown', function(event) {
+      // ESC para fechar modais
+      if (event.key === 'Escape') {
+        document.querySelectorAll('.modal.active').forEach(modal => {
+          modal.classList.remove('active');
+        });
+      }
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+
+
