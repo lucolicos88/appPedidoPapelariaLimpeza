@@ -1204,6 +1204,10 @@
     let systemConfig = null;
     let allProdutos = [];
     let produtosPedido = [];
+
+    // Gráficos do Dashboard (v6.0.2)
+    let chartStatus = null;
+    let chartTipo = null;
     
     // Inicialização
     document.addEventListener('DOMContentLoaded', function() {
@@ -1499,13 +1503,23 @@ function loadDashboard() {
     }
     
     /**
-     * Renderiza gráficos
+     * Renderiza gráficos (CORRIGIDO v6.0.2 - Destrói gráficos antes de recriar)
      */
     function renderCharts(kpis) {
+      // Destruir gráficos existentes antes de criar novos
+      if (chartStatus) {
+        chartStatus.destroy();
+        chartStatus = null;
+      }
+      if (chartTipo) {
+        chartTipo.destroy();
+        chartTipo = null;
+      }
+
       // Gráfico de Status
       const ctxStatus = document.getElementById('chartStatus');
       if (ctxStatus) {
-        new Chart(ctxStatus, {
+        chartStatus = new Chart(ctxStatus, {
           type: 'doughnut',
           data: {
             labels: ['Solicitado', 'Em Compra', 'Finalizado', 'Cancelado'],
@@ -1529,11 +1543,11 @@ function loadDashboard() {
           }
         });
       }
-      
+
       // Gráfico de Tipo
       const ctxTipo = document.getElementById('chartTipo');
       if (ctxTipo) {
-        new Chart(ctxTipo, {
+        chartTipo = new Chart(ctxTipo, {
           type: 'bar',
           data: {
             labels: ['Papelaria', 'Limpeza'],
