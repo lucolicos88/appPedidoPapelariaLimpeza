@@ -13,69 +13,164 @@
  */
 
 /**
- * Calcula KPIs do dashboard v6.0
+ * Valida filtros do dashboard (NOVO v6.0.1)
+ */
+function validarFiltrosDashboard(filtros) {
+  if (!filtros) {
+    return { valido: true };
+  }
+
+  // Validar datas
+  if (filtros.dataInicio && filtros.dataFim) {
+    const dataInicio = new Date(filtros.dataInicio);
+    const dataFim = new Date(filtros.dataFim);
+
+    // Verificar se as datas são válidas
+    if (isNaN(dataInicio.getTime())) {
+      return {
+        valido: false,
+        erro: 'Data de início inválida'
+      };
+    }
+
+    if (isNaN(dataFim.getTime())) {
+      return {
+        valido: false,
+        erro: 'Data de fim inválida'
+      };
+    }
+
+    // Verificar se dataInicio <= dataFim
+    if (dataInicio > dataFim) {
+      return {
+        valido: false,
+        erro: 'Data de início deve ser anterior ou igual à data de fim'
+      };
+    }
+
+    // Verificar se o intervalo não é muito grande (máximo 2 anos)
+    const diffAnos = (dataFim - dataInicio) / (1000 * 60 * 60 * 24 * 365);
+    if (diffAnos > 2) {
+      return {
+        valido: false,
+        erro: 'Intervalo de datas muito grande (máximo 2 anos)'
+      };
+    }
+  }
+
+  // Validar tipo
+  if (filtros.tipo) {
+    const tiposValidos = ['Papelaria', 'Limpeza'];
+    if (!tiposValidos.includes(filtros.tipo)) {
+      return {
+        valido: false,
+        erro: 'Tipo inválido'
+      };
+    }
+  }
+
+  // Validar status
+  if (filtros.status) {
+    const statusValidos = Object.values(CONFIG.STATUS_PEDIDO);
+    if (!statusValidos.includes(filtros.status)) {
+      return {
+        valido: false,
+        erro: 'Status inválido'
+      };
+    }
+  }
+
+  return { valido: true };
+}
+
+/**
+ * Calcula KPIs do dashboard (v6.0.1 - COM VALIDAÇÃO)
  */
 function getDashboardData(filtros) {
   try {
+    // Validar filtros
+    const validacao = validarFiltrosDashboard(filtros);
+    if (!validacao.valido) {
+      return {
+        success: false,
+        error: validacao.erro
+      };
+    }
+
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaPedidos = ss.getSheetByName(CONFIG.ABAS.ORDERS);
     const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
     const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
     const abaMovimentacoes = ss.getSheetByName(CONFIG.ABAS.STOCK_MOVEMENTS);
-    
+
     if (!abaPedidos || !abaProdutos) {
       return { success: false, error: 'Abas não encontradas' };
     }
-    
-    const dadosPedidos = abaPedidos.getDataRange().getValues();
-    const dadosProdutos = abaProdutos.getDataRange().getValues();
-    const dadosEstoque = abaEstoque ? abaEstoque.getDataRange().getValues() : [];
-    const dadosMovimentacoes = abaMovimentacoes ? abaMovimentacoes.getDataRange().getValues() : [];
-    
+
+    const lastRowPedidos = abaPedidos.getLastRow();
+    const lastRowProdutos = abaProdutos.getLastRow();
+
+    const dadosPedidos = lastRowPedidos > 1 ? abaPedidos.getRange(2, 1, lastRowPedidos - 1, 15).getValues() : [];
+    const dadosProdutos = lastRowProdutos > 1 ? abaProdutos.getRange(2, 1, lastRowProdutos - 1, 13).getValues() : [];
+
+    const lastRowEstoque = abaEstoque ? abaEstoque.getLastRow() : 0;
+    const dadosEstoque = (abaEstoque && lastRowEstoque > 1) ? abaEstoque.getRange(2, 1, lastRowEstoque - 1, 8).getValues() : [];
+
+    const lastRowMovimentacoes = abaMovimentacoes ? abaMovimentacoes.getLastRow() : 0;
+    const dadosMovimentacoes = (abaMovimentacoes && lastRowMovimentacoes > 1) ? abaMovimentacoes.getRange(2, 1, lastRowMovimentacoes - 1, 10).getValues() : [];
+
     // Aplicar filtros aos pedidos
     const pedidosFiltrados = [];
-    for (let i = 1; i < dadosPedidos.length; i++) {
+    for (let i = 0; i < dadosPedidos.length; i++) {
       if (!dadosPedidos[i][0]) continue;
-      
+
       let incluir = true;
-      
+
       // Filtro por tipo
       if (filtros && filtros.tipo && dadosPedidos[i][2] !== filtros.tipo) {
         incluir = false;
       }
-      
+
       // Filtro por status
       if (filtros && filtros.status && dadosPedidos[i][9] !== filtros.status) {
         incluir = false;
       }
-      
+
       // Filtro por solicitante
       if (filtros && filtros.solicitante && dadosPedidos[i][3] !== filtros.solicitante) {
         incluir = false;
       }
-      
+
       // Filtro por setor
       if (filtros && filtros.setor && dadosPedidos[i][5] !== filtros.setor) {
         incluir = false;
       }
-      
+
       // Filtro por data
       if (filtros && filtros.dataInicio) {
-        const dataInicio = new Date(filtros.dataInicio);
-        const dataPedido = new Date(dadosPedidos[i][10]);
-        if (dataPedido < dataInicio) {
-          incluir = false;
+        try {
+          const dataInicio = new Date(filtros.dataInicio);
+          const dataPedido = new Date(dadosPedidos[i][10]);
+          if (!isNaN(dataInicio.getTime()) && !isNaN(dataPedido.getTime()) && dataPedido < dataInicio) {
+            incluir = false;
+          }
+        } catch (e) {
+          Logger.log('⚠️ Erro ao processar data de início: ' + e.message);
         }
       }
-      
+
       if (filtros && filtros.dataFim) {
-        const dataFim = new Date(filtros.dataFim);
-        const dataPedido = new Date(dadosPedidos[i][10]);
-        if (dataPedido > dataFim) {
-          incluir = false;
+        try {
+          const dataFim = new Date(filtros.dataFim);
+          const dataPedido = new Date(dadosPedidos[i][10]);
+          if (!isNaN(dataFim.getTime()) && !isNaN(dataPedido.getTime()) && dataPedido > dataFim) {
+            incluir = false;
+          }
+        } catch (e) {
+          Logger.log('⚠️ Erro ao processar data de fim: ' + e.message);
         }
       }
-      
+
       if (incluir) {
         pedidosFiltrados.push(dadosPedidos[i]);
       }

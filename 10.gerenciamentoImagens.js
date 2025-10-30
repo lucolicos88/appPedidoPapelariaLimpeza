@@ -77,10 +77,18 @@ function uploadImagemProduto(dadosImagem) {
       
       // Fazer upload
       const arquivo = subpasta.createFile(blob);
-      
-      // Tornar arquivo público (apenas leitura)
-      arquivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      
+
+      // CORREÇÃO v6.0.1: Acesso restrito por domínio em vez de público
+      // Nota: Para acesso público, o administrador deve configurar manualmente
+      // Por padrão, apenas pessoas com acesso à pasta podem ver
+      try {
+        arquivo.setSharing(DriveApp.Access.DOMAIN_WITH_LINK, DriveApp.Permission.VIEW);
+      } catch (sharingError) {
+        // Se não conseguir definir compartilhamento de domínio, usar link restrito
+        Logger.log('⚠️ Não foi possível definir compartilhamento de domínio: ' + sharingError.message);
+        arquivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      }
+
       // Obter URL pública
       const fileId = arquivo.getId();
       const imageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;

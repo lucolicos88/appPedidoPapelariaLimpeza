@@ -124,33 +124,37 @@ function registrarEntradaEstoque(dadosMovimentacao) {
     let estoqueAnterior = 0;
     let estoqueNovo = 0;
     
-    // Procurar produto no estoque
+    // Verificar se já existe registro de estoque
+    let linhaEstoque = -1;
     for (let i = 1; i < dadosEstoque.length; i++) {
       if (dadosEstoque[i][1] === dadosMovimentacao.produtoId) {
-        estoqueAnterior = dadosEstoque[i][3] || 0;
-        estoqueNovo = estoqueAnterior + quantidade;
-        
-        // Atualizar quantidade atual
-        abaEstoque.getRange(i + 1, 4).setValue(estoqueNovo);
-        
-        // Atualizar estoque disponível
-        const reservada = dadosEstoque[i][4] || 0;
-        abaEstoque.getRange(i + 1, 6).setValue(estoqueNovo - reservada);
-        
-        // Atualizar data e responsável
-        abaEstoque.getRange(i + 1, 7).setValue(new Date());
-        abaEstoque.getRange(i + 1, 8).setValue(email);
-        
-        estoqueAtualizado = true;
+        linhaEstoque = i;
         break;
       }
     }
-    
-    // Se não encontrou, criar novo registro
-    if (!estoqueAtualizado) {
+
+    if (linhaEstoque >= 0) {
+      // Atualizar estoque existente
+      estoqueAnterior = dadosEstoque[linhaEstoque][3] || 0;
+      estoqueNovo = estoqueAnterior + quantidade;
+
+      // Atualizar quantidade atual
+      abaEstoque.getRange(linhaEstoque + 1, 4).setValue(estoqueNovo);
+
+      // Atualizar estoque disponível
+      const reservada = dadosEstoque[linhaEstoque][4] || 0;
+      abaEstoque.getRange(linhaEstoque + 1, 6).setValue(estoqueNovo - reservada);
+
+      // Atualizar data e responsável
+      abaEstoque.getRange(linhaEstoque + 1, 7).setValue(new Date());
+      abaEstoque.getRange(linhaEstoque + 1, 8).setValue(email);
+
+      estoqueAtualizado = true;
+    } else {
+      // Criar novo registro
       estoqueAnterior = 0;
       estoqueNovo = quantidade;
-      
+
       const novoEstoque = [
         Utilities.getUuid(),
         dadosMovimentacao.produtoId,
@@ -161,8 +165,9 @@ function registrarEntradaEstoque(dadosMovimentacao) {
         new Date(),
         email
       ];
-      
+
       abaEstoque.appendRow(novoEstoque);
+      estoqueAtualizado = true;
     }
     
     // Registrar movimentação

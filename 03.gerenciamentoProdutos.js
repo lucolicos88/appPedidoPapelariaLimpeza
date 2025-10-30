@@ -1,15 +1,26 @@
 /**
  * ========================================
- * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v6.0
+ * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v6.0.1
  * Módulo: Gerenciamento de Produtos
  * ========================================
- * 
+ *
  * NOVIDADES v6.0:
  * - Upload de imagens com preview
  * - Renomeação inteligente de arquivos
  * - Estoque mínimo e ponto de pedido
  * - Histórico de produtos
+ *
+ * MELHORIAS v6.0.1:
+ * - Cache de produtos para otimização
+ * - Validação robusta de entrada
+ * - Tratamento de erros aprimorado
  */
+
+/**
+ * Cache de produtos (NOVO v6.0.1)
+ */
+const CACHE_PRODUTOS = {};
+const CACHE_PRODUTOS_TTL = 3 * 60 * 1000; // 3 minutos
 
 /**
  * Lista produtos com filtros v6.0
@@ -78,53 +89,106 @@ function listarProdutos(filtros) {
 }
 
 /**
- * Busca produto por ID ou código
+ * Busca produto por ID ou código (v6.0.1 - COM CACHE)
  */
 function buscarProduto(identificador) {
   try {
+    // Validar identificador
+    if (!identificador || String(identificador).trim() === '') {
+      return {
+        success: false,
+        error: 'Identificador inválido'
+      };
+    }
+
+    const identificadorStr = String(identificador).trim();
+
+    // Verificar cache
+    const agora = new Date().getTime();
+    if (CACHE_PRODUTOS[identificadorStr] &&
+        (agora - CACHE_PRODUTOS[identificadorStr].timestamp < CACHE_PRODUTOS_TTL)) {
+      Logger.log('✅ Produto recuperado do cache: ' + identificadorStr);
+      return {
+        success: true,
+        produto: CACHE_PRODUTOS[identificadorStr].data
+      };
+    }
+
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
-    
+
     if (!abaProdutos) {
       return { success: false, error: 'Aba de produtos não encontrada' };
     }
-    
-    const dados = abaProdutos.getDataRange().getValues();
-    
-    for (let i = 1; i < dados.length; i++) {
-      if (dados[i][0] === identificador || dados[i][1] === identificador) {
+
+    const lastRow = abaProdutos.getLastRow();
+    if (lastRow < 2) {
+      return { success: false, error: 'Produto não encontrado' };
+    }
+
+    const dados = abaProdutos.getRange(2, 1, lastRow - 1, 13).getValues();
+
+    for (let i = 0; i < dados.length; i++) {
+      if (dados[i][0] === identificadorStr || dados[i][1] === identificadorStr) {
+        const produto = {
+          id: String(dados[i][0]),
+          codigo: String(dados[i][1]),
+          nome: String(dados[i][2]),
+          tipo: String(dados[i][3]),
+          categoria: String(dados[i][4]),
+          unidade: String(dados[i][5]),
+          precoUnitario: parseFloat(dados[i][6]) || 0,
+          estoqueMinimo: parseInt(dados[i][7]) || 0,
+          pontoPedido: parseInt(dados[i][8]) || 0,
+          fornecedor: String(dados[i][9] || ''),
+          imagemURL: String(dados[i][10] || ''),
+          ativo: String(dados[i][11] !== undefined ? dados[i][11] : 'Sim'),
+          dataCadastro: dados[i][12]
+        };
+
+        // Armazenar no cache (tanto por ID quanto por código)
+        CACHE_PRODUTOS[produto.id] = {
+          data: produto,
+          timestamp: agora
+        };
+        CACHE_PRODUTOS[produto.codigo] = {
+          data: produto,
+          timestamp: agora
+        };
+
         return {
           success: true,
-          produto: {
-            id: dados[i][0],
-            codigo: dados[i][1],
-            nome: dados[i][2],
-            tipo: dados[i][3],
-            categoria: dados[i][4],
-            unidade: dados[i][5],
-            precoUnitario: dados[i][6],
-            estoqueMinimo: dados[i][7] || 0,
-            pontoPedido: dados[i][8] || 0,
-            fornecedor: dados[i][9],
-            imagemURL: dados[i][10] || '',
-            ativo: dados[i][11] !== undefined ? dados[i][11] : 'Sim',
-            dataCadastro: dados[i][12]
-          }
+          produto: produto
         };
       }
     }
-    
+
     return {
       success: false,
       error: 'Produto não encontrado'
     };
-    
+
   } catch (error) {
     Logger.log('❌ Erro ao buscar produto: ' + error.message);
+    Logger.log(error.stack);
     return {
       success: false,
       error: error.message
     };
+  }
+}
+
+/**
+ * Limpa cache de produtos (NOVO v6.0.1)
+ */
+function limparCacheProdutos(identificador) {
+  if (identificador) {
+    delete CACHE_PRODUTOS[identificador];
+  } else {
+    // Limpar todo o cache
+    Object.keys(CACHE_PRODUTOS).forEach(key => {
+      delete CACHE_PRODUTOS[key];
+    });
   }
 }
 

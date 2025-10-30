@@ -11,68 +11,159 @@
  */
 
 /**
- * Cria novo pedido (v6.0 - múltiplos produtos)
+ * Valida dados de produto para pedido (NOVO v6.0.1)
+ */
+function validarProdutoPedido(item) {
+  if (!item || typeof item !== 'object') {
+    return { valido: false, erro: 'Item inválido' };
+  }
+
+  if (!item.produtoId || String(item.produtoId).trim() === '') {
+    return { valido: false, erro: 'ID do produto é obrigatório' };
+  }
+
+  if (item.quantidade === undefined || item.quantidade === null || item.quantidade === '') {
+    return { valido: false, erro: 'Quantidade é obrigatória' };
+  }
+
+  const quantidade = parseFloat(item.quantidade);
+  if (isNaN(quantidade) || quantidade <= 0) {
+    return { valido: false, erro: 'Quantidade deve ser um número positivo' };
+  }
+
+  if (quantidade > 10000) {
+    return { valido: false, erro: 'Quantidade muito alta (máximo 10.000 unidades por item)' };
+  }
+
+  return { valido: true };
+}
+
+/**
+ * Cria novo pedido (v6.0.1 - COM VALIDAÇÃO)
  */
 function criarPedido(dadosPedido) {
   try {
     const email = Session.getActiveUser().getEmail();
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaPedidos = ss.getSheetByName(CONFIG.ABAS.ORDERS);
-    
+
     if (!abaPedidos) {
       return { success: false, error: 'Aba de pedidos não encontrada' };
     }
-    
+
     // Validar dados obrigatórios
-    if (!dadosPedido.tipo || !dadosPedido.produtos || dadosPedido.produtos.length === 0) {
+    if (!dadosPedido || typeof dadosPedido !== 'object') {
       return {
         success: false,
-        error: 'Tipo e produtos são obrigatórios'
+        error: 'Dados do pedido inválidos'
       };
     }
-    
+
+    if (!dadosPedido.tipo || String(dadosPedido.tipo).trim() === '') {
+      return {
+        success: false,
+        error: 'Tipo de pedido é obrigatório'
+      };
+    }
+
+    // Validar tipo
+    const tiposValidos = ['Papelaria', 'Limpeza'];
+    if (!tiposValidos.includes(dadosPedido.tipo)) {
+      return {
+        success: false,
+        error: 'Tipo de pedido inválido. Use: Papelaria ou Limpeza'
+      };
+    }
+
+    if (!dadosPedido.produtos || !Array.isArray(dadosPedido.produtos) || dadosPedido.produtos.length === 0) {
+      return {
+        success: false,
+        error: 'Lista de produtos é obrigatória'
+      };
+    }
+
+    if (dadosPedido.produtos.length > 50) {
+      return {
+        success: false,
+        error: 'Número máximo de produtos por pedido é 50'
+      };
+    }
+
     // Gerar número do pedido
     const numeroPedido = gerarNumeroPedido();
-    
+
     // Obter dados do usuário
     const contexto = getUserContext();
-    
+
     if (!contexto.success || !contexto.user) {
       return {
         success: false,
         error: 'Erro ao obter dados do usuário'
       };
     }
-    
+
     const usuario = contexto.user;
-    
+
     // Processar produtos e calcular valor total
     let valorTotal = 0;
     const produtosNomes = [];
     const produtosQuantidades = [];
-    
+
     for (let i = 0; i < dadosPedido.produtos.length; i++) {
       const item = dadosPedido.produtos[i];
-      
+
+      // Validar item
+      const validacao = validarProdutoPedido(item);
+      if (!validacao.valido) {
+        return {
+          success: false,
+          error: `Produto ${i + 1}: ${validacao.erro}`
+        };
+      }
+
       // Buscar produto
       const resultado = buscarProduto(item.produtoId);
-      
+
       if (!resultado.success) {
         return {
           success: false,
           error: `Produto não encontrado: ${item.produtoId}`
         };
       }
-      
+
       const produto = resultado.produto;
-      
+
+      // Verificar se produto está ativo
+      if (produto.ativo !== 'Sim') {
+        return {
+          success: false,
+          error: `Produto inativo: ${produto.nome}`
+        };
+      }
+
       // Calcular valor
-      const quantidade = parseFloat(item.quantidade) || 0;
+      const quantidade = parseFloat(item.quantidade);
       const precoUnitario = parseFloat(produto.precoUnitario) || 0;
-      valorTotal += quantidade * precoUnitario;
-      
+      const subtotal = quantidade * precoUnitario;
+
+      if (subtotal > 1000000) {
+        return {
+          success: false,
+          error: `Valor muito alto para produto ${produto.nome} (máximo R$ 1.000.000 por item)`
+        };
+      }
+
+      valorTotal += subtotal;
       produtosNomes.push(produto.nome);
       produtosQuantidades.push(quantidade);
+    }
+
+    // Validar valor total
+    if (valorTotal > 10000000) {
+      return {
+        success: false,
+        error: 'Valor total do pedido excede o limite (R$ 10.000.000)'
+      };
     }
     
     // Calcular prazo de entrega baseado no tipo
@@ -133,38 +224,82 @@ function criarPedido(dadosPedido) {
 }
 
 /**
- * Gera número único para o pedido
+ * Lock simples para evitar race conditions (NOVO v6.0.1)
+ */
+const LOCK_PEDIDOS = {};
+
+/**
+ * Gera número único para o pedido (v6.0.1 - COM LOCK)
  */
 function gerarNumeroPedido() {
   const agora = new Date();
   const ano = agora.getFullYear();
   const mes = String(agora.getMonth() + 1).padStart(2, '0');
   const dia = String(agora.getDate()).padStart(2, '0');
-  
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const abaPedidos = ss.getSheetByName(CONFIG.ABAS.ORDERS);
-  
-  if (!abaPedidos) {
-    return `PED${ano}${mes}${dia}-001`;
-  }
-  
-  const dados = abaPedidos.getDataRange().getValues();
   const prefixo = `PED${ano}${mes}${dia}`;
-  
-  let ultimoNumero = 0;
-  
-  for (let i = 1; i < dados.length; i++) {
-    const numeroPedido = dados[i][1];
-    if (numeroPedido && numeroPedido.startsWith(prefixo)) {
-      const numero = parseInt(numeroPedido.split('-')[1]);
-      if (numero > ultimoNumero) {
-        ultimoNumero = numero;
+
+  // Tentar adquirir lock por até 5 segundos
+  const lockKey = 'numeroPedido';
+  const maxTentativas = 50;
+  let tentativas = 0;
+
+  while (LOCK_PEDIDOS[lockKey] && tentativas < maxTentativas) {
+    Utilities.sleep(100); // Esperar 100ms
+    tentativas++;
+  }
+
+  if (tentativas >= maxTentativas) {
+    Logger.log('⚠️ Timeout ao aguardar lock para geração de número de pedido');
+    // Adicionar timestamp para garantir unicidade em caso de timeout
+    const timestamp = agora.getTime().toString().slice(-4);
+    return `${prefixo}-${timestamp}`;
+  }
+
+  try {
+    // Adquirir lock
+    LOCK_PEDIDOS[lockKey] = true;
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaPedidos = ss.getSheetByName(CONFIG.ABAS.ORDERS);
+
+    if (!abaPedidos) {
+      return `${prefixo}-001`;
+    }
+
+    const lastRow = abaPedidos.getLastRow();
+    if (lastRow < 2) {
+      return `${prefixo}-001`;
+    }
+
+    // Buscar apenas a coluna de números de pedido
+    const dados = abaPedidos.getRange(2, 2, lastRow - 1, 1).getValues();
+
+    let ultimoNumero = 0;
+
+    for (let i = 0; i < dados.length; i++) {
+      const numeroPedido = dados[i][0];
+      if (numeroPedido && String(numeroPedido).startsWith(prefixo)) {
+        try {
+          const partes = String(numeroPedido).split('-');
+          if (partes.length === 2) {
+            const numero = parseInt(partes[1]);
+            if (!isNaN(numero) && numero > ultimoNumero) {
+              ultimoNumero = numero;
+            }
+          }
+        } catch (e) {
+          Logger.log('⚠️ Erro ao processar número de pedido: ' + numeroPedido);
+        }
       }
     }
+
+    const proximoNumero = String(ultimoNumero + 1).padStart(3, '0');
+    return `${prefixo}-${proximoNumero}`;
+
+  } finally {
+    // Liberar lock
+    delete LOCK_PEDIDOS[lockKey];
   }
-  
-  const proximoNumero = String(ultimoNumero + 1).padStart(3, '0');
-  return `${prefixo}-${proximoNumero}`;
 }
 
 /**
@@ -498,53 +633,139 @@ function getDetalhesPedido(pedidoId) {
 }
 
 /**
- * Envia notificação de pedido por email
+ * Rate limiting para emails (NOVO v6.0.1)
+ */
+const EMAIL_RATE_LIMIT = {};
+const EMAIL_RATE_LIMIT_MINUTOS = 5;
+const EMAIL_MAX_POR_HORA = 10;
+
+/**
+ * Verifica rate limit de email (NOVO v6.0.1)
+ */
+function verificarRateLimitEmail(destinatario) {
+  const agora = new Date().getTime();
+  const chave = `email_${destinatario}`;
+
+  if (!EMAIL_RATE_LIMIT[chave]) {
+    EMAIL_RATE_LIMIT[chave] = {
+      ultimoEnvio: 0,
+      contadorHora: []
+    };
+  }
+
+  const limite = EMAIL_RATE_LIMIT[chave];
+
+  // Verificar se passou o intervalo mínimo
+  const tempoDesdeUltimoEnvio = agora - limite.ultimoEnvio;
+  const intervaloMinimo = EMAIL_RATE_LIMIT_MINUTOS * 60 * 1000;
+
+  if (tempoDesdeUltimoEnvio < intervaloMinimo) {
+    return {
+      permitido: false,
+      motivo: `Aguarde ${Math.ceil((intervaloMinimo - tempoDesdeUltimoEnvio) / 60000)} minutos antes de enviar outro email`
+    };
+  }
+
+  // Limpar envios mais antigos que 1 hora
+  const umaHoraAtras = agora - (60 * 60 * 1000);
+  limite.contadorHora = limite.contadorHora.filter(t => t > umaHoraAtras);
+
+  // Verificar limite por hora
+  if (limite.contadorHora.length >= EMAIL_MAX_POR_HORA) {
+    return {
+      permitido: false,
+      motivo: 'Limite de emails por hora atingido'
+    };
+  }
+
+  return { permitido: true };
+}
+
+/**
+ * Registra envio de email (NOVO v6.0.1)
+ */
+function registrarEnvioEmail(destinatario) {
+  const agora = new Date().getTime();
+  const chave = `email_${destinatario}`;
+
+  if (!EMAIL_RATE_LIMIT[chave]) {
+    EMAIL_RATE_LIMIT[chave] = {
+      ultimoEnvio: 0,
+      contadorHora: []
+    };
+  }
+
+  EMAIL_RATE_LIMIT[chave].ultimoEnvio = agora;
+  EMAIL_RATE_LIMIT[chave].contadorHora.push(agora);
+}
+
+/**
+ * Envia notificação de pedido por email (v6.0.1 - COM RATE LIMITING)
  */
 function enviarNotificacaoPedido(destinatario, dadosPedido) {
   try {
+    // Validar email
+    if (!destinatario || !validarEmail(destinatario)) {
+      Logger.log('⚠️ Email inválido: ' + destinatario);
+      return false;
+    }
+
+    // Verificar rate limit
+    const limiteCheck = verificarRateLimitEmail(destinatario);
+    if (!limiteCheck.permitido) {
+      Logger.log(`⚠️ Rate limit atingido: ${limiteCheck.motivo}`);
+      return false;
+    }
+
     const assunto = `🛒 Novo Pedido: ${dadosPedido.numeroPedido}`;
-    
+
     let corpo = `
       <h2 style="color: #00A651;">Sistema Neoformula - Novo Pedido</h2>
       <p><strong>Número do Pedido:</strong> ${dadosPedido.numeroPedido}</p>
       <p><strong>Solicitante:</strong> ${dadosPedido.solicitante}</p>
       <p><strong>Tipo:</strong> ${dadosPedido.tipo}</p>
       <p><strong>Valor Total:</strong> R$ ${dadosPedido.valorTotal.toFixed(2)}</p>
-      
+
       <h3>Produtos:</h3>
       <ul>
     `;
-    
+
     dadosPedido.produtos.forEach(produto => {
       corpo += `<li>${produto}</li>`;
     });
-    
+
     corpo += `
       </ul>
-      
+
       <p style="margin-top: 20px;">
-        <a href="${ScriptApp.getService().getUrl()}" 
-           style="background-color: #00A651; color: white; padding: 10px 20px; 
+        <a href="${ScriptApp.getService().getUrl()}"
+           style="background-color: #00A651; color: white; padding: 10px 20px;
                   text-decoration: none; border-radius: 5px;">
           Acessar Sistema
         </a>
       </p>
-      
+
       <hr>
       <p style="color: #666; font-size: 12px;">
-        Sistema de Controle de Pedidos Neoformula v6.0
+        Sistema de Controle de Pedidos Neoformula v6.0.1
       </p>
     `;
-    
+
     MailApp.sendEmail({
       to: destinatario,
       subject: assunto,
       htmlBody: corpo
     });
-    
+
+    // Registrar envio
+    registrarEnvioEmail(destinatario);
+
     Logger.log(`✅ Notificação enviada para ${destinatario}`);
-    
+    return true;
+
   } catch (error) {
     Logger.log(`⚠️ Erro ao enviar notificação: ${error.message}`);
+    Logger.log(error.stack);
+    return false;
   }
 }

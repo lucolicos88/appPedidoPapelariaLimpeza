@@ -12,23 +12,40 @@
  */
 
 /**
- * Obtém contexto do usuário atual (v6.0 - CORRIGIDO)
+ * Cache de usuários para otimizar buscas (NOVO v6.0.1)
+ */
+const CACHE_USUARIOS = {};
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
+/**
+ * Obtém contexto do usuário atual (v6.0.1 - OTIMIZADO)
  */
 function getUserContext() {
   try {
     const email = Session.getActiveUser().getEmail();
-    
-    if (!email) {
+
+    // Validar email
+    if (!email || !validarEmail(email)) {
       return {
         success: false,
-        error: 'Email não identificado',
+        error: 'Email não identificado ou inválido',
         user: null
       };
     }
-    
+
+    // Verificar cache
+    const agora = new Date().getTime();
+    if (CACHE_USUARIOS[email] && (agora - CACHE_USUARIOS[email].timestamp < CACHE_TTL)) {
+      Logger.log('✅ Usuário recuperado do cache: ' + email);
+      return {
+        success: true,
+        user: CACHE_USUARIOS[email].data
+      };
+    }
+
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaUsers = ss.getSheetByName(CONFIG.ABAS.USERS);
-    
+
     if (!abaUsers) {
       return {
         success: false,
@@ -36,62 +53,93 @@ function getUserContext() {
         user: null
       };
     }
-    
-    const dados = abaUsers.getDataRange().getValues();
-    
-    if (!dados || dados.length < 2) {
-      // Criar usuário automaticamente se não existir
+
+    const lastRow = abaUsers.getLastRow();
+
+    // Verificar se há dados além do cabeçalho
+    if (lastRow < 2) {
       return criarUsuarioAutomatico(email);
     }
-    
+
+    const dados = abaUsers.getRange(2, 1, lastRow - 1, 6).getValues();
+
+    if (!dados || dados.length === 0) {
+      return criarUsuarioAutomatico(email);
+    }
+
     // Procurar usuário
     let usuario = null;
-    for (let i = 1; i < dados.length; i++) {
+    for (let i = 0; i < dados.length; i++) {
       if (dados[i][0] === email) {
         usuario = {
-          email: dados[i][0] || email,
-          nome: dados[i][1] || email.split('@')[0],
-          setor: dados[i][2] || 'Sem Setor',
-          permissao: dados[i][3] || CONFIG.PERMISSOES.USUARIO,
-          ativo: dados[i][4] !== undefined ? dados[i][4] : 'Sim'
+          email: String(dados[i][0] || email),
+          nome: String(dados[i][1] || email.split('@')[0]),
+          setor: String(dados[i][2] || 'Sem Setor'),
+          permissao: String(dados[i][3] || CONFIG.PERMISSOES.USUARIO),
+          ativo: dados[i][4] !== undefined ? String(dados[i][4]) : 'Sim'
         };
         break;
       }
     }
-    
+
     // Se usuário não encontrado, criar automaticamente
     if (!usuario) {
       return criarUsuarioAutomatico(email);
     }
-    
+
     // Verificar se está ativo
-    if (usuario.ativo === 'Não' || usuario.ativo === false) {
+    if (usuario.ativo === 'Não' || usuario.ativo === 'false' || usuario.ativo === false) {
       return {
         success: false,
         error: 'Usuário inativo',
         user: null
       };
     }
-    
+
+    // Armazenar no cache
+    CACHE_USUARIOS[email] = {
+      data: usuario,
+      timestamp: agora
+    };
+
     return {
       success: true,
       user: usuario
     };
-    
+
   } catch (error) {
     Logger.log('❌ Erro em getUserContext: ' + error.message);
-    
+    Logger.log(error.stack);
+
     // Em caso de erro, tentar criar usuário de emergência
     try {
       const email = Session.getActiveUser().getEmail();
-      return criarUsuarioAutomatico(email);
+      if (email && validarEmail(email)) {
+        return criarUsuarioAutomatico(email);
+      }
     } catch (e) {
-      return {
-        success: false,
-        error: 'Erro crítico ao obter contexto: ' + error.message,
-        user: null
-      };
+      Logger.log('❌ Erro ao criar usuário de emergência: ' + e.message);
     }
+
+    return {
+      success: false,
+      error: 'Erro crítico ao obter contexto: ' + error.message,
+      user: null
+    };
+  }
+}
+
+/**
+ * Limpa cache de usuários (NOVO v6.0.1)
+ */
+function limparCacheUsuarios(email) {
+  if (email) {
+    delete CACHE_USUARIOS[email];
+  } else {
+    // Limpar todo o cache
+    Object.keys(CACHE_USUARIOS).forEach(key => {
+      delete CACHE_USUARIOS[key];
+    });
   }
 }
 
@@ -304,12 +352,20 @@ function adicionarUsuario(dadosUsuario) {
 }
 
 /**
- * Atualiza dados de um usuário
+ * Atualiza dados de um usuário (v6.0.1 - OTIMIZADO)
  */
 function atualizarUsuario(email, dadosAtualizados) {
   try {
     const emailAtual = Session.getActiveUser().getEmail();
-    
+
+    // Validar email
+    if (!email || !validarEmail(email)) {
+      return {
+        success: false,
+        error: 'Email inválido'
+      };
+    }
+
     // Verificar permissão
     if (!verificarPermissao(emailAtual, CONFIG.PERMISSOES.ADMIN)) {
       return {
@@ -317,50 +373,66 @@ function atualizarUsuario(email, dadosAtualizados) {
         error: 'Permissão negada. Somente administradores podem atualizar usuários.'
       };
     }
-    
+
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaUsers = ss.getSheetByName(CONFIG.ABAS.USERS);
-    
+
     if (!abaUsers) {
       return { success: false, error: 'Aba de usuários não encontrada' };
     }
-    
-    const dados = abaUsers.getDataRange().getValues();
-    
+
+    const lastRow = abaUsers.getLastRow();
+    if (lastRow < 2) {
+      return { success: false, error: 'Usuário não encontrado' };
+    }
+
+    const dados = abaUsers.getRange(2, 1, lastRow - 1, 6).getValues();
+
     // Procurar usuário
-    for (let i = 1; i < dados.length; i++) {
+    for (let i = 0; i < dados.length; i++) {
       if (dados[i][0] === email) {
-        // Atualizar dados
-        if (dadosAtualizados.nome) {
-          abaUsers.getRange(i + 1, 2).setValue(dadosAtualizados.nome);
+        const linha = i + 2; // +2 porque: +1 para cabeçalho, +1 para índice de planilha
+
+        // Atualizar dados com validação
+        if (dadosAtualizados.nome && String(dadosAtualizados.nome).trim()) {
+          abaUsers.getRange(linha, 2).setValue(String(dadosAtualizados.nome).trim());
         }
-        if (dadosAtualizados.setor) {
-          abaUsers.getRange(i + 1, 3).setValue(dadosAtualizados.setor);
+        if (dadosAtualizados.setor && String(dadosAtualizados.setor).trim()) {
+          abaUsers.getRange(linha, 3).setValue(String(dadosAtualizados.setor).trim());
         }
         if (dadosAtualizados.permissao) {
-          abaUsers.getRange(i + 1, 4).setValue(dadosAtualizados.permissao);
+          // Validar permissão
+          const permissoesValidas = Object.values(CONFIG.PERMISSOES);
+          if (permissoesValidas.includes(dadosAtualizados.permissao)) {
+            abaUsers.getRange(linha, 4).setValue(dadosAtualizados.permissao);
+          }
         }
         if (dadosAtualizados.ativo !== undefined) {
-          abaUsers.getRange(i + 1, 5).setValue(dadosAtualizados.ativo);
+          const ativoValor = dadosAtualizados.ativo === true || dadosAtualizados.ativo === 'Sim' ? 'Sim' : 'Não';
+          abaUsers.getRange(linha, 5).setValue(ativoValor);
         }
-        
+
+        // Limpar cache do usuário
+        limparCacheUsuarios(email);
+
         // Registrar log
         registrarLog('USUARIO_ATUALIZADO', `Usuário ${email} atualizado`, 'SUCESSO');
-        
+
         return {
           success: true,
           message: 'Usuário atualizado com sucesso'
         };
       }
     }
-    
+
     return {
       success: false,
       error: 'Usuário não encontrado'
     };
-    
+
   } catch (error) {
     Logger.log('❌ Erro ao atualizar usuário: ' + error.message);
+    Logger.log(error.stack);
     return {
       success: false,
       error: error.message
