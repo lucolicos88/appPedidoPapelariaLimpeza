@@ -13,9 +13,10 @@
 
 /**
  * Cache de usuários para otimizar buscas (NOVO v6.0.1)
+ * Usando var para compatibilidade com Google Apps Script
  */
-const CACHE_USUARIOS = {};
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+var CACHE_USUARIOS = CACHE_USUARIOS || {};
+var CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 
 /**
  * Obtém contexto do usuário atual (v6.0.1 - OTIMIZADO)

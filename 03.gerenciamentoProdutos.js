@@ -18,9 +18,10 @@
 
 /**
  * Cache de produtos (NOVO v6.0.1)
+ * Usando var para compatibilidade com Google Apps Script
  */
-const CACHE_PRODUTOS = {};
-const CACHE_PRODUTOS_TTL = 3 * 60 * 1000; // 3 minutos
+var CACHE_PRODUTOS = CACHE_PRODUTOS || {};
+var CACHE_PRODUTOS_TTL = 3 * 60 * 1000; // 3 minutos
 
 /**
  * Lista produtos com filtros v6.0

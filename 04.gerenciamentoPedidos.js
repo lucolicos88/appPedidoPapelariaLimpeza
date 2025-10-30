@@ -225,8 +225,9 @@ function criarPedido(dadosPedido) {
 
 /**
  * Lock simples para evitar race conditions (NOVO v6.0.1)
+ * Usando var para compatibilidade com Google Apps Script
  */
-const LOCK_PEDIDOS = {};
+var LOCK_PEDIDOS = LOCK_PEDIDOS || {};
 
 /**
  * Gera número único para o pedido (v6.0.1 - COM LOCK)
@@ -634,10 +635,11 @@ function getDetalhesPedido(pedidoId) {
 
 /**
  * Rate limiting para emails (NOVO v6.0.1)
+ * Usando var para compatibilidade com Google Apps Script
  */
-const EMAIL_RATE_LIMIT = {};
-const EMAIL_RATE_LIMIT_MINUTOS = 5;
-const EMAIL_MAX_POR_HORA = 10;
+var EMAIL_RATE_LIMIT = EMAIL_RATE_LIMIT || {};
+var EMAIL_RATE_LIMIT_MINUTOS = 5;
+var EMAIL_MAX_POR_HORA = 10;
 
 /**
  * Verifica rate limit de email (NOVO v6.0.1)
