@@ -1443,7 +1443,7 @@ function loadDashboard() {
       hideLoading();
       showError('Erro ao carregar dashboard: ' + error.message);
     })
-    .getDashboardData(filtros);
+    .__getDashboardData(filtros);
 }
 
     
@@ -1644,7 +1644,7 @@ function loadPedidos() {
       renderPedidosTable([]);
       showError('Erro de conexão ao carregar pedidos: ' + error.message);
     })
-    .listarPedidos(filtros);
+    .__listarPedidos(filtros);
 }
 
     
@@ -1786,7 +1786,7 @@ function loadPedidos() {
           hideLoading();
           showError('Erro: ' + error.message);
         })
-        .listarProdutos({ ativo: 'Sim' });
+        .__listarProdutos({ ativo: 'Sim' });
     }
     
     /**
@@ -1938,7 +1938,7 @@ function loadProdutos() {
       renderProdutosTable([]);
       showError('Erro de conexão: ' + error.message);
     })
-    .listarProdutos(filtros);
+    .__listarProdutos(filtros);
 }
 
     
@@ -2166,7 +2166,7 @@ function loadEstoque() {
       renderEstoqueTable([]);
       showError('Erro de conexão: ' + error.message);
     })
-    .getEstoqueAtual({});
+    .__getEstoqueAtual({});
 }
 
     
@@ -2276,11 +2276,11 @@ function loadEstoque() {
                 </tr>
               `;
             });
-            
+
             tbody.innerHTML = html;
           }
         })
-        .listarProdutos({});
+        .__listarProdutos({});
     }
     
     /**
@@ -2334,13 +2334,13 @@ function loadEstoque() {
             
             const nomeInput = document.getElementById('movimentacaoProdutoNome');
             nomeInput.parentNode.replaceChild(select, nomeInput);
-            
+
             select.addEventListener('change', function() {
               document.getElementById('movimentacaoProdutoId').value = this.value;
             });
           }
         })
-        .listarProdutos({ ativo: 'Sim' });
+        .__listarProdutos({ ativo: 'Sim' });
     }
     
     /**
