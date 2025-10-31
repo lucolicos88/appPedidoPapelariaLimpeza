@@ -276,7 +276,33 @@
       background: var(--danger);
       color: white;
     }
-    
+
+    /* Tab Buttons (Dashboard Avançado v7.0) */
+    .tab-btn {
+      padding: 12px 24px;
+      border: none;
+      background: #f5f5f5;
+      color: #666;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+      border-radius: 8px 8px 0 0;
+      transition: all 0.3s;
+      border-bottom: 3px solid transparent;
+    }
+
+    .tab-btn:hover {
+      background: #e0e0e0;
+      color: var(--secondary);
+    }
+
+    .tab-btn.active {
+      background: white;
+      color: var(--primary);
+      border-bottom: 3px solid var(--primary);
+      font-weight: 600;
+    }
+
     .btn-success {
       background: var(--success);
       color: white;
@@ -689,14 +715,14 @@
   <!-- Main Container -->
   <div class="container">
     
-    <!-- Dashboard Page -->
+    <!-- Dashboard Page (v7.0 - Avançado) -->
     <section class="page-section active" id="page-dashboard">
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">Dashboard</h2>
+          <h2 class="card-title">📊 Dashboard Avançado v7.0</h2>
           <button class="btn btn-primary" onclick="refreshDashboard()">🔄 Atualizar</button>
         </div>
-        
+
         <!-- Filters -->
         <div class="filters">
           <div class="filter-grid">
@@ -728,34 +754,149 @@
             </div>
             <div class="form-group">
               <button class="btn btn-primary" onclick="applyDashboardFilters()" style="width: 100%;">
-                Aplicar Filtros
+                ✓ Aplicar Filtros
               </button>
             </div>
           </div>
         </div>
-        
-        <!-- KPIs -->
-        <div class="kpi-grid" id="kpiGrid">
-          <!-- KPIs serão inseridos aqui via JavaScript -->
+
+        <!-- Tabs de Navegação -->
+        <div style="display: flex; gap: 10px; margin: 20px 0; border-bottom: 2px solid #f0f0f0;">
+          <button class="tab-btn active" onclick="switchDashboardTab('resumo')" id="tab-btn-resumo" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid var(--primary); cursor: pointer; font-weight: 600; color: var(--primary);">
+            📊 Resumo
+          </button>
+          <button class="tab-btn" onclick="switchDashboardTab('financeiro')" id="tab-btn-financeiro" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; color: #666;">
+            💰 Financeiro
+          </button>
+          <button class="tab-btn" onclick="switchDashboardTab('logistico')" id="tab-btn-logistico" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; color: #666;">
+            🚚 Logístico
+          </button>
+          <button class="tab-btn" onclick="switchDashboardTab('estoque')" id="tab-btn-estoque" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; color: #666;">
+            📦 Estoque
+          </button>
         </div>
-        
-        <!-- Charts -->
-        <div class="charts-grid">
-          <div class="chart-card">
-            <h3 class="chart-title">Pedidos por Status</h3>
-            <canvas id="chartStatus"></canvas>
+
+        <!-- TAB: Resumo -->
+        <div id="dashboard-tab-resumo" class="dashboard-tab active">
+          <div class="kpi-grid" id="kpiGrid">
+            <!-- KPIs principais serão inseridos aqui -->
           </div>
-          <div class="chart-card">
-            <h3 class="chart-title">Valor por Tipo</h3>
-            <canvas id="chartTipo"></canvas>
+
+          <div class="charts-grid">
+            <div class="chart-card">
+              <h3 class="chart-title">Pedidos por Status</h3>
+              <canvas id="chartStatus"></canvas>
+            </div>
+            <div class="chart-card">
+              <h3 class="chart-title">Valor por Tipo</h3>
+              <canvas id="chartTipo"></canvas>
+            </div>
+          </div>
+
+          <div style="margin-top: 30px;" id="alertasEstoqueContainer">
+            <h3 style="margin-bottom: 15px;">⚠️ Alertas de Estoque</h3>
+            <div id="alertasEstoque"></div>
           </div>
         </div>
-        
-        <!-- Alerts -->
-        <div style="margin-top: 30px;">
-          <h3 style="margin-bottom: 15px;">⚠️ Alertas de Estoque</h3>
-          <div id="alertasEstoque">
-            <!-- Alertas serão inseridos aqui -->
+
+        <!-- TAB: Financeiro -->
+        <div id="dashboard-tab-financeiro" class="dashboard-tab" style="display: none;">
+          <h3 style="margin-bottom: 20px; color: var(--secondary);">💰 KPIs Financeiros</h3>
+          <div class="kpi-grid" id="kpiGridFinanceiro"></div>
+
+          <div class="charts-grid">
+            <div class="chart-card">
+              <h3 class="chart-title">Gastos por Tipo</h3>
+              <canvas id="chartFinanceiroTipo"></canvas>
+            </div>
+            <div class="chart-card">
+              <h3 class="chart-title">Evolução Mensal</h3>
+              <canvas id="chartFinanceiroEvolucao"></canvas>
+            </div>
+          </div>
+
+          <div class="ranking-table" style="margin-top: 30px;">
+            <h3 class="chart-title">Top 10 - Gastos por Setor</h3>
+            <table id="tableGastoPorSetor" style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #f5f5f5; border-bottom: 2px solid var(--primary);">
+                  <th style="padding: 12px; width: 50px; text-align: center;">#</th>
+                  <th style="padding: 12px;">Setor</th>
+                  <th style="padding: 12px; text-align: right;">Valor</th>
+                  <th style="padding: 12px; width: 40%;">Distribuição</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB: Logístico -->
+        <div id="dashboard-tab-logistico" class="dashboard-tab" style="display: none;">
+          <h3 style="margin-bottom: 20px; color: var(--secondary);">🚚 KPIs Logísticos</h3>
+          <div class="kpi-grid" id="kpiGridLogistico"></div>
+
+          <div class="charts-grid">
+            <div class="chart-card">
+              <h3 class="chart-title">Pedidos por Status</h3>
+              <canvas id="chartLogisticoStatus"></canvas>
+            </div>
+            <div class="chart-card">
+              <h3 class="chart-title">Tempos Médios (dias)</h3>
+              <canvas id="chartLogisticoTempos"></canvas>
+            </div>
+          </div>
+
+          <div class="ranking-table" style="margin-top: 30px;">
+            <h3 class="chart-title">Top 10 - Solicitantes Mais Ativos</h3>
+            <table id="tableSolicitantes" style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #f5f5f5; border-bottom: 2px solid var(--primary);">
+                  <th style="padding: 12px; width: 50px; text-align: center;">#</th>
+                  <th style="padding: 12px;">Solicitante</th>
+                  <th style="padding: 12px; text-align: right;">Pedidos</th>
+                  <th style="padding: 12px; width: 40%;">Atividade</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB: Estoque -->
+        <div id="dashboard-tab-estoque" class="dashboard-tab" style="display: none;">
+          <h3 style="margin-bottom: 20px; color: var(--secondary);">📦 KPIs de Estoque</h3>
+
+          <div class="alert alert-warning" id="alertEstoqueBaixoTab" style="display: none; padding: 15px; border-radius: 5px; background: #fff3e0; color: #e65100; border-left: 4px solid #e65100; margin-bottom: 20px;">
+            <strong>⚠️ Atenção!</strong> Existem <span id="countEstoqueBaixoTab"></span> produtos com estoque abaixo do mínimo.
+          </div>
+
+          <div class="kpi-grid" id="kpiGridEstoque"></div>
+
+          <div class="charts-grid">
+            <div class="chart-card">
+              <h3 class="chart-title">Top 10 Produtos Mais Solicitados</h3>
+              <canvas id="chartEstoqueSolicitados"></canvas>
+            </div>
+            <div class="chart-card">
+              <h3 class="chart-title">Indicadores de Saúde</h3>
+              <canvas id="chartEstoqueSaude"></canvas>
+            </div>
+          </div>
+
+          <div class="ranking-table" style="margin-top: 30px;">
+            <h3 class="chart-title">Previsão de Reposição (Próximos 30 dias)</h3>
+            <table id="tablePrevisaoReposicao" style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #f5f5f5; border-bottom: 2px solid var(--primary);">
+                  <th style="padding: 12px; width: 50px; text-align: center;">⚠️</th>
+                  <th style="padding: 12px;">Produto</th>
+                  <th style="padding: 12px; text-align: right;">Dias até Ruptura</th>
+                  <th style="padding: 12px; width: 40%;">Urgência</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -1398,18 +1539,18 @@ function initializeSystem() {
     }
     
     /**
- * Carrega Dashboard (CORRIGIDO v6.0.1)
+ * Carrega Dashboard Avançado v7.0
  */
 function loadDashboard() {
   showLoading();
-  
+
   const filtros = {
     dataInicio: document.getElementById('dashFilterDataInicio')?.value || null,
     dataFim: document.getElementById('dashFilterDataFim')?.value || null,
     tipo: document.getElementById('dashFilterTipo')?.value || null,
     status: document.getElementById('dashFilterStatus')?.value || null
   };
-  
+
   google.script.run
     .withSuccessHandler(function(response) {
       try {
@@ -1418,24 +1559,40 @@ function loadDashboard() {
           hideLoading();
           return;
         }
-        
+
         if (response.success && response.kpis) {
-          renderKPIs(response.kpis);
-          renderCharts(response.kpis);
-          renderAlertasEstoque(response.kpis);
+          // Renderizar aba Resumo (dados básicos compatíveis)
+          const resumoKPIs = {
+            totalPedidos: response.kpis.financeiros.totalPedidos || 0,
+            valorTotalPedidos: response.kpis.financeiros.valorTotal || 0,
+            ticketMedio: response.kpis.financeiros.ticketMedio || 0,
+            pedidosSolicitados: response.kpis.logisticos.pedidosSolicitados || 0,
+            pedidosEmCompra: response.kpis.logisticos.pedidosEmCompra || 0,
+            pedidosFinalizados: response.kpis.logisticos.pedidosFinalizados || 0,
+            pedidosCancelados: response.kpis.logisticos.pedidosCancelados || 0,
+            taxaFinalizacao: response.kpis.logisticos.taxaFinalizacao || 0,
+            taxaCancelamento: response.kpis.logisticos.taxaCancelamento || 0,
+            totalProdutos: response.kpis.estoque.totalProdutos || 0,
+            produtosEstoqueBaixo: response.kpis.estoque.produtosAbaixoMinimo || 0,
+            produtosPontoPedido: response.kpis.estoque.produtosPontoPedido || 0,
+            valorTotalEstoque: response.kpis.estoque.valorTotal || 0,
+            pedidosPapelaria: response.kpis.financeiros.pedidosPapelaria || 0,
+            valorPapelaria: response.kpis.financeiros.valorPapelaria || 0,
+            pedidosLimpeza: response.kpis.financeiros.pedidosLimpeza || 0,
+            valorLimpeza: response.kpis.financeiros.valorLimpeza || 0
+          };
+
+          renderKPIs(resumoKPIs);
+          renderCharts(resumoKPIs);
+          renderAlertasEstoque(resumoKPIs);
+
+          // Renderizar abas específicas
+          renderFinanceiroTab(response.kpis.financeiros);
+          renderLogisticoTab(response.kpis.logisticos);
+          renderEstoqueTab(response.kpis.estoque);
+
         } else {
           console.error('Erro ao carregar dashboard:', response.error);
-          // Renderizar KPIs vazios
-          renderKPIs({
-            totalPedidos: 0,
-            valorTotalPedidos: 0,
-            ticketMedio: 0,
-            pedidosSolicitados: 0,
-            pedidosEmCompra: 0,
-            pedidosFinalizados: 0,
-            totalProdutos: 0,
-            produtosEstoqueBaixo: 0
-          });
         }
       } catch (error) {
         console.error('❌ Erro ao processar dashboard:', error);
@@ -1447,7 +1604,7 @@ function loadDashboard() {
       hideLoading();
       showError('Erro ao carregar dashboard: ' + error.message);
     })
-    .__getDashboardData(filtros);
+    .__getDashboardAvancado(filtros);
 }
 
     
@@ -1636,12 +1793,445 @@ function loadDashboard() {
     function applyDashboardFilters() {
       loadDashboard();
     }
-    
+
     /**
      * Recarrega dashboard
      */
     function refreshDashboard() {
       loadDashboard();
+    }
+
+    /**
+     * Troca de aba no Dashboard Avançado v7.0
+     */
+    function switchDashboardTab(tabName) {
+      // Ocultar todas as abas
+      document.querySelectorAll('[id^="dashboard-tab-"]').forEach(tab => {
+        tab.style.display = 'none';
+      });
+
+      // Remover classe active de todos os botões
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      // Mostrar aba selecionada
+      const selectedTab = document.getElementById(`dashboard-tab-${tabName}`);
+      if (selectedTab) {
+        selectedTab.style.display = 'block';
+      }
+
+      // Ativar botão selecionado
+      const selectedBtn = document.getElementById(`tab-btn-${tabName}`);
+      if (selectedBtn) {
+        selectedBtn.classList.add('active');
+      }
+    }
+
+    // Variáveis globais para gráficos das novas abas
+    let chartFinanceiroTipo = null;
+    let chartFinanceiroEvolucao = null;
+    let chartLogisticoStatus = null;
+    let chartLogisticoTempos = null;
+    let chartEstoqueSolicitados = null;
+    let chartEstoqueSaude = null;
+
+    /**
+     * Renderiza aba Financeiro
+     */
+    function renderFinanceiroTab(kpis) {
+      // Renderizar KPIs Financeiros
+      const kpiGrid = document.getElementById('kpiGridFinanceiro');
+      if (!kpiGrid) return;
+
+      kpiGrid.innerHTML = `
+        <div class="kpi-card" style="border-left-color: #00A651;">
+          <div class="kpi-label">Valor Total de Pedidos</div>
+          <div class="kpi-value">R$ ${formatMoney(kpis.valorTotal || 0)}</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #2196F3;">
+          <div class="kpi-label">Ticket Médio</div>
+          <div class="kpi-value">R$ ${formatMoney(kpis.ticketMedio || 0)}</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #FF6B35;">
+          <div class="kpi-label">Variação Mensal</div>
+          <div class="kpi-value">${(kpis.variacaoMensal || 0).toFixed(1)}%</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #FFC107;">
+          <div class="kpi-label">Previsão de Gastos</div>
+          <div class="kpi-value">R$ ${formatMoney(kpis.previsaoGastos || 0)}</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #9C27B0;">
+          <div class="kpi-label">Custo per Capita</div>
+          <div class="kpi-value">R$ ${formatMoney(kpis.custoPerCapita || 0)}</div>
+        </div>
+      `;
+
+      // Renderizar Gráfico de Gastos por Tipo
+      if (chartFinanceiroTipo) {
+        chartFinanceiroTipo.destroy();
+      }
+      const ctxTipo = document.getElementById('chartFinanceiroTipo');
+      if (ctxTipo) {
+        chartFinanceiroTipo = new Chart(ctxTipo, {
+          type: 'doughnut',
+          data: {
+            labels: ['Papelaria', 'Limpeza'],
+            datasets: [{
+              data: [kpis.valorPapelaria || 0, kpis.valorLimpeza || 0],
+              backgroundColor: ['#00A651', '#2196F3']
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'bottom' },
+              title: { display: true, text: 'Gastos por Tipo' }
+            }
+          }
+        });
+      }
+
+      // Renderizar Gráfico de Evolução Mensal
+      if (chartFinanceiroEvolucao) {
+        chartFinanceiroEvolucao.destroy();
+      }
+      const ctxEvolucao = document.getElementById('chartFinanceiroEvolucao');
+      if (ctxEvolucao && kpis.evolucaoMensal) {
+        const labels = kpis.evolucaoMensal.map(item => item.mes || '');
+        const valores = kpis.evolucaoMensal.map(item => item.valor || 0);
+
+        chartFinanceiroEvolucao = new Chart(ctxEvolucao, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Valor (R$)',
+              data: valores,
+              borderColor: '#00A651',
+              backgroundColor: 'rgba(0, 166, 81, 0.1)',
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: { display: true, text: 'Evolução Mensal de Gastos' }
+            },
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        });
+      }
+
+      // Renderizar Tabela de Gastos por Setor
+      renderTableGastosPorSetor(kpis.gastoPorSetor || []);
+    }
+
+    /**
+     * Renderiza tabela de gastos por setor
+     */
+    function renderTableGastosPorSetor(dados) {
+      const tbody = document.getElementById('tableGastoPorSetor');
+      if (!tbody) return;
+
+      if (!dados || dados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Nenhum dado disponível</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = dados.slice(0, 10).map((item, index) => `
+        <tr>
+          <td>${index + 1}. ${item.setor || 'N/A'}</td>
+          <td>R$ ${formatMoney(item.valor || 0)}</td>
+          <td>
+            <div style="background: #f0f0f0; border-radius: 4px; height: 20px; position: relative; overflow: hidden;">
+              <div style="background: linear-gradient(90deg, #00A651, #2196F3); height: 100%; width: ${item.percentual || 0}%; border-radius: 4px;"></div>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    /**
+     * Renderiza aba Logístico
+     */
+    function renderLogisticoTab(kpis) {
+      // Renderizar KPIs Logísticos
+      const kpiGrid = document.getElementById('kpiGridLogistico');
+      if (!kpiGrid) return;
+
+      kpiGrid.innerHTML = `
+        <div class="kpi-card" style="border-left-color: #2196F3;">
+          <div class="kpi-label">Tempo Médio de Aprovação</div>
+          <div class="kpi-value">${(kpis.tempoMedioAprovacao || 0).toFixed(1)}h</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #FF6B35;">
+          <div class="kpi-label">Lead Time Total</div>
+          <div class="kpi-value">${(kpis.leadTimeTotal || 0).toFixed(1)} dias</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #4CAF50;">
+          <div class="kpi-label">Taxa de Pedidos no Prazo</div>
+          <div class="kpi-value">${(kpis.taxaPedidosNoPrazo || 0).toFixed(1)}%</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #F44336;">
+          <div class="kpi-label">Taxa de Cancelamento</div>
+          <div class="kpi-value">${(kpis.taxaCancelamento || 0).toFixed(1)}%</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #FFC107;">
+          <div class="kpi-label">Backlog de Pedidos</div>
+          <div class="kpi-value">${kpis.backlogPedidos || 0}</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #E91E63;">
+          <div class="kpi-label">Taxa de Pedidos Urgentes</div>
+          <div class="kpi-value">${(kpis.taxaPedidosUrgentes || 0).toFixed(1)}%</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #9C27B0;">
+          <div class="kpi-label">Eficiência de Processamento</div>
+          <div class="kpi-value">${(kpis.eficienciaProcessamento || 0).toFixed(1)}%</div>
+        </div>
+      `;
+
+      // Gráfico de Pedidos por Status
+      if (chartLogisticoStatus) {
+        chartLogisticoStatus.destroy();
+      }
+      const ctxStatus = document.getElementById('chartLogisticoStatus');
+      if (ctxStatus) {
+        chartLogisticoStatus = new Chart(ctxStatus, {
+          type: 'bar',
+          data: {
+            labels: ['Solicitado', 'Em Compra', 'Finalizado', 'Cancelado'],
+            datasets: [{
+              label: 'Quantidade',
+              data: [
+                kpis.pedidosSolicitados || 0,
+                kpis.pedidosEmCompra || 0,
+                kpis.pedidosFinalizados || 0,
+                kpis.pedidosCancelados || 0
+              ],
+              backgroundColor: ['#FFC107', '#FF6B35', '#4CAF50', '#F44336']
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: { display: true, text: 'Pedidos por Status' }
+            },
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        });
+      }
+
+      // Gráfico de Tempos Médios
+      if (chartLogisticoTempos) {
+        chartLogisticoTempos.destroy();
+      }
+      const ctxTempos = document.getElementById('chartLogisticoTempos');
+      if (ctxTempos) {
+        chartLogisticoTempos = new Chart(ctxTempos, {
+          type: 'bar',
+          data: {
+            labels: ['Aprovação', 'Compra', 'Entrega'],
+            datasets: [{
+              label: 'Tempo (dias)',
+              data: [
+                (kpis.tempoMedioAprovacao || 0) / 24,
+                (kpis.tempoMedioCompra || 0),
+                (kpis.tempoMedioEntrega || 0)
+              ],
+              backgroundColor: '#2196F3'
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: { display: true, text: 'Tempos Médios por Fase' }
+            },
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        });
+      }
+
+      // Renderizar Tabela de Solicitantes
+      renderTableSolicitantes(kpis.solicitantesMaisAtivos || []);
+    }
+
+    /**
+     * Renderiza tabela de solicitantes mais ativos
+     */
+    function renderTableSolicitantes(dados) {
+      const tbody = document.getElementById('tableSolicitantes');
+      if (!tbody) return;
+
+      if (!dados || dados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Nenhum dado disponível</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = dados.slice(0, 10).map((item, index) => `
+        <tr>
+          <td>${index + 1}. ${item.solicitante || 'N/A'}</td>
+          <td>${item.quantidade || 0}</td>
+          <td>
+            <div style="background: #f0f0f0; border-radius: 4px; height: 20px; position: relative; overflow: hidden;">
+              <div style="background: linear-gradient(90deg, #2196F3, #00A651); height: 100%; width: ${item.percentual || 0}%; border-radius: 4px;"></div>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    /**
+     * Renderiza aba Estoque
+     */
+    function renderEstoqueTab(kpis) {
+      // Renderizar KPIs de Estoque
+      const kpiGrid = document.getElementById('kpiGridEstoque');
+      if (!kpiGrid) return;
+
+      kpiGrid.innerHTML = `
+        <div class="kpi-card" style="border-left-color: #00A651;">
+          <div class="kpi-label">Valor Total de Estoque</div>
+          <div class="kpi-value">R$ ${formatMoney(kpis.valorTotal || 0)}</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #2196F3;">
+          <div class="kpi-label">Giro de Estoque</div>
+          <div class="kpi-value">${(kpis.giroEstoque || 0).toFixed(2)}x</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #FF6B35;">
+          <div class="kpi-label">Cobertura de Estoque</div>
+          <div class="kpi-value">${(kpis.coberturaEstoque || 0).toFixed(0)} dias</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #F44336;">
+          <div class="kpi-label">Taxa de Ruptura</div>
+          <div class="kpi-value">${(kpis.taxaRuptura || 0).toFixed(1)}%</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #FFC107;">
+          <div class="kpi-label">Produtos Abaixo do Mínimo</div>
+          <div class="kpi-value">${kpis.produtosAbaixoMinimo || 0}</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #4CAF50;">
+          <div class="kpi-label">Acurácia de Estoque</div>
+          <div class="kpi-value">${(kpis.acuraciaEstoque || 0).toFixed(1)}%</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #9C27B0;">
+          <div class="kpi-label">Idade Média do Estoque</div>
+          <div class="kpi-value">${(kpis.idadeMediaEstoque || 0).toFixed(0)} dias</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #607D8B;">
+          <div class="kpi-label">Produtos Inativos</div>
+          <div class="kpi-value">${kpis.produtosInativos || 0}</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #E91E63;">
+          <div class="kpi-label">Custo de Armazenagem</div>
+          <div class="kpi-value">R$ ${formatMoney(kpis.custoArmazenagem || 0)}</div>
+        </div>
+      `;
+
+      // Gráfico de Produtos Mais Solicitados
+      if (chartEstoqueSolicitados) {
+        chartEstoqueSolicitados.destroy();
+      }
+      const ctxSolicitados = document.getElementById('chartEstoqueSolicitados');
+      if (ctxSolicitados && kpis.produtosMaisSolicitados) {
+        const labels = kpis.produtosMaisSolicitados.map(p => p.nome || '');
+        const valores = kpis.produtosMaisSolicitados.map(p => p.quantidade || 0);
+
+        chartEstoqueSolicitados = new Chart(ctxSolicitados, {
+          type: 'bar',
+          data: {
+            labels: labels.slice(0, 10),
+            datasets: [{
+              label: 'Quantidade Solicitada',
+              data: valores.slice(0, 10),
+              backgroundColor: '#00A651'
+            }]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: {
+              title: { display: true, text: 'Top 10 Produtos Mais Solicitados' }
+            },
+            scales: {
+              x: { beginAtZero: true }
+            }
+          }
+        });
+      }
+
+      // Gráfico Radar de Saúde do Estoque
+      if (chartEstoqueSaude) {
+        chartEstoqueSaude.destroy();
+      }
+      const ctxSaude = document.getElementById('chartEstoqueSaude');
+      if (ctxSaude) {
+        chartEstoqueSaude = new Chart(ctxSaude, {
+          type: 'radar',
+          data: {
+            labels: ['Giro', 'Cobertura', 'Acurácia', 'Disponibilidade', 'Eficiência'],
+            datasets: [{
+              label: 'Saúde do Estoque',
+              data: [
+                Math.min((kpis.giroEstoque || 0) * 10, 100),
+                Math.min((30 / (kpis.coberturaEstoque || 30)) * 100, 100),
+                kpis.acuraciaEstoque || 0,
+                100 - (kpis.taxaRuptura || 0),
+                kpis.eficienciaEstoque || 0
+              ],
+              backgroundColor: 'rgba(0, 166, 81, 0.2)',
+              borderColor: '#00A651',
+              pointBackgroundColor: '#00A651'
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: { display: true, text: 'Indicadores de Saúde do Estoque' }
+            },
+            scales: {
+              r: {
+                beginAtZero: true,
+                max: 100
+              }
+            }
+          }
+        });
+      }
+
+      // Renderizar Tabela de Previsão de Reposição
+      renderTablePrevisaoReposicao(kpis.previsaoReposicao || []);
+    }
+
+    /**
+     * Renderiza tabela de previsão de reposição
+     */
+    function renderTablePrevisaoReposicao(dados) {
+      const tbody = document.getElementById('tablePrevisaoReposicao');
+      if (!tbody) return;
+
+      if (!dados || dados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum dado disponível</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = dados.slice(0, 10).map(item => {
+        const urgencia = item.diasParaRuptura <= 7 ? '#F44336' : item.diasParaRuptura <= 15 ? '#FFC107' : '#4CAF50';
+        return `
+          <tr>
+            <td>${item.produto || 'N/A'}</td>
+            <td>${item.estoqueAtual || 0}</td>
+            <td style="color: ${urgencia}; font-weight: bold;">${item.diasParaRuptura || 0} dias</td>
+            <td>${item.quantidadeSugerida || 0}</td>
+          </tr>
+        `;
+      }).join('');
     }
     
     /**
