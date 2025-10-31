@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nv7.0 - Dashboard Avançado Consolidado: 4 abas + 32 KPIs + 8 gráficos\n\nCONSOLIDAÇÃO:\n- Unificou Dashboard básico com Dashboard Avançado em interface com abas\n- Eliminada duplicação (DashboardAvancado.html não é mais necessário)\n\nESTRUTURA HTML (Index.html linhas 692-877):\n- Título: \"📊 Dashboard Avançado v7.0\"\n- 4 abas: Resumo, Financeiro, Logístico, Estoque\n- 36 KPIs distribuídos entre as abas\n- 8 canvas para gráficos Chart.js\n- 3 tabelas de ranking com progress bars\n\nJAVASCRIPT (Index.html):\n- loadDashboard() agora chama __getDashboardAvancado(filtros)\n- switchDashboardTab(tabName) - navegação entre abas\n- renderFinanceiroTab() - 5 KPIs + 2 gráficos + 1 tabela\n- renderLogisticoTab() - 7 KPIs + 2 gráficos + 1 tabela\n- renderEstoqueTab() - 9 KPIs + 2 gráficos + 1 tabela\n- 6 variáveis globais para gráficos (chart lifecycle management)\n\nCSS (Index.html):\n- .tab-btn - estilo dos botões de aba\n- .tab-btn.active - estado ativo\n- Hover effects\n\nDOCUMENTAÇÃO:\n- DEPLOY_V7.0_CONSOLIDADO.md - guia completo de deploy\n- VERSAO_7.0_CONSOLIDADO_RESUMO.md - resumo executivo das mudanças\n\nBACKEND REQUERIDO:\n- 06.dashboard_avancado.js com getDashboardAvancado()\n- 00.funcoes_wrapper.js com __getDashboardAvancado()\n\nBENEFÍCIOS:\n- Interface unificada e intuitiva\n- Menos duplicação de código\n- Filtros aplicam a todas as abas\n- Fácil manutenção e escalabilidade\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
