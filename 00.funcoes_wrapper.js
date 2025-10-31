@@ -214,6 +214,35 @@ function __obterTodasConfiguracoes() {
 }
 
 /**
+ * Wrapper para getDashboardAvancado (v7.0)
+ */
+function __getDashboardAvancado(filtros) {
+  try {
+    Logger.log('🔄 __getDashboardAvancado chamado com filtros: ' + JSON.stringify(filtros));
+    var resultado = getDashboardAvancado(filtros);
+    Logger.log('📤 __getDashboardAvancado retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
+
+    // CRITICAL: Serializar todas as Dates para strings ISO
+    var resultadoSerializado = serializarParaFrontend(resultado);
+    Logger.log('✅ Objeto serializado com sucesso');
+
+    return resultadoSerializado;
+  } catch (e) {
+    Logger.log('❌ Erro em __getDashboardAvancado: ' + e.message);
+    Logger.log('Stack: ' + e.stack);
+    return {
+      success: false,
+      error: e.message,
+      kpis: {
+        financeiros: {},
+        logisticos: {},
+        estoque: {}
+      }
+    };
+  }
+}
+
+/**
  * Teste simplificado que sempre retorna dados
  */
 function testeRetornoSimples() {
