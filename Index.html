@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema Neoformula v6.0</title>
+  <title>Sistema Neoformula v7.0</title>
   
   <style>
     /* ========================================
-     * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v6.0
+     * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v7.0
      * Estilos CSS
      * ======================================== */
     
@@ -1195,7 +1195,7 @@
   <script>
     /**
      * ========================================
-     * SISTEMA NEOFORMULA v6.0 - JavaScript
+     * SISTEMA NEOFORMULA v7.0 - JavaScript
      * ========================================
      */
     
@@ -1211,7 +1211,7 @@
     
     // Inicialização
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('🚀 Iniciando Sistema Neoformula v6.0...');
+      console.log('🚀 Iniciando Sistema Neoformula v7.0...');
       initializeSystem();
     });
     
@@ -1462,40 +1462,75 @@ function loadDashboard() {
           <div class="kpi-label">Total de Pedidos</div>
           <div class="kpi-value">${kpis.totalPedidos || 0}</div>
         </div>
-        
+
         <div class="kpi-card" style="border-left-color: var(--success);">
           <div class="kpi-label">Valor Total</div>
           <div class="kpi-value">R$ ${formatMoney(kpis.valorTotalPedidos || 0)}</div>
         </div>
-        
+
         <div class="kpi-card" style="border-left-color: var(--info);">
           <div class="kpi-label">Ticket Médio</div>
           <div class="kpi-value">R$ ${formatMoney(kpis.ticketMedio || 0)}</div>
         </div>
-        
+
         <div class="kpi-card" style="border-left-color: var(--warning);">
           <div class="kpi-label">Solicitados</div>
           <div class="kpi-value">${kpis.pedidosSolicitados || 0}</div>
         </div>
-        
+
         <div class="kpi-card" style="border-left-color: var(--accent);">
           <div class="kpi-label">Em Compra</div>
           <div class="kpi-value">${kpis.pedidosEmCompra || 0}</div>
         </div>
-        
+
         <div class="kpi-card" style="border-left-color: var(--success);">
           <div class="kpi-label">Finalizados</div>
           <div class="kpi-value">${kpis.pedidosFinalizados || 0}</div>
         </div>
-        
+
+        <div class="kpi-card" style="border-left-color: var(--danger);">
+          <div class="kpi-label">Cancelados</div>
+          <div class="kpi-value">${kpis.pedidosCancelados || 0}</div>
+        </div>
+
+        <div class="kpi-card" style="border-left-color: var(--success);">
+          <div class="kpi-label">Taxa de Finalização</div>
+          <div class="kpi-value">${(kpis.taxaFinalizacao || 0).toFixed(1)}%</div>
+        </div>
+
+        <div class="kpi-card" style="border-left-color: var(--danger);">
+          <div class="kpi-label">Taxa de Cancelamento</div>
+          <div class="kpi-value">${(kpis.taxaCancelamento || 0).toFixed(1)}%</div>
+        </div>
+
         <div class="kpi-card" style="border-left-color: var(--primary);">
           <div class="kpi-label">Produtos Cadastrados</div>
           <div class="kpi-value">${kpis.totalProdutos || 0}</div>
         </div>
-        
+
         <div class="kpi-card" style="border-left-color: var(--danger);">
           <div class="kpi-label">Estoque Baixo</div>
           <div class="kpi-value">${kpis.produtosEstoqueBaixo || 0}</div>
+        </div>
+
+        <div class="kpi-card" style="border-left-color: var(--warning);">
+          <div class="kpi-label">Ponto de Pedido</div>
+          <div class="kpi-value">${kpis.produtosPontoPedido || 0}</div>
+        </div>
+
+        <div class="kpi-card" style="border-left-color: var(--success);">
+          <div class="kpi-label">Valor Total Estoque</div>
+          <div class="kpi-value">R$ ${formatMoney(kpis.valorTotalEstoque || 0)}</div>
+        </div>
+
+        <div class="kpi-card" style="border-left-color: var(--info);">
+          <div class="kpi-label">Papelaria</div>
+          <div class="kpi-value">${kpis.pedidosPapelaria || 0} (R$ ${formatMoney(kpis.valorPapelaria || 0)})</div>
+        </div>
+
+        <div class="kpi-card" style="border-left-color: var(--info);">
+          <div class="kpi-label">Limpeza</div>
+          <div class="kpi-value">${kpis.pedidosLimpeza || 0} (R$ ${formatMoney(kpis.valorLimpeza || 0)})</div>
         </div>
       `;
       
@@ -1710,13 +1745,13 @@ function loadPedidos() {
      */
     function verDetalhesPedido(pedidoId) {
       showLoading();
-      
+
       google.script.run
         .withSuccessHandler(function(response) {
-          if (response.success) {
+          if (response && response.success) {
             showPedidoDetails(response.pedido);
           } else {
-            showError('Erro ao carregar pedido: ' + response.error);
+            showError('Erro ao carregar pedido: ' + (response ? response.error : 'Resposta vazia do servidor'));
           }
           hideLoading();
         })
@@ -1724,7 +1759,7 @@ function loadPedidos() {
           hideLoading();
           showError('Erro: ' + error.message);
         })
-        .getDetalhesPedido(pedidoId);
+        .__getDetalhesPedido(pedidoId);
     }
     
     /**
@@ -2005,13 +2040,13 @@ function loadProdutos() {
      */
     function verDetalhesProduto(produtoId) {
       showLoading();
-      
+
       google.script.run
         .withSuccessHandler(function(response) {
-          if (response.success) {
+          if (response && response.success) {
             showProdutoDetails(response.produto);
           } else {
-            showError('Erro ao carregar produto: ' + response.error);
+            showError('Erro ao carregar produto: ' + (response ? response.error : 'Resposta vazia do servidor'));
           }
           hideLoading();
         })
@@ -2019,7 +2054,7 @@ function loadProdutos() {
           hideLoading();
           showError('Erro: ' + error.message);
         })
-        .buscarProduto(produtoId);
+        .__buscarProduto(produtoId);
     }
     
     /**
@@ -2585,10 +2620,10 @@ function loadGerenciamento() {
       
       google.script.run
         .withSuccessHandler(function(response) {
-          if (response.success) {
+          if (response && response.success) {
             renderConfiguracoes(response.configuracoes);
           } else {
-            showError('Erro ao carregar configurações: ' + response.error);
+            showError('Erro ao carregar configurações: ' + (response ? response.error : 'Resposta vazia do servidor'));
           }
           hideLoading();
         })
@@ -2596,7 +2631,7 @@ function loadGerenciamento() {
           hideLoading();
           showError('Erro: ' + error.message);
         })
-        .obterTodasConfiguracoes();
+        .__obterTodasConfiguracoes();
     }
     
     /**

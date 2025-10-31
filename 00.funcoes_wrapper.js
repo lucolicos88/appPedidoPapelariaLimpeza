@@ -114,6 +114,106 @@ function __getEstoqueAtual(filtros) {
 }
 
 /**
+ * Wrapper para getDetalhesPedido
+ */
+function __getDetalhesPedido(pedidoId) {
+  try {
+    Logger.log('🔄 __getDetalhesPedido chamado com ID: ' + pedidoId);
+    var resultado = getDetalhesPedido(pedidoId);
+    Logger.log('📤 __getDetalhesPedido retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
+
+    // CRITICAL: Serializar todas as Dates para strings ISO
+    var resultadoSerializado = serializarParaFrontend(resultado);
+    Logger.log('✅ Objeto serializado com sucesso');
+
+    return resultadoSerializado;
+  } catch (e) {
+    Logger.log('❌ Erro em __getDetalhesPedido: ' + e.message);
+    Logger.log('Stack: ' + e.stack);
+    return {
+      success: false,
+      error: e.message,
+      pedido: null
+    };
+  }
+}
+
+/**
+ * Wrapper para buscarProduto
+ */
+function __buscarProduto(produtoId) {
+  try {
+    Logger.log('🔄 __buscarProduto chamado com ID: ' + produtoId);
+    var resultado = buscarProduto(produtoId);
+    Logger.log('📤 __buscarProduto retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
+
+    // CRITICAL: Serializar todas as Dates para strings ISO
+    var resultadoSerializado = serializarParaFrontend(resultado);
+    Logger.log('✅ Objeto serializado com sucesso');
+
+    return resultadoSerializado;
+  } catch (e) {
+    Logger.log('❌ Erro em __buscarProduto: ' + e.message);
+    Logger.log('Stack: ' + e.stack);
+    return {
+      success: false,
+      error: e.message,
+      produto: null
+    };
+  }
+}
+
+/**
+ * Wrapper para getConfig (Configurações)
+ */
+function __getConfig() {
+  try {
+    Logger.log('🔄 __getConfig chamado');
+    var resultado = getConfig();
+    Logger.log('📤 __getConfig retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
+
+    // CRITICAL: Serializar todas as Dates para strings ISO
+    var resultadoSerializado = serializarParaFrontend(resultado);
+    Logger.log('✅ Objeto serializado com sucesso');
+
+    return resultadoSerializado;
+  } catch (e) {
+    Logger.log('❌ Erro em __getConfig: ' + e.message);
+    Logger.log('Stack: ' + e.stack);
+    return {
+      success: false,
+      error: e.message,
+      config: null
+    };
+  }
+}
+
+/**
+ * Wrapper para obterTodasConfiguracoes
+ */
+function __obterTodasConfiguracoes() {
+  try {
+    Logger.log('🔄 __obterTodasConfiguracoes chamado');
+    var resultado = obterTodasConfiguracoes();
+    Logger.log('📤 __obterTodasConfiguracoes retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
+
+    // CRITICAL: Serializar todas as Dates para strings ISO
+    var resultadoSerializado = serializarParaFrontend(resultado);
+    Logger.log('✅ Objeto serializado com sucesso');
+
+    return resultadoSerializado;
+  } catch (e) {
+    Logger.log('❌ Erro em __obterTodasConfiguracoes: ' + e.message);
+    Logger.log('Stack: ' + e.stack);
+    return {
+      success: false,
+      error: e.message,
+      configuracoes: null
+    };
+  }
+}
+
+/**
  * Teste simplificado que sempre retorna dados
  */
 function testeRetornoSimples() {
