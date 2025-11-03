@@ -1,120 +1,56 @@
 /**
  * ========================================
- * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v6.0
- * Módulo: Gerenciamento de Imagens
+ * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v8.0
+ * Módulo: 08. UPLOAD DE IMAGENS (GOOGLE DRIVE)
  * ========================================
- * 
- * FUNCIONALIDADES v6.0:
- * - Upload de imagens para o Google Drive
- * - Renomeação inteligente: NomeProduto-DataCadastro
- * - Organização automática por tipo (Papelaria/Limpeza)
- * - Geração de URLs públicas
- * - Compressão e otimização
+ *
+ * Este módulo gerencia upload de imagens de produtos para o Google Drive
+ * e retorna URLs públicas para exibição no frontend
  */
+
+// Nome da pasta no Drive onde as imagens serão armazenadas
+const PASTA_IMAGENS_PRODUTOS = 'NeoFormula_Produtos_Imagens';
 
 /**
- * Faz upload de imagem para o Google Drive (v6.0)
+ * Upload de imagem em Base64 para o Google Drive
+ *
+ * @param {string} base64 - String Base64 da imagem
+ * @param {string} fileName - Nome do arquivo original
+ * @param {string} mimeType - Tipo MIME (image/jpeg, image/png, etc)
+ * @returns {object} - { success: boolean, imageUrl: string, fileId: string }
  */
-function uploadImagemProduto(dadosImagem) {
+function uploadImagemDrive(base64, fileName, mimeType) {
   try {
-    const email = Session.getActiveUser().getEmail();
-    
-    // Verificar permissão
-    if (!verificarPermissao(email, CONFIG.PERMISSOES.GESTOR)) {
-      return {
-        success: false,
-        error: 'Permissão negada. Apenas gestores podem fazer upload de imagens.'
-      };
-    }
-    
-    // Validar dados
-    if (!dadosImagem.base64Data || !dadosImagem.produtoNome || !dadosImagem.tipo) {
-      return {
-        success: false,
-        error: 'Dados incompletos para upload da imagem'
-      };
-    }
-    
-    // Obter ID da pasta principal
-    const pastaId = obterConfiguracao('PASTA_IMAGENS_ID');
-    
-    if (!pastaId || pastaId === '') {
-      return {
-        success: false,
-        error: 'Pasta de imagens não configurada. Configure em Configurações > PASTA_IMAGENS_ID'
-      };
-    }
-    
-    try {
-      const pastaPrincipal = DriveApp.getFolderById(pastaId);
-      
-      // Obter ou criar subpasta por tipo
-      let subpasta;
-      const subpastaNome = dadosImagem.tipo; // 'Papelaria' ou 'Limpeza'
-      
-      const subpastas = pastaPrincipal.getFoldersByName(subpastaNome);
-      if (subpastas.hasNext()) {
-        subpasta = subpastas.next();
-      } else {
-        subpasta = pastaPrincipal.createFolder(subpastaNome);
-      }
-      
-      // Gerar nome do arquivo: NomeProduto-DataCadastro
-      const agora = new Date();
-      const dataFormatada = Utilities.formatDate(agora, Session.getScriptTimeZone(), 'yyyy-MM-dd_HHmmss');
-      const nomeProdutoLimpo = dadosImagem.produtoNome
-        .replace(/[^a-zA-Z0-9\s]/g, '') // Remove caracteres especiais
-        .replace(/\s+/g, '_') // Substitui espaços por underline
-        .substring(0, 50); // Limita tamanho
-      
-      const extensao = dadosImagem.mimeType ? dadosImagem.mimeType.split('/')[1] : 'jpg';
-      const nomeArquivo = `${nomeProdutoLimpo}-${dataFormatada}.${extensao}`;
-      
-      // Converter base64 para blob
-      const base64Data = dadosImagem.base64Data.split(',')[1] || dadosImagem.base64Data;
-      const decodedData = Utilities.base64Decode(base64Data);
-      const blob = Utilities.newBlob(decodedData, dadosImagem.mimeType || 'image/jpeg', nomeArquivo);
-      
-      // Fazer upload
-      const arquivo = subpasta.createFile(blob);
+    Logger.log(`📤 Iniciando upload de imagem: ${fileName}`);
 
-      // CORREÇÃO v6.0.1: Acesso restrito por domínio em vez de público
-      // Nota: Para acesso público, o administrador deve configurar manualmente
-      // Por padrão, apenas pessoas com acesso à pasta podem ver
-      try {
-        arquivo.setSharing(DriveApp.Access.DOMAIN_WITH_LINK, DriveApp.Permission.VIEW);
-      } catch (sharingError) {
-        // Se não conseguir definir compartilhamento de domínio, usar link restrito
-        Logger.log('⚠️ Não foi possível definir compartilhamento de domínio: ' + sharingError.message);
-        arquivo.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      }
+    // 1. Verificar se pasta existe, senão criar
+    const pasta = obterOuCriarPastaImagens();
 
-      // Obter URL pública
-      const fileId = arquivo.getId();
-      const imageUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
-      
-      // Registrar log
-      registrarLog('IMAGEM_UPLOAD', `Upload de imagem: ${nomeArquivo}`, 'SUCESSO');
-      
-      Logger.log(`✅ Imagem salva: ${nomeArquivo}`);
-      
-      return {
-        success: true,
-        imageUrl: imageUrl,
-        fileId: fileId,
-        fileName: nomeArquivo
-      };
-      
-    } catch (driveError) {
-      Logger.log('❌ Erro ao acessar Google Drive: ' + driveError.message);
-      return {
-        success: false,
-        error: 'Erro ao acessar a pasta do Google Drive. Verifique o ID da pasta nas configurações.'
-      };
-    }
-    
+    // 2. Converter Base64 para Blob
+    const bytes = Utilities.base64Decode(base64);
+    const blob = Utilities.newBlob(bytes, mimeType, fileName);
+
+    // 3. Fazer upload para o Drive
+    const file = pasta.createFile(blob);
+
+    // 4. Tornar arquivo público (leitura para qualquer um com o link)
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    // 5. Obter URL pública
+    const fileId = file.getId();
+    const imageUrl = `https://drive.google.com/uc?id=${fileId}`;
+
+    Logger.log(`✅ Upload concluído: ${imageUrl}`);
+
+    return {
+      success: true,
+      imageUrl: imageUrl,
+      fileId: fileId,
+      fileName: fileName
+    };
+
   } catch (error) {
-    Logger.log('❌ Erro ao fazer upload da imagem: ' + error.message);
+    Logger.log(`❌ Erro ao fazer upload de imagem: ${error.message}`);
     return {
       success: false,
       error: error.message
@@ -123,56 +59,180 @@ function uploadImagemProduto(dadosImagem) {
 }
 
 /**
- * Lista imagens de uma pasta
+ * Obter ou criar pasta de imagens de produtos no Drive
+ *
+ * @returns {Folder} - Objeto Folder do Google Drive
  */
-function listarImagensPasta(tipo) {
+function obterOuCriarPastaImagens() {
   try {
-    const pastaId = obterConfiguracao('PASTA_IMAGENS_ID');
-    
-    if (!pastaId || pastaId === '') {
-      return {
-        success: false,
-        error: 'Pasta de imagens não configurada'
-      };
+    // Buscar pasta existente
+    const folders = DriveApp.getFoldersByName(PASTA_IMAGENS_PRODUTOS);
+
+    if (folders.hasNext()) {
+      // Pasta já existe
+      Logger.log(`📁 Pasta encontrada: ${PASTA_IMAGENS_PRODUTOS}`);
+      return folders.next();
+    } else {
+      // Criar nova pasta
+      Logger.log(`📁 Criando pasta: ${PASTA_IMAGENS_PRODUTOS}`);
+      const pasta = DriveApp.createFolder(PASTA_IMAGENS_PRODUTOS);
+
+      // Tornar pasta compartilhada (para que imagens sejam acessíveis)
+      pasta.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+      return pasta;
     }
-    
-    const pastaPrincipal = DriveApp.getFolderById(pastaId);
-    const subpastas = pastaPrincipal.getFoldersByName(tipo);
-    
-    if (!subpastas.hasNext()) {
-      return {
-        success: true,
-        imagens: []
-      };
+  } catch (error) {
+    Logger.log(`❌ Erro ao obter/criar pasta: ${error.message}`);
+    throw error;
+  }
+}
+
+/**
+ * Deletar imagem do Drive quando produto for removido
+ *
+ * @param {string} fileIdOrUrl - ID do arquivo ou URL completa
+ * @returns {object} - { success: boolean }
+ */
+function deletarImagemDrive(fileIdOrUrl) {
+  try {
+    // Extrair File ID da URL se necessário
+    let fileId = fileIdOrUrl;
+
+    if (fileIdOrUrl.includes('drive.google.com')) {
+      // URL format: https://drive.google.com/uc?id=FILE_ID
+      const match = fileIdOrUrl.match(/id=([^&]+)/);
+      if (match) {
+        fileId = match[1];
+      }
     }
-    
-    const subpasta = subpastas.next();
-    const arquivos = subpasta.getFiles();
-    const imagens = [];
-    
+
+    Logger.log(`🗑️ Deletando imagem com ID: ${fileId}`);
+
+    // Buscar arquivo
+    const file = DriveApp.getFileById(fileId);
+
+    // Deletar
+    file.setTrashed(true);
+
+    Logger.log(`✅ Imagem deletada com sucesso`);
+
+    return {
+      success: true
+    };
+
+  } catch (error) {
+    Logger.log(`❌ Erro ao deletar imagem: ${error.message}`);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Obter URL pública de uma imagem dado o File ID
+ *
+ * @param {string} fileId - ID do arquivo no Drive
+ * @returns {string} - URL pública da imagem
+ */
+function getImageUrl(fileId) {
+  return `https://drive.google.com/uc?id=${fileId}`;
+}
+
+/**
+ * Atualizar imagem de um produto (deleta antiga e sobe nova)
+ *
+ * @param {string} imagemUrlAntiga - URL da imagem atual
+ * @param {string} base64Nova - Base64 da nova imagem
+ * @param {string} fileName - Nome do novo arquivo
+ * @param {string} mimeType - Tipo MIME da nova imagem
+ * @returns {object} - { success: boolean, imageUrl: string }
+ */
+function atualizarImagemProduto(imagemUrlAntiga, base64Nova, fileName, mimeType) {
+  try {
+    Logger.log(`🔄 Atualizando imagem de produto`);
+
+    // 1. Deletar imagem antiga (se existir)
+    if (imagemUrlAntiga) {
+      deletarImagemDrive(imagemUrlAntiga);
+    }
+
+    // 2. Upload da nova imagem
+    const resultado = uploadImagemDrive(base64Nova, fileName, mimeType);
+
+    return resultado;
+
+  } catch (error) {
+    Logger.log(`❌ Erro ao atualizar imagem: ${error.message}`);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Limpar imagens órfãs (imagens no Drive que não estão vinculadas a nenhum produto)
+ *
+ * @returns {object} - { success: boolean, imagensDeletadas: number }
+ */
+function limparImagensOrfas() {
+  try {
+    Logger.log(`🧹 Iniciando limpeza de imagens órfãs`);
+
+    // 1. Buscar todas as imagens na pasta
+    const pasta = obterOuCriarPastaImagens();
+    const arquivos = pasta.getFiles();
+
+    // 2. Buscar todos os produtos e suas URLs de imagem
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+    const lastRow = abaProdutos.getLastRow();
+
+    if (lastRow <= 1) {
+      return { success: true, imagensDeletadas: 0 };
+    }
+
+    // Assumindo que a coluna "Imagem URL" está na última posição
+    // AJUSTAR o índice conforme a estrutura real da planilha
+    const colunaImagemUrl = 13; // VERIFICAR E AJUSTAR!
+
+    const dadosProdutos = abaProdutos.getRange(2, 1, lastRow - 1, colunaImagemUrl).getValues();
+
+    // Coletar todas as URLs de imagem em uso
+    const urlsEmUso = new Set();
+    dadosProdutos.forEach(row => {
+      const imagemUrl = row[colunaImagemUrl - 1]; // Ajustar índice
+      if (imagemUrl) {
+        urlsEmUso.add(imagemUrl);
+      }
+    });
+
+    // 3. Deletar arquivos não utilizados
+    let imagensDeletadas = 0;
+
     while (arquivos.hasNext()) {
       const arquivo = arquivos.next();
-      const mimeType = arquivo.getMimeType();
-      
-      // Filtrar apenas imagens
-      if (mimeType.startsWith('image/')) {
-        imagens.push({
-          id: arquivo.getId(),
-          nome: arquivo.getName(),
-          url: `https://drive.google.com/uc?export=view&id=${arquivo.getId()}`,
-          dataModificacao: arquivo.getLastUpdated(),
-          tamanho: arquivo.getSize()
-        });
+      const fileId = arquivo.getId();
+      const imageUrl = getImageUrl(fileId);
+
+      if (!urlsEmUso.has(imageUrl)) {
+        Logger.log(`🗑️ Deletando imagem órfã: ${arquivo.getName()}`);
+        arquivo.setTrashed(true);
+        imagensDeletadas++;
       }
     }
-    
+
+    Logger.log(`✅ Limpeza concluída. ${imagensDeletadas} imagem(ns) deletada(s)`);
+
     return {
       success: true,
-      imagens: imagens
+      imagensDeletadas: imagensDeletadas
     };
-    
+
   } catch (error) {
-    Logger.log('❌ Erro ao listar imagens: ' + error.message);
+    Logger.log(`❌ Erro ao limpar imagens órfãs: ${error.message}`);
     return {
       success: false,
       error: error.message
@@ -181,33 +241,37 @@ function listarImagensPasta(tipo) {
 }
 
 /**
- * Deleta uma imagem do Drive
+ * Obter informações de uma imagem do Drive
+ *
+ * @param {string} fileIdOrUrl - ID ou URL da imagem
+ * @returns {object} - Informações do arquivo
  */
-function deletarImagem(fileId) {
+function getInfoImagemDrive(fileIdOrUrl) {
   try {
-    const email = Session.getActiveUser().getEmail();
-    
-    // Verificar permissão
-    if (!verificarPermissao(email, CONFIG.PERMISSOES.ADMIN)) {
-      return {
-        success: false,
-        error: 'Permissão negada. Apenas administradores podem deletar imagens.'
-      };
+    // Extrair File ID
+    let fileId = fileIdOrUrl;
+    if (fileIdOrUrl.includes('drive.google.com')) {
+      const match = fileIdOrUrl.match(/id=([^&]+)/);
+      if (match) {
+        fileId = match[1];
+      }
     }
-    
-    const arquivo = DriveApp.getFileById(fileId);
-    arquivo.setTrashed(true);
-    
-    // Registrar log
-    registrarLog('IMAGEM_DELETADA', `Imagem deletada: ${arquivo.getName()}`, 'SUCESSO');
-    
+
+    const file = DriveApp.getFileById(fileId);
+
     return {
       success: true,
-      message: 'Imagem deletada com sucesso'
+      info: {
+        nome: file.getName(),
+        tamanho: file.getSize(),
+        tipo: file.getMimeType(),
+        dataCriacao: file.getDateCreated(),
+        url: getImageUrl(fileId)
+      }
     };
-    
+
   } catch (error) {
-    Logger.log('❌ Erro ao deletar imagem: ' + error.message);
+    Logger.log(`❌ Erro ao obter info da imagem: ${error.message}`);
     return {
       success: false,
       error: error.message
@@ -216,52 +280,40 @@ function deletarImagem(fileId) {
 }
 
 /**
- * Atualiza imagem de um produto
+ * ========================================
+ * FUNÇÕES DE TESTE
+ * ========================================
  */
-function atualizarImagemProduto(produtoId, dadosImagem) {
-  try {
-    // Buscar produto atual
-    const resultadoProduto = buscarProduto(produtoId);
-    
-    if (!resultadoProduto.success) {
-      return {
-        success: false,
-        error: 'Produto não encontrado'
-      };
-    }
-    
-    const produto = resultadoProduto.produto;
-    
-    // Se já tem imagem, marcar a antiga para remoção (opcional)
-    if (produto.imagemURL) {
-      // Você pode optar por deletar a imagem antiga aqui
-      // ou manter histórico de imagens
-    }
-    
-    // Fazer upload da nova imagem
-    const resultadoUpload = uploadImagemProduto({
-      base64Data: dadosImagem.base64Data,
-      fileName: dadosImagem.fileName,
-      mimeType: dadosImagem.mimeType,
-      produtoId: produtoId,
-      produtoNome: produto.nome,
-      tipo: produto.tipo
-    });
-    
-    if (!resultadoUpload.success) {
-      return resultadoUpload;
-    }
-    
-    // Atualizar produto com nova URL
-    return atualizarProduto(produtoId, {
-      imagemURL: resultadoUpload.imageUrl
-    });
-    
-  } catch (error) {
-    Logger.log('❌ Erro ao atualizar imagem do produto: ' + error.message);
-    return {
-      success: false,
-      error: error.message
-    };
+
+/**
+ * Função de teste para verificar se upload está funcionando
+ */
+function testeUploadImagem() {
+  // Base64 de uma imagem 1x1 pixel PNG transparente (para teste)
+  const base64Test = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+  const resultado = uploadImagemDrive(base64Test, 'teste.png', 'image/png');
+
+  Logger.log('Resultado do teste:');
+  Logger.log(JSON.stringify(resultado));
+
+  if (resultado.success) {
+    Logger.log('✅ Teste de upload passou!');
+    Logger.log('URL da imagem: ' + resultado.imageUrl);
+
+    // Tentar deletar a imagem de teste
+    const resultadoDelete = deletarImagemDrive(resultado.fileId);
+    Logger.log('Resultado do delete: ' + JSON.stringify(resultadoDelete));
+  } else {
+    Logger.log('❌ Teste de upload falhou: ' + resultado.error);
   }
+}
+
+/**
+ * Função de teste para verificar limpeza de órfãs
+ */
+function testeLimparOrfas() {
+  const resultado = limparImagensOrfas();
+  Logger.log('Resultado da limpeza:');
+  Logger.log(JSON.stringify(resultado));
 }

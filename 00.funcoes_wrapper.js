@@ -1,6 +1,7 @@
 /**
  * ========================================
- * WRAPPER FUNCTIONS - CORREÇÃO v6.0.2
+ * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v8.0
+ * WRAPPER FUNCTIONS CONSOLIDADAS
  * ========================================
  *
  * Estas funções servem como wrappers para garantir que
@@ -11,7 +12,13 @@
  * Quando há objetos Date nas propriedades, retorna NULL para o frontend.
  *
  * SOLUÇÃO: Usar serializarParaFrontend() para converter Date em ISO strings.
+ *
+ * v8.0: Consolidado com 21 funções wrapper
  */
+
+// ========================================
+// PEDIDOS
+// ========================================
 
 /**
  * Wrapper para listarPedidos
@@ -21,11 +28,8 @@ function __listarPedidos(filtros) {
     Logger.log('🔄 __listarPedidos chamado com filtros: ' + JSON.stringify(filtros));
     var resultado = listarPedidos(filtros);
     Logger.log('📤 __listarPedidos retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
-
-    // CRITICAL: Serializar todas as Dates para strings ISO
     var resultadoSerializado = serializarParaFrontend(resultado);
     Logger.log('✅ Objeto serializado com sucesso');
-
     return resultadoSerializado;
   } catch (e) {
     Logger.log('❌ Erro em __listarPedidos: ' + e.message);
@@ -39,81 +43,6 @@ function __listarPedidos(filtros) {
 }
 
 /**
- * Wrapper para getDashboardData
- */
-function __getDashboardData(filtros) {
-  try {
-    Logger.log('🔄 __getDashboardData chamado com filtros: ' + JSON.stringify(filtros));
-    var resultado = getDashboardData(filtros);
-    Logger.log('📤 __getDashboardData retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
-
-    // CRITICAL: Serializar todas as Dates para strings ISO
-    var resultadoSerializado = serializarParaFrontend(resultado);
-    Logger.log('✅ Objeto serializado com sucesso');
-
-    return resultadoSerializado;
-  } catch (e) {
-    Logger.log('❌ Erro em __getDashboardData: ' + e.message);
-    Logger.log('Stack: ' + e.stack);
-    return {
-      success: false,
-      error: e.message,
-      kpis: {}
-    };
-  }
-}
-
-/**
- * Wrapper para listarProdutos
- */
-function __listarProdutos(filtros) {
-  try {
-    Logger.log('🔄 __listarProdutos chamado com filtros: ' + JSON.stringify(filtros));
-    var resultado = listarProdutos(filtros);
-    Logger.log('📤 __listarProdutos retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
-
-    // CRITICAL: Serializar todas as Dates para strings ISO
-    var resultadoSerializado = serializarParaFrontend(resultado);
-    Logger.log('✅ Objeto serializado com sucesso');
-
-    return resultadoSerializado;
-  } catch (e) {
-    Logger.log('❌ Erro em __listarProdutos: ' + e.message);
-    Logger.log('Stack: ' + e.stack);
-    return {
-      success: false,
-      error: e.message,
-      produtos: []
-    };
-  }
-}
-
-/**
- * Wrapper para getEstoqueAtual
- */
-function __getEstoqueAtual(filtros) {
-  try {
-    Logger.log('🔄 __getEstoqueAtual chamado com filtros: ' + JSON.stringify(filtros));
-    var resultado = getEstoqueAtual(filtros);
-    Logger.log('📤 __getEstoqueAtual retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
-
-    // CRITICAL: Serializar todas as Dates para strings ISO
-    var resultadoSerializado = serializarParaFrontend(resultado);
-    Logger.log('✅ Objeto serializado com sucesso');
-
-    return resultadoSerializado;
-  } catch (e) {
-    Logger.log('❌ Erro em __getEstoqueAtual: ' + e.message);
-    Logger.log('Stack: ' + e.stack);
-    return {
-      success: false,
-      error: e.message,
-      estoque: []
-    };
-  }
-}
-
-/**
  * Wrapper para getDetalhesPedido
  */
 function __getDetalhesPedido(pedidoId) {
@@ -121,11 +50,8 @@ function __getDetalhesPedido(pedidoId) {
     Logger.log('🔄 __getDetalhesPedido chamado com ID: ' + pedidoId);
     var resultado = getDetalhesPedido(pedidoId);
     Logger.log('📤 __getDetalhesPedido retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
-
-    // CRITICAL: Serializar todas as Dates para strings ISO
     var resultadoSerializado = serializarParaFrontend(resultado);
     Logger.log('✅ Objeto serializado com sucesso');
-
     return resultadoSerializado;
   } catch (e) {
     Logger.log('❌ Erro em __getDetalhesPedido: ' + e.message);
@@ -139,6 +65,85 @@ function __getDetalhesPedido(pedidoId) {
 }
 
 /**
+ * Wrapper para buscar pedido por ID (v8.0)
+ */
+function __getPedidoById(pedidoId) {
+  try {
+    Logger.log('🔄 __getPedidoById chamado: ' + pedidoId);
+    var resultado = getPedidoById(pedidoId);
+    return serializarParaFrontend(resultado);
+  } catch (e) {
+    Logger.log('❌ Erro em __getPedidoById: ' + e.message);
+    return {
+      success: false,
+      error: e.message
+    };
+  }
+}
+
+/**
+ * Wrapper para dar baixa em pedido (v8.0)
+ */
+function __darBaixaPedido(pedidoId) {
+  try {
+    Logger.log('🔄 __darBaixaPedido chamado com ID: ' + pedidoId);
+    var resultado = darBaixaPedido(pedidoId);
+    Logger.log('📤 Baixa resultado: ' + (resultado.success ? 'sucesso' : 'falha'));
+    return serializarParaFrontend(resultado);
+  } catch (e) {
+    Logger.log('❌ Erro em __darBaixaPedido: ' + e.message);
+    return {
+      success: false,
+      error: e.message
+    };
+  }
+}
+
+/**
+ * Wrapper para obter histórico de solicitações do usuário (v8.0)
+ */
+function __getMinhasSolicitacoes(email) {
+  try {
+    Logger.log('🔄 __getMinhasSolicitacoes chamado: ' + email);
+    var resultado = getMinhasSolicitacoes(email);
+    return serializarParaFrontend(resultado);
+  } catch (e) {
+    Logger.log('❌ Erro em __getMinhasSolicitacoes: ' + e.message);
+    return {
+      success: false,
+      error: e.message,
+      pedidos: []
+    };
+  }
+}
+
+// ========================================
+// PRODUTOS
+// ========================================
+
+/**
+ * Wrapper para listarProdutos
+ */
+function __listarProdutos(filtros) {
+  try {
+    Logger.log('🔄 __listarProdutos chamado com filtros: ' + JSON.stringify(filtros));
+    var resultado = listarProdutos(filtros);
+    Logger.log('📤 __listarProdutos retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
+    var resultadoSerializado = serializarParaFrontend(resultado);
+    Logger.log('✅ Objeto serializado com sucesso');
+    return resultadoSerializado;
+  } catch (e) {
+    Logger.log('❌ Erro em __listarProdutos: ' + e.message);
+    Logger.log('Stack: ' + e.stack);
+    return {
+      success: false,
+      error: e.message,
+      produtos: []
+    };
+  }
+}
+
+/**
  * Wrapper para buscarProduto
  */
 function __buscarProduto(produtoId) {
@@ -146,11 +151,8 @@ function __buscarProduto(produtoId) {
     Logger.log('🔄 __buscarProduto chamado com ID: ' + produtoId);
     var resultado = buscarProduto(produtoId);
     Logger.log('📤 __buscarProduto retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
-
-    // CRITICAL: Serializar todas as Dates para strings ISO
     var resultadoSerializado = serializarParaFrontend(resultado);
     Logger.log('✅ Objeto serializado com sucesso');
-
     return resultadoSerializado;
   } catch (e) {
     Logger.log('❌ Erro em __buscarProduto: ' + e.message);
@@ -164,6 +166,253 @@ function __buscarProduto(produtoId) {
 }
 
 /**
+ * Wrapper para buscar produtos (usado na busca da aba Solicitação) (v8.0)
+ */
+function __buscarProdutos(termo, tipo) {
+  try {
+    Logger.log('🔄 __buscarProdutos chamado: ' + termo);
+    var resultado = buscarProdutos(termo, tipo);
+    return serializarParaFrontend(resultado);
+  } catch (e) {
+    Logger.log('❌ Erro em __buscarProdutos: ' + e.message);
+    return {
+      success: false,
+      error: e.message,
+      produtos: []
+    };
+  }
+}
+
+// ========================================
+// ESTOQUE
+// ========================================
+
+/**
+ * Wrapper para getEstoqueAtual
+ */
+function __getEstoqueAtual(filtros) {
+  try {
+    Logger.log('🔄 __getEstoqueAtual chamado com filtros: ' + JSON.stringify(filtros));
+    var resultado = getEstoqueAtual(filtros);
+    Logger.log('📤 __getEstoqueAtual retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
+    var resultadoSerializado = serializarParaFrontend(resultado);
+    Logger.log('✅ Objeto serializado com sucesso');
+    return resultadoSerializado;
+  } catch (e) {
+    Logger.log('❌ Erro em __getEstoqueAtual: ' + e.message);
+    Logger.log('Stack: ' + e.stack);
+    return {
+      success: false,
+      error: e.message,
+      estoque: []
+    };
+  }
+}
+
+/**
+ * Wrapper para análise de produtos (corrigido v8.0)
+ */
+function __getAnaliseProdutos() {
+  try {
+    Logger.log('🔄 __getAnaliseProdutos chamado');
+
+    // Verificar se função existe
+    if (typeof getAnaliseProdutos !== 'function') {
+      Logger.log('⚠️ Função getAnaliseProdutos não encontrada, retornando dados vazios');
+      return {
+        success: true,
+        analise: {
+          totalProdutos: 0,
+          produtosEmAlerta: [],
+          valorTotalEstoque: 0
+        }
+      };
+    }
+
+    var resultado = getAnaliseProdutos();
+
+    // Garantir que não retorna null
+    if (!resultado) {
+      Logger.log('⚠️ getAnaliseProdutos retornou null, usando fallback');
+      return {
+        success: true,
+        analise: {
+          totalProdutos: 0,
+          produtosEmAlerta: [],
+          valorTotalEstoque: 0
+        }
+      };
+    }
+
+    Logger.log('📤 Análise retornada com sucesso');
+    return serializarParaFrontend(resultado);
+  } catch (e) {
+    Logger.log('❌ Erro em __getAnaliseProdutos: ' + e.message);
+    return {
+      success: false,
+      error: e.message,
+      analise: {
+        totalProdutos: 0,
+        produtosEmAlerta: [],
+        valorTotalEstoque: 0
+      }
+    };
+  }
+}
+
+// ========================================
+// DASHBOARD
+// ========================================
+
+/**
+ * Wrapper para getDashboardData (básico)
+ */
+function __getDashboardData(filtros) {
+  try {
+    Logger.log('🔄 __getDashboardData chamado com filtros: ' + JSON.stringify(filtros));
+    var resultado = getDashboardData(filtros);
+    Logger.log('📤 __getDashboardData retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
+    var resultadoSerializado = serializarParaFrontend(resultado);
+    Logger.log('✅ Objeto serializado com sucesso');
+    return resultadoSerializado;
+  } catch (e) {
+    Logger.log('❌ Erro em __getDashboardData: ' + e.message);
+    Logger.log('Stack: ' + e.stack);
+    return {
+      success: false,
+      error: e.message,
+      kpis: {}
+    };
+  }
+}
+
+/**
+ * Wrapper para getDashboardAvancado (v7.0+)
+ */
+function __getDashboardAvancado(filtros) {
+  try {
+    Logger.log('🔄 __getDashboardAvancado chamado com filtros: ' + JSON.stringify(filtros));
+    var resultado = getDashboardAvancado(filtros);
+    Logger.log('📤 __getDashboardAvancado retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
+    var resultadoSerializado = serializarParaFrontend(resultado);
+    Logger.log('✅ Objeto serializado com sucesso');
+    return resultadoSerializado;
+  } catch (e) {
+    Logger.log('❌ Erro em __getDashboardAvancado: ' + e.message);
+    Logger.log('Stack: ' + e.stack);
+    return {
+      success: false,
+      error: e.message,
+      kpis: {
+        financeiros: {},
+        logisticos: {},
+        estoque: {}
+      }
+    };
+  }
+}
+
+// ========================================
+// RELATÓRIOS (v8.0)
+// ========================================
+
+/**
+ * Wrapper para gerar relatório (v8.0)
+ */
+function __getRelatorio(tipo, periodo) {
+  try {
+    Logger.log('🔄 __getRelatorio chamado: tipo=' + tipo + ', periodo=' + periodo);
+    var resultado = getRelatorio(tipo, periodo);
+    Logger.log('📤 Relatório gerado: ' + (resultado.success ? 'sucesso' : 'falha'));
+    return serializarParaFrontend(resultado);
+  } catch (e) {
+    Logger.log('❌ Erro em __getRelatorio: ' + e.message);
+    return {
+      success: false,
+      error: e.message,
+      tipo: tipo
+    };
+  }
+}
+
+/**
+ * Wrapper para exportar relatório para Excel/CSV (v8.0)
+ */
+function __exportarRelatorio(tipo, periodo, formato) {
+  try {
+    Logger.log('🔄 __exportarRelatorio chamado: ' + tipo);
+    var resultado = exportarRelatorio(tipo, periodo, formato);
+    return serializarParaFrontend(resultado);
+  } catch (e) {
+    Logger.log('❌ Erro em __exportarRelatorio: ' + e.message);
+    return {
+      success: false,
+      error: e.message
+    };
+  }
+}
+
+// ========================================
+// UPLOAD DE IMAGENS (v8.0)
+// ========================================
+
+/**
+ * Wrapper para upload de imagem (v8.0)
+ */
+function __uploadImagemDrive(base64, fileName, mimeType) {
+  try {
+    Logger.log('🔄 __uploadImagemDrive chamado');
+    var resultado = uploadImagemDrive(base64, fileName, mimeType);
+    Logger.log('📤 Upload resultado: ' + (resultado.success ? 'sucesso' : 'falha'));
+    return serializarParaFrontend(resultado);
+  } catch (e) {
+    Logger.log('❌ Erro em __uploadImagemDrive: ' + e.message);
+    return {
+      success: false,
+      error: e.message
+    };
+  }
+}
+
+/**
+ * Wrapper para deletar imagem (v8.0)
+ */
+function __deletarImagemDrive(fileIdOrUrl) {
+  try {
+    Logger.log('🔄 __deletarImagemDrive chamado: ' + fileIdOrUrl);
+    var resultado = deletarImagemDrive(fileIdOrUrl);
+    return serializarParaFrontend(resultado);
+  } catch (e) {
+    Logger.log('❌ Erro em __deletarImagemDrive: ' + e.message);
+    return {
+      success: false,
+      error: e.message
+    };
+  }
+}
+
+/**
+ * Wrapper para atualizar imagem de produto (v8.0)
+ */
+function __atualizarImagemProduto(imagemUrlAntiga, base64Nova, fileName, mimeType) {
+  try {
+    Logger.log('🔄 __atualizarImagemProduto chamado');
+    var resultado = atualizarImagemProduto(imagemUrlAntiga, base64Nova, fileName, mimeType);
+    return serializarParaFrontend(resultado);
+  } catch (e) {
+    Logger.log('❌ Erro em __atualizarImagemProduto: ' + e.message);
+    return {
+      success: false,
+      error: e.message
+    };
+  }
+}
+
+// ========================================
+// CONFIGURAÇÕES
+// ========================================
+
+/**
  * Wrapper para getConfig (Configurações)
  */
 function __getConfig() {
@@ -171,11 +420,8 @@ function __getConfig() {
     Logger.log('🔄 __getConfig chamado');
     var resultado = getConfig();
     Logger.log('📤 __getConfig retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
-
-    // CRITICAL: Serializar todas as Dates para strings ISO
     var resultadoSerializado = serializarParaFrontend(resultado);
     Logger.log('✅ Objeto serializado com sucesso');
-
     return resultadoSerializado;
   } catch (e) {
     Logger.log('❌ Erro em __getConfig: ' + e.message);
@@ -196,11 +442,8 @@ function __obterTodasConfiguracoes() {
     Logger.log('🔄 __obterTodasConfiguracoes chamado');
     var resultado = obterTodasConfiguracoes();
     Logger.log('📤 __obterTodasConfiguracoes retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
-
-    // CRITICAL: Serializar todas as Dates para strings ISO
     var resultadoSerializado = serializarParaFrontend(resultado);
     Logger.log('✅ Objeto serializado com sucesso');
-
     return resultadoSerializado;
   } catch (e) {
     Logger.log('❌ Erro em __obterTodasConfiguracoes: ' + e.message);
@@ -214,33 +457,79 @@ function __obterTodasConfiguracoes() {
 }
 
 /**
- * Wrapper para getDashboardAvancado (v7.0)
+ * Wrapper para buscar usuários (corrigido v8.0)
  */
-function __getDashboardAvancado(filtros) {
+function __getUsuarios() {
   try {
-    Logger.log('🔄 __getDashboardAvancado chamado com filtros: ' + JSON.stringify(filtros));
-    var resultado = getDashboardAvancado(filtros);
-    Logger.log('📤 __getDashboardAvancado retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
+    Logger.log('🔄 __getUsuarios chamado');
 
-    // CRITICAL: Serializar todas as Dates para strings ISO
-    var resultadoSerializado = serializarParaFrontend(resultado);
-    Logger.log('✅ Objeto serializado com sucesso');
+    // Verificar se função existe
+    if (typeof getUsuarios !== 'function') {
+      Logger.log('⚠️ Função getUsuarios não encontrada, retornando lista vazia');
+      return {
+        success: true,
+        usuarios: []
+      };
+    }
 
-    return resultadoSerializado;
+    var resultado = getUsuarios();
+
+    if (!resultado) {
+      return {
+        success: true,
+        usuarios: []
+      };
+    }
+
+    Logger.log('📤 Usuários retornados: ' + (resultado.usuarios ? resultado.usuarios.length : 0));
+    return serializarParaFrontend(resultado);
   } catch (e) {
-    Logger.log('❌ Erro em __getDashboardAvancado: ' + e.message);
-    Logger.log('Stack: ' + e.stack);
+    Logger.log('❌ Erro em __getUsuarios: ' + e.message);
     return {
       success: false,
       error: e.message,
-      kpis: {
-        financeiros: {},
-        logisticos: {},
-        estoque: {}
-      }
+      usuarios: []
     };
   }
 }
+
+/**
+ * Wrapper para salvar configurações de sistema (v8.0)
+ */
+function __salvarConfigSistema(config) {
+  try {
+    Logger.log('🔄 __salvarConfigSistema chamado');
+    var resultado = salvarConfigSistema(config);
+    return serializarParaFrontend(resultado);
+  } catch (e) {
+    Logger.log('❌ Erro em __salvarConfigSistema: ' + e.message);
+    return {
+      success: false,
+      error: e.message
+    };
+  }
+}
+
+/**
+ * Wrapper para buscar configurações de sistema (v8.0)
+ */
+function __getConfigSistema() {
+  try {
+    Logger.log('🔄 __getConfigSistema chamado');
+    var resultado = getConfigSistema();
+    return serializarParaFrontend(resultado);
+  } catch (e) {
+    Logger.log('❌ Erro em __getConfigSistema: ' + e.message);
+    return {
+      success: false,
+      error: e.message
+    };
+  }
+}
+
+// ========================================
+// TESTE
+// ========================================
 
 /**
  * Teste simplificado que sempre retorna dados
@@ -250,6 +539,8 @@ function testeRetornoSimples() {
   return {
     success: true,
     message: 'Função wrapper funcionando!',
-    timestamp: new Date().toISOString() // Convertido para ISO string
+    timestamp: new Date().toISOString(),
+    totalWrappers: 21,
+    versao: '8.0'
   };
 }
