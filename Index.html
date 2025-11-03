@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema Neoformula v7.0</title>
+  <title>Sistema Neoformula v8.0</title>
   
   <style>
     /* ========================================
-     * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v7.0
+     * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v8.0
      * Estilos CSS
      * ======================================== */
     
@@ -277,7 +277,7 @@
       color: white;
     }
 
-    /* Tab Buttons (Dashboard Avançado v7.0) */
+    /* Tab Buttons (Dashboard Avançado v8.0) */
     .tab-btn {
       padding: 12px 24px;
       border: none;
@@ -619,7 +619,70 @@
       margin-bottom: 15px;
       color: var(--secondary);
     }
-    
+
+    /* Ranking Tables */
+    .ranking-table {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+
+    .ranking-table table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .ranking-table th {
+      text-align: left;
+      padding: 12px;
+      background: var(--light);
+      color: var(--secondary);
+      font-weight: 600;
+      border-bottom: 2px solid var(--primary);
+    }
+
+    .ranking-table td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .ranking-table tr:hover {
+      background: var(--light);
+    }
+
+    .ranking-position {
+      width: 50px;
+      text-align: center;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* Progress Bars */
+    .progress-bar {
+      height: 8px;
+      background: var(--light);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 5px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--primary);
+      transition: width 0.3s;
+    }
+
+    /* Dashboard Tabs */
+    .dashboard-tab {
+      display: none;
+    }
+
+    .dashboard-tab.active {
+      display: block;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .header-content {
@@ -715,11 +778,11 @@
   <!-- Main Container -->
   <div class="container">
     
-    <!-- Dashboard Page (v7.0 - Avançado) -->
+    <!-- Dashboard Page (v8.0 - Avançado Consolidado) -->
     <section class="page-section active" id="page-dashboard">
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">📊 Dashboard Avançado v7.0</h2>
+          <h2 class="card-title">📊 Dashboard Avançado v8.0</h2>
           <button class="btn btn-primary" onclick="refreshDashboard()">🔄 Atualizar</button>
         </div>
 
@@ -823,6 +886,21 @@
                   <th style="padding: 12px; width: 50px; text-align: center;">#</th>
                   <th style="padding: 12px;">Setor</th>
                   <th style="padding: 12px; text-align: right;">Valor</th>
+                  <th style="padding: 12px; width: 40%;">Distribuição</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="ranking-table" style="margin-top: 30px;">
+            <h3 class="chart-title">Top 10 - Produtos Mais Caros</h3>
+            <table id="tableProdutosCaros" style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #f5f5f5; border-bottom: 2px solid var(--primary);">
+                  <th style="padding: 12px; width: 50px; text-align: center;">#</th>
+                  <th style="padding: 12px;">Produto</th>
+                  <th style="padding: 12px; text-align: right;">Valor Total</th>
                   <th style="padding: 12px; width: 40%;">Distribuição</th>
                 </tr>
               </thead>
@@ -1336,7 +1414,7 @@
   <script>
     /**
      * ========================================
-     * SISTEMA NEOFORMULA v7.0 - JavaScript
+     * SISTEMA NEOFORMULA v8.0 - JavaScript
      * ========================================
      */
     
@@ -1352,7 +1430,7 @@
     
     // Inicialização
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('🚀 Iniciando Sistema Neoformula v7.0...');
+      console.log('🚀 Iniciando Sistema Neoformula v8.0...');
       initializeSystem();
     });
     
@@ -1539,7 +1617,7 @@ function initializeSystem() {
     }
     
     /**
- * Carrega Dashboard Avançado v7.0
+ * Carrega Dashboard Avançado v8.0
  */
 function loadDashboard() {
   showLoading();
@@ -1802,7 +1880,7 @@ function loadDashboard() {
     }
 
     /**
-     * Troca de aba no Dashboard Avançado v7.0
+     * Troca de aba no Dashboard Avançado v8.0
      */
     function switchDashboardTab(tabName) {
       // Ocultar todas as abas
@@ -1837,7 +1915,7 @@ function loadDashboard() {
     let chartEstoqueSaude = null;
 
     /**
-     * Renderiza aba Financeiro
+     * Renderiza aba Financeiro (v8.0 - 5 KPIs)
      */
     function renderFinanceiroTab(kpis) {
       // Renderizar KPIs Financeiros
@@ -1845,25 +1923,34 @@ function loadDashboard() {
       if (!kpiGrid) return;
 
       kpiGrid.innerHTML = `
-        <div class="kpi-card" style="border-left-color: #00A651;">
-          <div class="kpi-label">Valor Total de Pedidos</div>
-          <div class="kpi-value">R$ ${formatMoney(kpis.valorTotal || 0)}</div>
+        <div class="kpi-card" style="border-left-color: var(--success);">
+          <div class="kpi-label">VALOR TOTAL DE PEDIDOS</div>
+          <div class="kpi-value">R$ ${formatMoney(kpis.valorTotalPedidos || kpis.valorTotal || 0)}</div>
         </div>
-        <div class="kpi-card" style="border-left-color: #2196F3;">
-          <div class="kpi-label">Ticket Médio</div>
+
+        <div class="kpi-card" style="border-left-color: var(--info);">
+          <div class="kpi-label">TICKET MÉDIO</div>
           <div class="kpi-value">R$ ${formatMoney(kpis.ticketMedio || 0)}</div>
         </div>
-        <div class="kpi-card" style="border-left-color: #FF6B35;">
-          <div class="kpi-label">Variação Mensal</div>
-          <div class="kpi-value">${(kpis.variacaoMensal || 0).toFixed(1)}%</div>
+
+        <div class="kpi-card" style="border-left-color: ${(kpis.taxaVariacao || kpis.variacaoMensal || 0) >= 0 ? 'var(--success)' : 'var(--danger)'};">
+          <div class="kpi-label">VARIAÇÃO MENSAL</div>
+          <div class="kpi-value">${(kpis.taxaVariacao || kpis.variacaoMensal || 0).toFixed(1)}%</div>
+          <div class="kpi-change ${(kpis.taxaVariacao || kpis.variacaoMensal || 0) >= 0 ? 'positive' : 'negative'}">
+            ${(kpis.taxaVariacao || kpis.variacaoMensal || 0) >= 0 ? '▲' : '▼'} ${Math.abs(kpis.taxaVariacao || kpis.variacaoMensal || 0).toFixed(1)}%
+          </div>
         </div>
-        <div class="kpi-card" style="border-left-color: #FFC107;">
-          <div class="kpi-label">Previsão de Gastos</div>
+
+        <div class="kpi-card" style="border-left-color: var(--warning);">
+          <div class="kpi-label">PREVISÃO DE GASTOS</div>
           <div class="kpi-value">R$ ${formatMoney(kpis.previsaoGastos || 0)}</div>
+          <div class="kpi-change">Próximo mês</div>
         </div>
-        <div class="kpi-card" style="border-left-color: #9C27B0;">
-          <div class="kpi-label">Custo per Capita</div>
+
+        <div class="kpi-card" style="border-left-color: var(--primary);">
+          <div class="kpi-label">CUSTO PER CAPITA</div>
           <div class="kpi-value">R$ ${formatMoney(kpis.custoPerCapita || 0)}</div>
+          <div class="kpi-change">Por usuário ativo</div>
         </div>
       `;
 
@@ -1925,37 +2012,75 @@ function loadDashboard() {
         });
       }
 
-      // Renderizar Tabela de Gastos por Setor
+      // Renderizar Tabelas
       renderTableGastosPorSetor(kpis.gastoPorSetor || []);
+      renderTableProdutosCaros(kpis.produtosMaisCaros || []);
     }
 
     /**
-     * Renderiza tabela de gastos por setor
+     * Renderiza tabela de gastos por setor (v8.0 - com progress bars)
      */
     function renderTableGastosPorSetor(dados) {
-      const tbody = document.getElementById('tableGastoPorSetor');
+      const tbody = document.querySelector('#tableGastoPorSetor tbody');
       if (!tbody) return;
 
       if (!dados || dados.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Nenhum dado disponível</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum dado disponível</td></tr>';
         return;
       }
 
-      tbody.innerHTML = dados.slice(0, 10).map((item, index) => `
-        <tr>
-          <td>${index + 1}. ${item.setor || 'N/A'}</td>
-          <td>R$ ${formatMoney(item.valor || 0)}</td>
-          <td>
-            <div style="background: #f0f0f0; border-radius: 4px; height: 20px; position: relative; overflow: hidden;">
-              <div style="background: linear-gradient(90deg, #00A651, #2196F3); height: 100%; width: ${item.percentual || 0}%; border-radius: 4px;"></div>
-            </div>
-          </td>
-        </tr>
-      `).join('');
+      const maxValor = Math.max(...dados.map(d => d.valor || 0));
+
+      tbody.innerHTML = dados.slice(0, 10).map((item, index) => {
+        const percent = maxValor > 0 ? (item.valor / maxValor * 100) : 0;
+        return `
+          <tr>
+            <td class="ranking-position">${index + 1}</td>
+            <td><strong>${item.setor || 'N/A'}</strong></td>
+            <td style="text-align: right;"><strong>R$ ${formatMoney(item.valor || 0)}</strong></td>
+            <td>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: ${percent}%;"></div>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
     /**
-     * Renderiza aba Logístico
+     * Renderiza tabela de produtos mais caros (v8.0 - com progress bars)
+     */
+    function renderTableProdutosCaros(dados) {
+      const tbody = document.querySelector('#tableProdutosCaros tbody');
+      if (!tbody) return;
+
+      if (!dados || dados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum dado disponível</td></tr>';
+        return;
+      }
+
+      const maxValor = Math.max(...dados.map(d => d.valor || 0));
+
+      tbody.innerHTML = dados.slice(0, 10).map((item, index) => {
+        const percent = maxValor > 0 ? (item.valor / maxValor * 100) : 0;
+        return `
+          <tr>
+            <td class="ranking-position">${index + 1}</td>
+            <td><strong>${item.produto || 'N/A'}</strong></td>
+            <td style="text-align: right;"><strong>R$ ${formatMoney(item.valor || 0)}</strong></td>
+            <td>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: ${percent}%;"></div>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    /**
+     * Renderiza aba Logístico (v8.0 - 7 KPIs)
      */
     function renderLogisticoTab(kpis) {
       // Renderizar KPIs Logísticos
@@ -1963,33 +2088,46 @@ function loadDashboard() {
       if (!kpiGrid) return;
 
       kpiGrid.innerHTML = `
-        <div class="kpi-card" style="border-left-color: #2196F3;">
-          <div class="kpi-label">Tempo Médio de Aprovação</div>
-          <div class="kpi-value">${(kpis.tempoMedioAprovacao || 0).toFixed(1)}h</div>
+        <div class="kpi-card" style="border-left-color: var(--info);">
+          <div class="kpi-label">TEMPO MÉDIO DE APROVAÇÃO</div>
+          <div class="kpi-value">${(kpis.tempoMedioAprovacao || 0).toFixed(1)} dias</div>
+          <div class="kpi-change">Meta: < 2 dias</div>
         </div>
-        <div class="kpi-card" style="border-left-color: #FF6B35;">
-          <div class="kpi-label">Lead Time Total</div>
+
+        <div class="kpi-card" style="border-left-color: var(--primary);">
+          <div class="kpi-label">LEAD TIME TOTAL</div>
           <div class="kpi-value">${(kpis.leadTimeTotal || 0).toFixed(1)} dias</div>
+          <div class="kpi-change">Meta: < 7 dias</div>
         </div>
-        <div class="kpi-card" style="border-left-color: #4CAF50;">
-          <div class="kpi-label">Taxa de Pedidos no Prazo</div>
+
+        <div class="kpi-card" style="border-left-color: var(--success);">
+          <div class="kpi-label">TAXA DE PEDIDOS NO PRAZO</div>
           <div class="kpi-value">${(kpis.taxaPedidosNoPrazo || 0).toFixed(1)}%</div>
+          <div class="kpi-change">Meta: > 90%</div>
         </div>
-        <div class="kpi-card" style="border-left-color: #F44336;">
-          <div class="kpi-label">Taxa de Cancelamento</div>
+
+        <div class="kpi-card" style="border-left-color: var(--danger);">
+          <div class="kpi-label">TAXA DE CANCELAMENTO</div>
           <div class="kpi-value">${(kpis.taxaCancelamento || 0).toFixed(1)}%</div>
+          <div class="kpi-change">Meta: < 5%</div>
         </div>
-        <div class="kpi-card" style="border-left-color: #FFC107;">
-          <div class="kpi-label">Backlog de Pedidos</div>
-          <div class="kpi-value">${kpis.backlogPedidos || 0}</div>
+
+        <div class="kpi-card" style="border-left-color: var(--warning);">
+          <div class="kpi-label">BACKLOG DE PEDIDOS</div>
+          <div class="kpi-value">${kpis.backlog || kpis.backlogPedidos || 0}</div>
+          <div class="kpi-change">Pedidos pendentes</div>
         </div>
-        <div class="kpi-card" style="border-left-color: #E91E63;">
-          <div class="kpi-label">Taxa de Pedidos Urgentes</div>
+
+        <div class="kpi-card" style="border-left-color: var(--accent);">
+          <div class="kpi-label">TAXA DE PEDIDOS URGENTES</div>
           <div class="kpi-value">${(kpis.taxaPedidosUrgentes || 0).toFixed(1)}%</div>
+          <div class="kpi-change">Meta: < 15%</div>
         </div>
-        <div class="kpi-card" style="border-left-color: #9C27B0;">
-          <div class="kpi-label">Eficiência de Processamento</div>
-          <div class="kpi-value">${(kpis.eficienciaProcessamento || 0).toFixed(1)}%</div>
+
+        <div class="kpi-card" style="border-left-color: var(--info);">
+          <div class="kpi-label">EFICIÊNCIA DE PROCESSAMENTO</div>
+          <div class="kpi-value">${(kpis.eficienciaProcessamento || 0).toFixed(1)}</div>
+          <div class="kpi-change">Pedidos/dia</div>
         </div>
       `;
 
@@ -2063,74 +2201,107 @@ function loadDashboard() {
     }
 
     /**
-     * Renderiza tabela de solicitantes mais ativos
+     * Renderiza tabela de solicitantes mais ativos (v8.0 - com progress bars)
      */
     function renderTableSolicitantes(dados) {
-      const tbody = document.getElementById('tableSolicitantes');
+      const tbody = document.querySelector('#tableSolicitantes tbody');
       if (!tbody) return;
 
       if (!dados || dados.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Nenhum dado disponível</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum dado disponível</td></tr>';
         return;
       }
 
-      tbody.innerHTML = dados.slice(0, 10).map((item, index) => `
-        <tr>
-          <td>${index + 1}. ${item.solicitante || 'N/A'}</td>
-          <td>${item.quantidade || 0}</td>
-          <td>
-            <div style="background: #f0f0f0; border-radius: 4px; height: 20px; position: relative; overflow: hidden;">
-              <div style="background: linear-gradient(90deg, #2196F3, #00A651); height: 100%; width: ${item.percentual || 0}%; border-radius: 4px;"></div>
-            </div>
-          </td>
-        </tr>
-      `).join('');
+      const maxCount = Math.max(...dados.map(d => d.count || d.quantidade || 0));
+
+      tbody.innerHTML = dados.slice(0, 10).map((item, index) => {
+        const count = item.count || item.quantidade || 0;
+        const percent = maxCount > 0 ? (count / maxCount * 100) : 0;
+        return `
+          <tr>
+            <td class="ranking-position">${index + 1}</td>
+            <td><strong>${item.solicitante || 'N/A'}</strong></td>
+            <td style="text-align: right;"><strong>${count}</strong></td>
+            <td>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: ${percent}%; background: #2196F3;"></div>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
     /**
-     * Renderiza aba Estoque
+     * Renderiza aba Estoque (v8.0 - 9 KPIs)
      */
     function renderEstoqueTab(kpis) {
       // Renderizar KPIs de Estoque
       const kpiGrid = document.getElementById('kpiGridEstoque');
       if (!kpiGrid) return;
 
+      // Mostrar alerta de estoque baixo
+      if (kpis.produtosAbaixoMinimo > 0) {
+        const alertElement = document.getElementById('alertEstoqueBaixoTab');
+        const countElement = document.getElementById('countEstoqueBaixoTab');
+        if (alertElement && countElement) {
+          alertElement.style.display = 'block';
+          countElement.textContent = kpis.produtosAbaixoMinimo;
+        }
+      }
+
       kpiGrid.innerHTML = `
-        <div class="kpi-card" style="border-left-color: #00A651;">
-          <div class="kpi-label">Valor Total de Estoque</div>
-          <div class="kpi-value">R$ ${formatMoney(kpis.valorTotal || 0)}</div>
+        <div class="kpi-card" style="border-left-color: var(--success);">
+          <div class="kpi-label">VALOR TOTAL DE ESTOQUE</div>
+          <div class="kpi-value">R$ ${formatMoney(kpis.valorTotalEstoque || kpis.valorTotal || 0)}</div>
         </div>
-        <div class="kpi-card" style="border-left-color: #2196F3;">
-          <div class="kpi-label">Giro de Estoque</div>
+
+        <div class="kpi-card" style="border-left-color: var(--info);">
+          <div class="kpi-label">GIRO DE ESTOQUE</div>
           <div class="kpi-value">${(kpis.giroEstoque || 0).toFixed(2)}x</div>
+          <div class="kpi-change">Meta: > 4x (trimestre)</div>
         </div>
-        <div class="kpi-card" style="border-left-color: #FF6B35;">
-          <div class="kpi-label">Cobertura de Estoque</div>
+
+        <div class="kpi-card" style="border-left-color: var(--warning);">
+          <div class="kpi-label">COBERTURA DE ESTOQUE</div>
           <div class="kpi-value">${(kpis.coberturaEstoque || 0).toFixed(0)} dias</div>
+          <div class="kpi-change">Meta: 30-45 dias</div>
         </div>
-        <div class="kpi-card" style="border-left-color: #F44336;">
-          <div class="kpi-label">Taxa de Ruptura</div>
+
+        <div class="kpi-card" style="border-left-color: var(--danger);">
+          <div class="kpi-label">TAXA DE RUPTURA</div>
           <div class="kpi-value">${(kpis.taxaRuptura || 0).toFixed(1)}%</div>
+          <div class="kpi-change">Meta: < 5%</div>
         </div>
-        <div class="kpi-card" style="border-left-color: #FFC107;">
-          <div class="kpi-label">Produtos Abaixo do Mínimo</div>
+
+        <div class="kpi-card" style="border-left-color: var(--danger);">
+          <div class="kpi-label">PRODUTOS ABAIXO DO MÍNIMO</div>
           <div class="kpi-value">${kpis.produtosAbaixoMinimo || 0}</div>
+          <div class="kpi-change">Reposição urgente</div>
         </div>
-        <div class="kpi-card" style="border-left-color: #4CAF50;">
-          <div class="kpi-label">Acurácia de Estoque</div>
+
+        <div class="kpi-card" style="border-left-color: var(--success);">
+          <div class="kpi-label">ACURÁCIA DE ESTOQUE</div>
           <div class="kpi-value">${(kpis.acuraciaEstoque || 0).toFixed(1)}%</div>
+          <div class="kpi-change">Meta: > 98%</div>
         </div>
-        <div class="kpi-card" style="border-left-color: #9C27B0;">
-          <div class="kpi-label">Idade Média do Estoque</div>
+
+        <div class="kpi-card" style="border-left-color: var(--warning);">
+          <div class="kpi-label">IDADE MÉDIA DO ESTOQUE</div>
           <div class="kpi-value">${(kpis.idadeMediaEstoque || 0).toFixed(0)} dias</div>
+          <div class="kpi-change">Meta: < 90 dias</div>
         </div>
-        <div class="kpi-card" style="border-left-color: #607D8B;">
-          <div class="kpi-label">Produtos Inativos</div>
+
+        <div class="kpi-card" style="border-left-color: var(--accent);">
+          <div class="kpi-label">PRODUTOS INATIVOS</div>
           <div class="kpi-value">${kpis.produtosInativos || 0}</div>
+          <div class="kpi-change">Sem movimentação > 90d</div>
         </div>
-        <div class="kpi-card" style="border-left-color: #E91E63;">
-          <div class="kpi-label">Custo de Armazenagem</div>
+
+        <div class="kpi-card" style="border-left-color: var(--info);">
+          <div class="kpi-label">CUSTO DE ARMAZENAGEM</div>
           <div class="kpi-value">R$ ${formatMoney(kpis.custoArmazenagem || 0)}</div>
+          <div class="kpi-change">2% ao mês</div>
         </div>
       `;
 
@@ -2210,25 +2381,33 @@ function loadDashboard() {
     }
 
     /**
-     * Renderiza tabela de previsão de reposição
+     * Renderiza tabela de previsão de reposição (v8.0 - com progress bars de urgência)
      */
     function renderTablePrevisaoReposicao(dados) {
-      const tbody = document.getElementById('tablePrevisaoReposicao');
+      const tbody = document.querySelector('#tablePrevisaoReposicao tbody');
       if (!tbody) return;
 
       if (!dados || dados.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum dado disponível</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999;">Nenhum produto com previsão de ruptura nos próximos 30 dias</td></tr>';
         return;
       }
 
       tbody.innerHTML = dados.slice(0, 10).map(item => {
-        const urgencia = item.diasParaRuptura <= 7 ? '#F44336' : item.diasParaRuptura <= 15 ? '#FFC107' : '#4CAF50';
+        const diasAteRuptura = item.diasAteRuptura || item.diasParaRuptura || 0;
+        const urgencia = diasAteRuptura < 7 ? 'danger' : diasAteRuptura < 15 ? 'warning' : 'info';
+        const cor = urgencia === 'danger' ? '#F44336' : urgencia === 'warning' ? '#FFC107' : '#2196F3';
+        const percent = Math.max(0, 100 - (diasAteRuptura / 30 * 100));
+
         return `
           <tr>
-            <td>${item.produto || 'N/A'}</td>
-            <td>${item.estoqueAtual || 0}</td>
-            <td style="color: ${urgencia}; font-weight: bold;">${item.diasParaRuptura || 0} dias</td>
-            <td>${item.quantidadeSugerida || 0}</td>
+            <td class="ranking-position" style="color: ${cor};">⚠️</td>
+            <td><strong>${item.produto || 'N/A'}</strong></td>
+            <td style="text-align: right; color: ${cor};"><strong>${diasAteRuptura} dias</strong></td>
+            <td>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: ${percent}%; background: ${cor};"></div>
+              </div>
+            </td>
           </tr>
         `;
       }).join('');
