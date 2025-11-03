@@ -91,6 +91,17 @@ const CONFIG = {
     CANCELADO: 'Cancelado'
   },
 
+  // Alias para compatibilidade com código existente
+  STATUS_PEDIDO: {
+    SOLICITADO: 'Solicitado',
+    EM_ANALISE: 'Em Análise',
+    APROVADO: 'Aprovado',
+    EM_COMPRA: 'Em Compra',
+    AGUARDANDO_ENTREGA: 'Aguardando Entrega',
+    FINALIZADO: 'Finalizado',
+    CANCELADO: 'Cancelado'
+  },
+
   // Tipos de movimentação
   TIPOS_MOVIMENTACAO: {
     ENTRADA: 'ENTRADA',
@@ -110,6 +121,14 @@ const CONFIG = {
     ADMIN: 'Admin',
     GESTOR: 'Gestor',
     FUNCIONARIO: 'Funcionario'
+  },
+
+  // Alias para compatibilidade (v6.0 usava PERMISSOES)
+  PERMISSOES: {
+    ADMIN: 'ADMIN',
+    GESTOR: 'GESTOR',
+    USUARIO: 'USUARIO',
+    VISUALIZADOR: 'VISUALIZADOR'
   },
 
   // Configurações de upload de imagens
@@ -139,6 +158,21 @@ const CONFIG = {
       ULTIMO_ANO: 365
     }
   },
+
+  // Cores padrão Neoformula (para compatibilidade)
+  CORES: {
+    PRIMARY: '#00A651',
+    PRIMARY_DARK: '#008542',
+    SECONDARY: '#2C3E50',
+    ACCENT: '#FF6B35',
+    SUCCESS: '#4CAF50',
+    WARNING: '#FFC107',
+    DANGER: '#F44336',
+    INFO: '#2196F3'
+  },
+
+  // Logo Neoformula
+  LOGO_URL: 'https://neoformula.com.br/cdn/shop/files/Logotipo-NeoFormula-Manipulacao-Homeopatia_76b2fa98-5ffa-4cc3-ac0a-6d41e1bc8810.png?height=100&v=1677088468',
 
   // Versão do sistema
   VERSAO: '8.0',
