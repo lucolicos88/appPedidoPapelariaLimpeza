@@ -194,9 +194,8 @@ function limparImagensOrfas() {
       return { success: true, imagensDeletadas: 0 };
     }
 
-    // Assumindo que a coluna "Imagem URL" está na última posição
-    // AJUSTAR o índice conforme a estrutura real da planilha
-    const colunaImagemUrl = 13; // VERIFICAR E AJUSTAR!
+    // Usar CONFIG para obter índice correto da coluna Imagem URL
+    const colunaImagemUrl = CONFIG.COLUNAS_PRODUTOS.IMAGEM_URL; // Coluna N = índice 14
 
     const dadosProdutos = abaProdutos.getRange(2, 1, lastRow - 1, colunaImagemUrl).getValues();
 

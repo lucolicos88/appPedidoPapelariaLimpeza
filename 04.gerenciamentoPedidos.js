@@ -771,3 +771,315 @@ function enviarNotificacaoPedido(destinatario, dadosPedido) {
     return false;
   }
 }
+
+// ========================================
+// FUNÇÕES v8.0
+// ========================================
+
+/**
+ * Dar baixa em pedido - Remove produtos do estoque e finaliza pedido (v8.0)
+ *
+ * @param {string} pedidoId - ID do pedido (número da linha)
+ * @returns {object} - { success: boolean, message: string }
+ */
+function darBaixaPedido(pedidoId) {
+  try {
+    Logger.log(`🔄 Iniciando baixa do pedido ID: ${pedidoId}`);
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaPedidos = ss.getSheetByName(CONFIG.ABAS.ORDERS);
+    const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
+    const abaMovimentacoes = ss.getSheetByName(CONFIG.ABAS.STOCK_MOVEMENTS);
+
+    // 1. Buscar pedido
+    const linhaPedido = parseInt(pedidoId);
+    if (isNaN(linhaPedido) || linhaPedido < 2) {
+      throw new Error('ID de pedido inválido');
+    }
+
+    const dadosPedido = abaPedidos.getRange(linhaPedido, 1, 1, 15).getValues()[0];
+
+    // Mapear colunas do pedido usando CONFIG
+    const pedido = {
+      id: linhaPedido,
+      numeroPedido: dadosPedido[CONFIG.COLUNAS_PEDIDOS.NUMERO_PEDIDO - 1],
+      tipo: dadosPedido[CONFIG.COLUNAS_PEDIDOS.TIPO - 1],
+      solicitanteEmail: dadosPedido[CONFIG.COLUNAS_PEDIDOS.SOLICITANTE_EMAIL - 1],
+      status: dadosPedido[CONFIG.COLUNAS_PEDIDOS.STATUS - 1],
+      produtos: dadosPedido[CONFIG.COLUNAS_PEDIDOS.PRODUTOS - 1], // JSON string
+      quantidades: dadosPedido[CONFIG.COLUNAS_PEDIDOS.QUANTIDADES - 1] // JSON string
+    };
+
+    // 2. Validar status
+    if (pedido.status !== 'Aguardando Entrega' && pedido.status !== 'Em Compra') {
+      throw new Error(`Pedido não está no status adequado para baixa. Status atual: ${pedido.status}`);
+    }
+
+    // 3. Parsear produtos
+    let produtos = [];
+    let quantidades = [];
+    try {
+      produtos = JSON.parse(pedido.produtos || '[]');
+      quantidades = JSON.parse(pedido.quantidades || '[]');
+    } catch (e) {
+      throw new Error('Erro ao parsear produtos do pedido');
+    }
+
+    if (!produtos || produtos.length === 0) {
+      throw new Error('Pedido não possui produtos');
+    }
+
+    Logger.log(`📦 ${produtos.length} produto(s) a serem baixados`);
+
+    // 4. Processar baixa de cada produto
+    const usuario = Session.getActiveUser().getEmail();
+    const dataHoraAtual = new Date();
+
+    for (let i = 0; i < produtos.length; i++) {
+      const produtoId = produtos[i];
+      const quantidade = quantidades[i];
+
+      // 4.1. Buscar produto no estoque
+      const dadosEstoque = abaEstoque.getDataRange().getValues();
+      let linhaEstoque = -1;
+      let estoqueAtual = 0;
+      let produtoNome = '';
+
+      for (let j = 1; j < dadosEstoque.length; j++) {
+        if (dadosEstoque[j][CONFIG.COLUNAS_ESTOQUE.PRODUTO_ID - 1] == produtoId) {
+          linhaEstoque = j + 1;
+          produtoNome = dadosEstoque[j][CONFIG.COLUNAS_ESTOQUE.PRODUTO_NOME - 1];
+          estoqueAtual = dadosEstoque[j][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL - 1];
+          break;
+        }
+      }
+
+      if (linhaEstoque === -1) {
+        Logger.log(`⚠️ Produto ID ${produtoId} não encontrado no estoque`);
+        continue; // Pula este produto
+      }
+
+      // 4.2. Verificar se há estoque suficiente
+      if (estoqueAtual < quantidade) {
+        throw new Error(`Estoque insuficiente para ${produtoNome}. Disponível: ${estoqueAtual}, Necessário: ${quantidade}`);
+      }
+
+      // 4.3. Dar saída no estoque
+      const novoEstoque = estoqueAtual - quantidade;
+      const estoqueDisponivel = novoEstoque; // Simplificado - ajustar se houver reservas
+
+      abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL).setValue(novoEstoque);
+      abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ESTOQUE_DISPONIVEL).setValue(estoqueDisponivel);
+      abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ULTIMA_ATUALIZACAO).setValue(dataHoraAtual);
+
+      Logger.log(`✅ Baixa realizada: ${produtoNome} - Qtd: ${quantidade} - Estoque anterior: ${estoqueAtual} - Novo estoque: ${novoEstoque}`);
+
+      // 4.4. Registrar movimentação
+      const novaMovimentacao = [];
+      novaMovimentacao[CONFIG.COLUNAS_MOVIMENTACOES.ID - 1] = ''; // Auto-gerado
+      novaMovimentacao[CONFIG.COLUNAS_MOVIMENTACOES.DATA_HORA - 1] = dataHoraAtual;
+      novaMovimentacao[CONFIG.COLUNAS_MOVIMENTACOES.TIPO_MOVIMENTACAO - 1] = 'SAIDA';
+      novaMovimentacao[CONFIG.COLUNAS_MOVIMENTACOES.PRODUTO_ID - 1] = produtoId;
+      novaMovimentacao[CONFIG.COLUNAS_MOVIMENTACOES.PRODUTO_NOME - 1] = produtoNome;
+      novaMovimentacao[CONFIG.COLUNAS_MOVIMENTACOES.QUANTIDADE - 1] = quantidade;
+      novaMovimentacao[CONFIG.COLUNAS_MOVIMENTACOES.ESTOQUE_ANTERIOR - 1] = estoqueAtual;
+      novaMovimentacao[CONFIG.COLUNAS_MOVIMENTACOES.ESTOQUE_ATUAL - 1] = novoEstoque;
+      novaMovimentacao[CONFIG.COLUNAS_MOVIMENTACOES.RESPONSAVEL - 1] = usuario;
+      novaMovimentacao[CONFIG.COLUNAS_MOVIMENTACOES.OBSERVACOES - 1] = `Baixa do pedido #${pedido.numeroPedido}`;
+      novaMovimentacao[CONFIG.COLUNAS_MOVIMENTACOES.PEDIDO_ID - 1] = pedido.numeroPedido;
+
+      abaMovimentacoes.appendRow(novaMovimentacao);
+    }
+
+    // 5. Atualizar status do pedido para "Finalizado"
+    abaPedidos.getRange(linhaPedido, CONFIG.COLUNAS_PEDIDOS.STATUS).setValue('Finalizado');
+    abaPedidos.getRange(linhaPedido, CONFIG.COLUNAS_PEDIDOS.DATA_FINALIZACAO).setValue(dataHoraAtual);
+
+    Logger.log(`✅ Pedido #${pedido.numeroPedido} finalizado com sucesso`);
+
+    return {
+      success: true,
+      message: `Baixa realizada com sucesso! ${produtos.length} produto(s) baixado(s) do estoque.`,
+      pedidoId: pedidoId
+    };
+
+  } catch (error) {
+    Logger.log(`❌ Erro ao dar baixa no pedido: ${error.message}`);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Buscar pedido por ID (v8.0)
+ *
+ * @param {string} pedidoId - ID do pedido (linha da planilha)
+ * @returns {object} - { success: boolean, pedido: object }
+ */
+function getPedidoById(pedidoId) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaPedidos = ss.getSheetByName(CONFIG.ABAS.ORDERS);
+
+    const linhaPedido = parseInt(pedidoId);
+    if (isNaN(linhaPedido) || linhaPedido < 2) {
+      throw new Error('ID de pedido inválido');
+    }
+
+    const dadosPedido = abaPedidos.getRange(linhaPedido, 1, 1, 15).getValues()[0];
+
+    const pedido = {
+      id: linhaPedido,
+      numeroPedido: dadosPedido[CONFIG.COLUNAS_PEDIDOS.NUMERO_PEDIDO - 1],
+      tipo: dadosPedido[CONFIG.COLUNAS_PEDIDOS.TIPO - 1],
+      solicitanteEmail: dadosPedido[CONFIG.COLUNAS_PEDIDOS.SOLICITANTE_EMAIL - 1],
+      solicitanteNome: dadosPedido[CONFIG.COLUNAS_PEDIDOS.SOLICITANTE_NOME - 1],
+      setor: dadosPedido[CONFIG.COLUNAS_PEDIDOS.SETOR - 1],
+      produtos: JSON.parse(dadosPedido[CONFIG.COLUNAS_PEDIDOS.PRODUTOS - 1] || '[]'),
+      quantidades: JSON.parse(dadosPedido[CONFIG.COLUNAS_PEDIDOS.QUANTIDADES - 1] || '[]'),
+      valorTotal: dadosPedido[CONFIG.COLUNAS_PEDIDOS.VALOR_TOTAL - 1],
+      status: dadosPedido[CONFIG.COLUNAS_PEDIDOS.STATUS - 1],
+      dataSolicitacao: dadosPedido[CONFIG.COLUNAS_PEDIDOS.DATA_SOLICITACAO - 1],
+      dataCompra: dadosPedido[CONFIG.COLUNAS_PEDIDOS.DATA_COMPRA - 1],
+      dataFinalizacao: dadosPedido[CONFIG.COLUNAS_PEDIDOS.DATA_FINALIZACAO - 1],
+      prazoEntrega: dadosPedido[CONFIG.COLUNAS_PEDIDOS.PRAZO_ENTREGA - 1],
+      observacoes: dadosPedido[CONFIG.COLUNAS_PEDIDOS.OBSERVACOES - 1]
+    };
+
+    return {
+      success: true,
+      pedido: pedido
+    };
+
+  } catch (error) {
+    Logger.log(`❌ Erro ao buscar pedido: ${error.message}`);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Buscar produtos para aba Solicitação (v8.0)
+ *
+ * @param {string} termo - Termo de busca (nome ou código)
+ * @param {string} tipo - Tipo de produto (Papelaria ou Limpeza)
+ * @returns {object} - { success: boolean, produtos: array }
+ */
+function buscarProdutos(termo, tipo) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+    const lastRow = abaProdutos.getLastRow();
+
+    if (lastRow <= 1) {
+      return { success: true, produtos: [] };
+    }
+
+    const dados = abaProdutos.getRange(2, 1, lastRow - 1, CONFIG.COLUNAS_PRODUTOS.IMAGEM_URL).getValues();
+
+    const termoLower = termo ? termo.toLowerCase() : '';
+
+    const produtosFiltrados = dados
+      .map((row, index) => ({
+        id: row[CONFIG.COLUNAS_PRODUTOS.ID - 1],
+        codigo: row[CONFIG.COLUNAS_PRODUTOS.CODIGO - 1],
+        nome: row[CONFIG.COLUNAS_PRODUTOS.NOME - 1],
+        tipo: row[CONFIG.COLUNAS_PRODUTOS.TIPO - 1],
+        categoria: row[CONFIG.COLUNAS_PRODUTOS.CATEGORIA - 1],
+        unidade: row[CONFIG.COLUNAS_PRODUTOS.UNIDADE - 1],
+        precoUnitario: row[CONFIG.COLUNAS_PRODUTOS.PRECO_UNITARIO - 1] || 0,
+        estoqueMinimo: row[CONFIG.COLUNAS_PRODUTOS.ESTOQUE_MINIMO - 1],
+        fornecedor: row[CONFIG.COLUNAS_PRODUTOS.FORNECEDOR - 1],
+        imagemUrl: row[CONFIG.COLUNAS_PRODUTOS.IMAGEM_URL - 1],
+        ativo: row[CONFIG.COLUNAS_PRODUTOS.ATIVO - 1]
+      }))
+      .filter(p => {
+        // Filtrar por tipo se especificado
+        if (tipo && p.tipo !== tipo) return false;
+
+        // Filtrar por termo de busca
+        if (termoLower) {
+          const match =
+            p.nome.toLowerCase().includes(termoLower) ||
+            p.codigo.toLowerCase().includes(termoLower) ||
+            (p.categoria && p.categoria.toLowerCase().includes(termoLower));
+          if (!match) return false;
+        }
+
+        // Apenas produtos ativos
+        return p.ativo !== false && p.ativo !== 'Não' && p.ativo !== 'N';
+      })
+      .slice(0, 20); // Limitar a 20 resultados
+
+    return {
+      success: true,
+      produtos: produtosFiltrados
+    };
+
+  } catch (error) {
+    Logger.log(`❌ Erro ao buscar produtos: ${error.message}`);
+    return {
+      success: false,
+      error: error.message,
+      produtos: []
+    };
+  }
+}
+
+/**
+ * Buscar solicitações do usuário logado (v8.0)
+ *
+ * @param {string} email - Email do usuário
+ * @returns {object} - { success: boolean, pedidos: array }
+ */
+function getMinhasSolicitacoes(email) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaPedidos = ss.getSheetByName(CONFIG.ABAS.ORDERS);
+    const lastRow = abaPedidos.getLastRow();
+
+    if (lastRow <= 1) {
+      return { success: true, pedidos: [] };
+    }
+
+    const dados = abaPedidos.getRange(2, 1, lastRow - 1, 15).getValues();
+
+    const pedidos = dados
+      .map((row, index) => ({
+        id: index + 2,
+        numeroPedido: row[CONFIG.COLUNAS_PEDIDOS.NUMERO_PEDIDO - 1],
+        tipo: row[CONFIG.COLUNAS_PEDIDOS.TIPO - 1],
+        solicitanteEmail: row[CONFIG.COLUNAS_PEDIDOS.SOLICITANTE_EMAIL - 1],
+        solicitanteNome: row[CONFIG.COLUNAS_PEDIDOS.SOLICITANTE_NOME - 1],
+        status: row[CONFIG.COLUNAS_PEDIDOS.STATUS - 1],
+        valorTotal: row[CONFIG.COLUNAS_PEDIDOS.VALOR_TOTAL - 1],
+        dataSolicitacao: row[CONFIG.COLUNAS_PEDIDOS.DATA_SOLICITACAO - 1],
+        observacoes: row[CONFIG.COLUNAS_PEDIDOS.OBSERVACOES - 1]
+      }))
+      .filter(p => p.solicitanteEmail === email)
+      .sort((a, b) => {
+        // Ordenar por data mais recente
+        const dataA = a.dataSolicitacao ? new Date(a.dataSolicitacao) : new Date(0);
+        const dataB = b.dataSolicitacao ? new Date(b.dataSolicitacao) : new Date(0);
+        return dataB - dataA;
+      })
+      .slice(0, 10); // Últimas 10 solicitações
+
+    return {
+      success: true,
+      pedidos: pedidos
+    };
+
+  } catch (error) {
+    Logger.log(`❌ Erro ao buscar solicitações: ${error.message}`);
+    return {
+      success: false,
+      error: error.message,
+      pedidos: []
+    };
+  }
+}
