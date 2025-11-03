@@ -40,6 +40,13 @@ function getDashboardAvancado(filtros) {
     const dadosMovimentacoes = (abaMovimentacoes && lastRowMovimentacoes > 1) ? abaMovimentacoes.getRange(2, 1, lastRowMovimentacoes - 1, 10).getValues() : [];
     const dadosUsuarios = (abaUsuarios && lastRowUsuarios > 1) ? abaUsuarios.getRange(2, 1, lastRowUsuarios - 1, 5).getValues() : [];
 
+    // 🐛 DEBUG: Log dados carregados
+    Logger.log('📊 getDashboardAvancado - Dados carregados da planilha:');
+    Logger.log('   Pedidos: ' + dadosPedidos.length);
+    Logger.log('   Produtos: ' + dadosProdutos.length);
+    Logger.log('   Estoque: ' + dadosEstoque.length);
+    Logger.log('🔍 Filtros recebidos no getDashboardAvancado: ' + JSON.stringify(filtros));
+
     // Aplicar filtros
     const pedidosFiltrados = aplicarFiltrosPedidos(dadosPedidos, filtros);
 
@@ -70,6 +77,10 @@ function getDashboardAvancado(filtros) {
  * Aplica filtros aos pedidos
  */
 function aplicarFiltrosPedidos(dadosPedidos, filtros) {
+  // 🐛 DEBUG: Log dos filtros recebidos
+  Logger.log('🔍 aplicarFiltrosPedidos - Total de pedidos recebidos: ' + dadosPedidos.length);
+  Logger.log('🔍 Filtros recebidos: ' + JSON.stringify(filtros));
+
   const pedidosFiltrados = [];
 
   for (let i = 0; i < dadosPedidos.length; i++) {
@@ -121,6 +132,9 @@ function aplicarFiltrosPedidos(dadosPedidos, filtros) {
       pedidosFiltrados.push(dadosPedidos[i]);
     }
   }
+
+  // 🐛 DEBUG: Log dos pedidos filtrados
+  Logger.log('🔍 Total de pedidos após filtros: ' + pedidosFiltrados.length);
 
   return pedidosFiltrados;
 }
