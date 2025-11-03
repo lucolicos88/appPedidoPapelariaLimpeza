@@ -29,10 +29,9 @@ const CONFIG = {
     ESTOQUE_MINIMO: 8,        // H - Estoque Mínimo
     PONTO_PEDIDO: 9,          // I - Ponto de Pedido
     FORNECEDOR: 10,           // J - Fornecedor
-    IMAGEM_URL_OLD: 11,       // K - ImagemURL (antiga, descontinuada)
+    IMAGEM_URL: 11,           // K - ImagemURL (v8.0)
     ATIVO: 12,                // L - Ativo
-    DATA_CADASTRO: 13,        // M - Data Cadastro
-    IMAGEM_URL: 14            // N - Imagem URL (v8.0)
+    DATA_CADASTRO: 13         // M - Data Cadastro
   },
 
   // Mapeamento de colunas - ABA PEDIDOS

@@ -1,8 +1,13 @@
 /**
  * ========================================
- * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v6.0.1
+ * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v8.0
  * Módulo: Gerenciamento de Produtos
  * ========================================
+ *
+ * NOVIDADES v8.0:
+ * - Uso de CONFIG para mapeamento de colunas
+ * - ImagemURL na coluna K (índice 11)
+ * - Compatibilidade total com estrutura v8.0
  *
  * NOVIDADES v6.0:
  * - Upload de imagens com preview
@@ -40,21 +45,21 @@ function listarProdutos(filtros) {
     
     for (let i = 1; i < dados.length; i++) {
       if (!dados[i][0]) continue; // Pular linhas vazias
-      
+
       const produto = {
-        id: dados[i][0],
-        codigo: dados[i][1],
-        nome: dados[i][2],
-        tipo: dados[i][3],
-        categoria: dados[i][4],
-        unidade: dados[i][5],
-        precoUnitario: dados[i][6],
-        estoqueMinimo: dados[i][7] || 0,
-        pontoPedido: dados[i][8] || 0,
-        fornecedor: dados[i][9],
-        imagemURL: dados[i][10] || '',
-        ativo: dados[i][11] !== undefined ? dados[i][11] : 'Sim',
-        dataCadastro: dados[i][12]
+        id: dados[i][CONFIG.COLUNAS_PRODUTOS.ID - 1],
+        codigo: dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO - 1],
+        nome: dados[i][CONFIG.COLUNAS_PRODUTOS.NOME - 1],
+        tipo: dados[i][CONFIG.COLUNAS_PRODUTOS.TIPO - 1],
+        categoria: dados[i][CONFIG.COLUNAS_PRODUTOS.CATEGORIA - 1],
+        unidade: dados[i][CONFIG.COLUNAS_PRODUTOS.UNIDADE - 1],
+        precoUnitario: dados[i][CONFIG.COLUNAS_PRODUTOS.PRECO_UNITARIO - 1],
+        estoqueMinimo: dados[i][CONFIG.COLUNAS_PRODUTOS.ESTOQUE_MINIMO - 1] || 0,
+        pontoPedido: dados[i][CONFIG.COLUNAS_PRODUTOS.PONTO_PEDIDO - 1] || 0,
+        fornecedor: dados[i][CONFIG.COLUNAS_PRODUTOS.FORNECEDOR - 1],
+        imagemURL: dados[i][CONFIG.COLUNAS_PRODUTOS.IMAGEM_URL - 1] || '',
+        ativo: dados[i][CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] !== undefined ? dados[i][CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] : 'Sim',
+        dataCadastro: dados[i][CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO - 1]
       };
       
       // Aplicar filtros
@@ -127,24 +132,25 @@ function buscarProduto(identificador) {
       return { success: false, error: 'Produto não encontrado' };
     }
 
-    const dados = abaProdutos.getRange(2, 1, lastRow - 1, 13).getValues();
+    const dados = abaProdutos.getRange(2, 1, lastRow - 1, CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO).getValues();
 
     for (let i = 0; i < dados.length; i++) {
-      if (dados[i][0] === identificadorStr || dados[i][1] === identificadorStr) {
+      if (dados[i][CONFIG.COLUNAS_PRODUTOS.ID - 1] === identificadorStr ||
+          dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO - 1] === identificadorStr) {
         const produto = {
-          id: String(dados[i][0]),
-          codigo: String(dados[i][1]),
-          nome: String(dados[i][2]),
-          tipo: String(dados[i][3]),
-          categoria: String(dados[i][4]),
-          unidade: String(dados[i][5]),
-          precoUnitario: parseFloat(dados[i][6]) || 0,
-          estoqueMinimo: parseInt(dados[i][7]) || 0,
-          pontoPedido: parseInt(dados[i][8]) || 0,
-          fornecedor: String(dados[i][9] || ''),
-          imagemURL: String(dados[i][10] || ''),
-          ativo: String(dados[i][11] !== undefined ? dados[i][11] : 'Sim'),
-          dataCadastro: dados[i][12]
+          id: String(dados[i][CONFIG.COLUNAS_PRODUTOS.ID - 1]),
+          codigo: String(dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO - 1]),
+          nome: String(dados[i][CONFIG.COLUNAS_PRODUTOS.NOME - 1]),
+          tipo: String(dados[i][CONFIG.COLUNAS_PRODUTOS.TIPO - 1]),
+          categoria: String(dados[i][CONFIG.COLUNAS_PRODUTOS.CATEGORIA - 1]),
+          unidade: String(dados[i][CONFIG.COLUNAS_PRODUTOS.UNIDADE - 1]),
+          precoUnitario: parseFloat(dados[i][CONFIG.COLUNAS_PRODUTOS.PRECO_UNITARIO - 1]) || 0,
+          estoqueMinimo: parseInt(dados[i][CONFIG.COLUNAS_PRODUTOS.ESTOQUE_MINIMO - 1]) || 0,
+          pontoPedido: parseInt(dados[i][CONFIG.COLUNAS_PRODUTOS.PONTO_PEDIDO - 1]) || 0,
+          fornecedor: String(dados[i][CONFIG.COLUNAS_PRODUTOS.FORNECEDOR - 1] || ''),
+          imagemURL: String(dados[i][CONFIG.COLUNAS_PRODUTOS.IMAGEM_URL - 1] || ''),
+          ativo: String(dados[i][CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] !== undefined ? dados[i][CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] : 'Sim'),
+          dataCadastro: dados[i][CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO - 1]
         };
 
         // Armazenar no cache (tanto por ID quanto por código)
@@ -226,7 +232,7 @@ function cadastrarProduto(dadosProduto) {
     // Verificar se código já existe
     const dados = abaProdutos.getDataRange().getValues();
     for (let i = 1; i < dados.length; i++) {
-      if (dados[i][1] === dadosProduto.codigo) {
+      if (dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO - 1] === dadosProduto.codigo) {
         return {
           success: false,
           error: 'Código de produto já existe'
@@ -256,38 +262,36 @@ function cadastrarProduto(dadosProduto) {
       }
     }
     
-    // Adicionar produto
-    const novoProduto = [
-      id,
-      dadosProduto.codigo,
-      dadosProduto.nome,
-      dadosProduto.tipo,
-      dadosProduto.categoria || '',
-      dadosProduto.unidade || 'UN',
-      dadosProduto.precoUnitario || 0,
-      dadosProduto.estoqueMinimo || 0,
-      dadosProduto.pontoPedido || 0,
-      dadosProduto.fornecedor || '',
-      imagemURL,
-      'Sim',
-      new Date()
-    ];
+    // Adicionar produto usando CONFIG
+    const novoProduto = [];
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.ID - 1] = id;
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.CODIGO - 1] = dadosProduto.codigo;
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.NOME - 1] = dadosProduto.nome;
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.TIPO - 1] = dadosProduto.tipo;
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.CATEGORIA - 1] = dadosProduto.categoria || '';
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.UNIDADE - 1] = dadosProduto.unidade || 'UN';
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.PRECO_UNITARIO - 1] = dadosProduto.precoUnitario || 0;
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.ESTOQUE_MINIMO - 1] = dadosProduto.estoqueMinimo || 0;
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.PONTO_PEDIDO - 1] = dadosProduto.pontoPedido || 0;
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.FORNECEDOR - 1] = dadosProduto.fornecedor || '';
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.IMAGEM_URL - 1] = imagemURL;
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] = 'Sim';
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO - 1] = new Date();
     
     abaProdutos.appendRow(novoProduto);
     
-    // Criar registro de estoque inicial
+    // Criar registro de estoque inicial usando CONFIG
     const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
     if (abaEstoque) {
-      const novoEstoque = [
-        Utilities.getUuid(),
-        id,
-        dadosProduto.nome,
-        0, // Quantidade atual
-        0, // Quantidade reservada
-        0, // Estoque disponível
-        new Date(),
-        email
-      ];
+      const novoEstoque = [];
+      novoEstoque[CONFIG.COLUNAS_ESTOQUE.ID - 1] = Utilities.getUuid();
+      novoEstoque[CONFIG.COLUNAS_ESTOQUE.PRODUTO_ID - 1] = id;
+      novoEstoque[CONFIG.COLUNAS_ESTOQUE.PRODUTO_NOME - 1] = dadosProduto.nome;
+      novoEstoque[CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL - 1] = 0;
+      novoEstoque[CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_RESERVADA - 1] = 0;
+      novoEstoque[CONFIG.COLUNAS_ESTOQUE.ESTOQUE_DISPONIVEL - 1] = 0;
+      novoEstoque[CONFIG.COLUNAS_ESTOQUE.ULTIMA_ATUALIZACAO - 1] = new Date();
+      novoEstoque[CONFIG.COLUNAS_ESTOQUE.RESPONSAVEL - 1] = email;
       abaEstoque.appendRow(novoEstoque);
     }
     
@@ -333,39 +337,39 @@ function atualizarProduto(produtoId, dadosAtualizados) {
     }
     
     const dados = abaProdutos.getDataRange().getValues();
-    
+
     // Procurar produto
     for (let i = 1; i < dados.length; i++) {
-      if (dados[i][0] === produtoId) {
-        // Atualizar campos
+      if (dados[i][CONFIG.COLUNAS_PRODUTOS.ID - 1] === produtoId) {
+        // Atualizar campos usando CONFIG
         if (dadosAtualizados.codigo) {
-          abaProdutos.getRange(i + 1, 2).setValue(dadosAtualizados.codigo);
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.CODIGO).setValue(dadosAtualizados.codigo);
         }
         if (dadosAtualizados.nome) {
-          abaProdutos.getRange(i + 1, 3).setValue(dadosAtualizados.nome);
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.NOME).setValue(dadosAtualizados.nome);
         }
         if (dadosAtualizados.tipo) {
-          abaProdutos.getRange(i + 1, 4).setValue(dadosAtualizados.tipo);
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.TIPO).setValue(dadosAtualizados.tipo);
         }
         if (dadosAtualizados.categoria) {
-          abaProdutos.getRange(i + 1, 5).setValue(dadosAtualizados.categoria);
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.CATEGORIA).setValue(dadosAtualizados.categoria);
         }
         if (dadosAtualizados.unidade) {
-          abaProdutos.getRange(i + 1, 6).setValue(dadosAtualizados.unidade);
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.UNIDADE).setValue(dadosAtualizados.unidade);
         }
         if (dadosAtualizados.precoUnitario !== undefined) {
-          abaProdutos.getRange(i + 1, 7).setValue(dadosAtualizados.precoUnitario);
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.PRECO_UNITARIO).setValue(dadosAtualizados.precoUnitario);
         }
         if (dadosAtualizados.estoqueMinimo !== undefined) {
-          abaProdutos.getRange(i + 1, 8).setValue(dadosAtualizados.estoqueMinimo);
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.ESTOQUE_MINIMO).setValue(dadosAtualizados.estoqueMinimo);
         }
         if (dadosAtualizados.pontoPedido !== undefined) {
-          abaProdutos.getRange(i + 1, 9).setValue(dadosAtualizados.pontoPedido);
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.PONTO_PEDIDO).setValue(dadosAtualizados.pontoPedido);
         }
         if (dadosAtualizados.fornecedor) {
-          abaProdutos.getRange(i + 1, 10).setValue(dadosAtualizados.fornecedor);
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.FORNECEDOR).setValue(dadosAtualizados.fornecedor);
         }
-        
+
         // Atualizar imagem se fornecida
         if (dadosAtualizados.imagemBase64) {
           const resultadoUpload = uploadImagemProduto({
@@ -373,22 +377,22 @@ function atualizarProduto(produtoId, dadosAtualizados) {
             fileName: dadosAtualizados.imagemFileName || 'produto.jpg',
             mimeType: dadosAtualizados.imagemMimeType || 'image/jpeg',
             produtoId: produtoId,
-            produtoNome: dadosAtualizados.nome || dados[i][2],
-            tipo: dadosAtualizados.tipo || dados[i][3]
+            produtoNome: dadosAtualizados.nome || dados[i][CONFIG.COLUNAS_PRODUTOS.NOME - 1],
+            tipo: dadosAtualizados.tipo || dados[i][CONFIG.COLUNAS_PRODUTOS.TIPO - 1]
           });
-          
+
           if (resultadoUpload.success) {
-            abaProdutos.getRange(i + 1, 11).setValue(resultadoUpload.imageUrl);
+            abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.IMAGEM_URL).setValue(resultadoUpload.imageUrl);
           }
         }
-        
+
         if (dadosAtualizados.ativo !== undefined) {
-          abaProdutos.getRange(i + 1, 12).setValue(dadosAtualizados.ativo);
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.ATIVO).setValue(dadosAtualizados.ativo);
         }
-        
+
         // Registrar log
-        registrarLog('PRODUTO_ATUALIZADO', `Produto ${dados[i][2]} atualizado`, 'SUCESSO');
-        
+        registrarLog('PRODUTO_ATUALIZADO', `Produto ${dados[i][CONFIG.COLUNAS_PRODUTOS.NOME - 1]} atualizado`, 'SUCESSO');
+
         return {
           success: true,
           message: 'Produto atualizado com sucesso'
@@ -493,25 +497,25 @@ function getAnaliseProdutos() {
     const produtosEmAlerta = [];
     
     for (let i = 1; i < dadosProdutos.length; i++) {
-      if (!dadosProdutos[i][0]) continue;
-      
+      if (!dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ID - 1]) continue;
+
       totalProdutos++;
-      
-      if (dadosProdutos[i][11] === 'Sim') {
+
+      if (dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] === 'Sim') {
         produtosAtivos++;
       }
-      
-      const produtoId = dadosProdutos[i][0];
-      const produtoNome = dadosProdutos[i][2];
-      const estoqueMinimo = dadosProdutos[i][7] || 0;
-      const pontoPedido = dadosProdutos[i][8] || 0;
-      const precoUnitario = dadosProdutos[i][6] || 0;
-      
-      // Buscar estoque atual
+
+      const produtoId = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ID - 1];
+      const produtoNome = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.NOME - 1];
+      const estoqueMinimo = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ESTOQUE_MINIMO - 1] || 0;
+      const pontoPedido = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.PONTO_PEDIDO - 1] || 0;
+      const precoUnitario = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.PRECO_UNITARIO - 1] || 0;
+
+      // Buscar estoque atual usando CONFIG
       let qtdAtual = 0;
       for (let j = 1; j < dadosEstoque.length; j++) {
-        if (dadosEstoque[j][1] === produtoId) {
-          qtdAtual = dadosEstoque[j][3] || 0;
+        if (dadosEstoque[j][CONFIG.COLUNAS_ESTOQUE.PRODUTO_ID - 1] === produtoId) {
+          qtdAtual = dadosEstoque[j][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL - 1] || 0;
           break;
         }
       }
