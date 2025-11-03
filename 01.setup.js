@@ -1,9 +1,13 @@
 /**
  * ========================================
- * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v6.0
+ * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v8.0
  * Módulo: Setup e Configuração Principal
  * ========================================
- * 
+ *
+ * NOVIDADES v8.0:
+ * - CONFIG movido para 01.config.js (separado)
+ * - Usa CONFIG global do arquivo 01.config.js
+ *
  * NOVIDADES v6.0:
  * - Logo Neoformula integrado
  * - Sem tela de login (acesso direto)
@@ -14,60 +18,8 @@
  * - Correção de bugs de usuários
  */
 
-// Configurações globais do sistema
-const CONFIG = {
-  // Versão
-  VERSAO: '6.0',
-  
-  // Nomes das abas
-  ABAS: {
-    CONFIG: 'Configurações',
-    USERS: 'Usuários',
-    PRODUCTS: 'Produtos',
-    ORDERS: 'Pedidos',
-    STOCK: 'Estoque',
-    STOCK_MOVEMENTS: 'Movimentações Estoque',
-    LOGS: 'Registros',
-    KPIS: 'Indicadores'
-  },
-  
-  // Níveis de permissão
-  PERMISSOES: {
-    ADMIN: 'ADMIN',
-    GESTOR: 'GESTOR',
-    USUARIO: 'USUARIO',
-    VISUALIZADOR: 'VISUALIZADOR'
-  },
-  
-  // Status de pedidos
-  STATUS_PEDIDO: {
-    SOLICITADO: 'Solicitado',
-    EM_COMPRA: 'Em Compra',
-    FINALIZADO: 'Finalizado',
-    CANCELADO: 'Cancelado'
-  },
-  
-  // Tipos de produtos
-  TIPOS_PRODUTO: {
-    PAPELARIA: 'Papelaria',
-    LIMPEZA: 'Limpeza'
-  },
-  
-  // Cores padrão Neoformula
-  CORES: {
-    PRIMARY: '#00A651',
-    PRIMARY_DARK: '#008542',
-    SECONDARY: '#2C3E50',
-    ACCENT: '#FF6B35',
-    SUCCESS: '#4CAF50',
-    WARNING: '#FFC107',
-    DANGER: '#F44336',
-    INFO: '#2196F3'
-  },
-  
-  // Logo Neoformula
-  LOGO_URL: 'https://neoformula.com.br/cdn/shop/files/Logotipo-NeoFormula-Manipulacao-Homeopatia_76b2fa98-5ffa-4cc3-ac0a-6d41e1bc8810.png?height=100&v=1677088468'
-};
+// CONFIG é declarado em 01.config.js e disponível globalmente
+// Não precisa redeclarar aqui
 
 /**
  * Configuração inicial da planilha v6.0
