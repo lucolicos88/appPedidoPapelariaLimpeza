@@ -790,11 +790,11 @@
         <div class="filters">
           <div class="filter-grid">
             <div class="form-group">
-              <label class="form-label">Data Início</label>
+              <label class="form-label">Data Início <span style="color: #999; font-size: 0.85em;">(opcional)</span></label>
               <input type="date" class="form-control" id="dashFilterDataInicio">
             </div>
             <div class="form-group">
-              <label class="form-label">Data Fim</label>
+              <label class="form-label">Data Fim <span style="color: #999; font-size: 0.85em;">(opcional)</span></label>
               <input type="date" class="form-control" id="dashFilterDataFim">
             </div>
             <div class="form-group">
@@ -816,8 +816,11 @@
               </select>
             </div>
             <div class="form-group">
-              <button class="btn btn-primary" onclick="applyDashboardFilters()" style="width: 100%;">
+              <button class="btn btn-primary" onclick="applyDashboardFilters()" style="width: 100%; margin-bottom: 8px;">
                 ✓ Aplicar Filtros
+              </button>
+              <button class="btn" onclick="clearDashboardFilters()" style="width: 100%; background: #f5f5f5; color: #666; border: 1px solid #ddd;">
+                ✕ Limpar Filtros
               </button>
             </div>
           </div>
@@ -825,16 +828,16 @@
 
         <!-- Tabs de Navegação -->
         <div style="display: flex; gap: 10px; margin: 20px 0; border-bottom: 2px solid #f0f0f0;">
-          <button class="tab-btn active" onclick="switchDashboardTab('resumo')" id="tab-btn-resumo" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid var(--primary); cursor: pointer; font-weight: 600; color: var(--primary);">
+          <button class="tab-btn active" onclick="switchDashboardTab('resumo')" id="tab-btn-resumo">
             📊 Resumo
           </button>
-          <button class="tab-btn" onclick="switchDashboardTab('financeiro')" id="tab-btn-financeiro" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; color: #666;">
+          <button class="tab-btn" onclick="switchDashboardTab('financeiro')" id="tab-btn-financeiro">
             💰 Financeiro
           </button>
-          <button class="tab-btn" onclick="switchDashboardTab('logistico')" id="tab-btn-logistico" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; color: #666;">
+          <button class="tab-btn" onclick="switchDashboardTab('logistico')" id="tab-btn-logistico">
             🚚 Logístico
           </button>
-          <button class="tab-btn" onclick="switchDashboardTab('estoque')" id="tab-btn-estoque" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; color: #666;">
+          <button class="tab-btn" onclick="switchDashboardTab('estoque')" id="tab-btn-estoque">
             📦 Estoque
           </button>
         </div>
@@ -1869,6 +1872,22 @@ function loadDashboard() {
      * Aplica filtros no dashboard
      */
     function applyDashboardFilters() {
+      loadDashboard();
+    }
+
+    /**
+     * Limpa todos os filtros e recarrega dashboard com histórico completo
+     */
+    function clearDashboardFilters() {
+      // Limpar campos de data
+      document.getElementById('dashFilterDataInicio').value = '';
+      document.getElementById('dashFilterDataFim').value = '';
+
+      // Resetar selects para "Todos"
+      document.getElementById('dashFilterTipo').value = '';
+      document.getElementById('dashFilterStatus').value = '';
+
+      // Recarregar dashboard
       loadDashboard();
     }
 
