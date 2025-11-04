@@ -14,7 +14,7 @@
 /**
  * FUNÇÃO DE TESTE - Insere dados fictícios com IDs auto-gerados
  */
-function testarInsercaoDadosFicticio sV2() {
+function testarInsercaoDadosFicticiosV2() {
   Logger.log('🧪 INICIANDO TESTE DE INSERÇÃO V2 (Auto-detect IDs)...');
 
   try {
