@@ -5,7 +5,162 @@
  * ========================================
  *
  * Este módulo permite inserir dados fictícios na planilha para testes de KPIs
+ *
+ * COMO EXECUTAR VIA APPS SCRIPT EDITOR:
+ * 1. Selecione a função "testarInsercaoDadosFicticios" no dropdown
+ * 2. Clique no botão "Executar" (▶️)
+ * 3. Veja os logs em "Execuções" ou pressione Ctrl+Enter
  */
+
+/**
+ * FUNÇÃO DE TESTE - Execute esta função pelo Apps Script Editor
+ * Não requer autenticação de usuário Admin (apenas para testes)
+ */
+function testarInsercaoDadosFicticios() {
+  Logger.log('🧪 INICIANDO TESTE DE INSERÇÃO DE DADOS FICTÍCIOS...');
+  Logger.log('⚠️ Esta função ignora a verificação de perfil Admin para testes');
+
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const userEmail = Session.getActiveUser().getEmail();
+
+    Logger.log('📊 Iniciando inserção de dados fictícios...');
+    Logger.log('👤 Usuário: ' + userEmail);
+
+    let resultado = {
+      sucesso: true,
+      pedidos: 0,
+      produtos: 0,
+      estoque: 0,
+      movimentacoes: 0,
+      erros: []
+    };
+
+    // 1. Inserir Produtos
+    try {
+      resultado.produtos = inserirProdutosFicticios(ss);
+      Logger.log(`✅ ${resultado.produtos} produtos inseridos`);
+    } catch (error) {
+      Logger.log('❌ Erro ao inserir produtos: ' + error.message);
+      resultado.erros.push('Produtos: ' + error.message);
+    }
+
+    // 2. Inserir Estoque
+    try {
+      resultado.estoque = inserirEstoqueFicticio(ss, userEmail);
+      Logger.log(`✅ ${resultado.estoque} registros de estoque inseridos`);
+    } catch (error) {
+      Logger.log('❌ Erro ao inserir estoque: ' + error.message);
+      resultado.erros.push('Estoque: ' + error.message);
+    }
+
+    // 3. Inserir Pedidos
+    try {
+      resultado.pedidos = inserirPedidosFicticios(ss, userEmail);
+      Logger.log(`✅ ${resultado.pedidos} pedidos inseridos`);
+    } catch (error) {
+      Logger.log('❌ Erro ao inserir pedidos: ' + error.message);
+      resultado.erros.push('Pedidos: ' + error.message);
+    }
+
+    // 4. Inserir Movimentações
+    try {
+      resultado.movimentacoes = inserirMovimentacoesFicticias(ss, userEmail);
+      Logger.log(`✅ ${resultado.movimentacoes} movimentações inseridas`);
+    } catch (error) {
+      Logger.log('❌ Erro ao inserir movimentações: ' + error.message);
+      resultado.erros.push('Movimentações: ' + error.message);
+    }
+
+    Logger.log('');
+    Logger.log('✅ ===== RESUMO DA INSERÇÃO =====');
+    Logger.log(`📦 Produtos inseridos: ${resultado.produtos}`);
+    Logger.log(`📊 Registros de estoque: ${resultado.estoque}`);
+    Logger.log(`🛒 Pedidos inseridos: ${resultado.pedidos}`);
+    Logger.log(`📝 Movimentações inseridas: ${resultado.movimentacoes}`);
+
+    if (resultado.erros.length > 0) {
+      Logger.log('');
+      Logger.log('⚠️ AVISOS:');
+      resultado.erros.forEach(erro => Logger.log('  • ' + erro));
+    }
+
+    Logger.log('');
+    Logger.log('🎯 Agora abra o Dashboard e verifique os KPIs!');
+    Logger.log('📊 Valores esperados:');
+    Logger.log('   • Total de Pedidos: 11 (excluindo cancelado)');
+    Logger.log('   • Valor Total: R$ 3.526,80');
+    Logger.log('   • Ticket Médio: R$ 320,62');
+    Logger.log('   • Estoque Baixo: 2 produtos (Caderno e Álcool)');
+
+    return resultado;
+
+  } catch (error) {
+    Logger.log('❌ ERRO GERAL: ' + error.message);
+    Logger.log('Stack: ' + error.stack);
+    throw error;
+  }
+}
+
+/**
+ * FUNÇÃO DE TESTE - Limpa dados fictícios (Execute pelo Apps Script Editor)
+ */
+function testarLimpezaDadosFicticios() {
+  Logger.log('🧪 INICIANDO TESTE DE LIMPEZA DE DADOS FICTÍCIOS...');
+  Logger.log('⚠️ Esta função ignora a verificação de perfil Admin para testes');
+
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    Logger.log('🗑️ Iniciando limpeza de dados fictícios...');
+
+    let resultado = {
+      sucesso: true,
+      pedidos: 0,
+      produtos: 0,
+      estoque: 0,
+      movimentacoes: 0
+    };
+
+    // IDs fictícios a remover
+    const idsPedidosFicticios = ['PED-001', 'PED-002', 'PED-003', 'PED-004', 'PED-005', 'PED-006', 'PED-007', 'PED-008', 'PED-009', 'PED-010', 'PED-011', 'PED-012'];
+    const idsProdutosFicticios = ['PROD-021', 'PROD-022', 'PROD-023', 'PROD-024', 'PROD-025'];
+    const idsEstoqueFicticios = ['EST-001', 'EST-002', 'EST-003', 'EST-004', 'EST-005'];
+    const idsMovimentacoesFicticias = ['MOV-001', 'MOV-002', 'MOV-003'];
+
+    // Remover Pedidos
+    resultado.pedidos = removerLinhasPorIds(ss, CONFIG.ABAS.ORDERS, idsPedidosFicticios);
+    Logger.log(`✅ ${resultado.pedidos} pedidos removidos`);
+
+    // Remover Movimentações
+    resultado.movimentacoes = removerLinhasPorIds(ss, CONFIG.ABAS.STOCK_MOVEMENTS, idsMovimentacoesFicticias);
+    Logger.log(`✅ ${resultado.movimentacoes} movimentações removidas`);
+
+    // Remover Estoque
+    resultado.estoque = removerLinhasPorIds(ss, CONFIG.ABAS.STOCK, idsEstoqueFicticios);
+    Logger.log(`✅ ${resultado.estoque} registros de estoque removidos`);
+
+    // Remover Produtos
+    resultado.produtos = removerLinhasPorIds(ss, CONFIG.ABAS.PRODUCTS, idsProdutosFicticios);
+    Logger.log(`✅ ${resultado.produtos} produtos removidos`);
+
+    Logger.log('');
+    Logger.log('✅ ===== RESUMO DA LIMPEZA =====');
+    Logger.log(`📦 Produtos removidos: ${resultado.produtos}`);
+    Logger.log(`📊 Registros de estoque: ${resultado.estoque}`);
+    Logger.log(`🛒 Pedidos removidos: ${resultado.pedidos}`);
+    Logger.log(`📝 Movimentações removidas: ${resultado.movimentacoes}`);
+    Logger.log('');
+    Logger.log('✅ Dados fictícios removidos com sucesso!');
+
+    return resultado;
+
+  } catch (error) {
+    Logger.log('❌ ERRO GERAL: ' + error.message);
+    Logger.log('Stack: ' + error.stack);
+    throw error;
+  }
+}
 
 /**
  * Insere todos os dados fictícios na planilha
