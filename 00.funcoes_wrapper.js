@@ -409,6 +409,55 @@ function __atualizarImagemProduto(imagemUrlAntiga, base64Nova, fileName, mimeTyp
 }
 
 // ========================================
+// DADOS FICTÍCIOS (v8.0)
+// ========================================
+
+/**
+ * Wrapper para inserir dados fictícios
+ */
+function __inserirDadosFicticios() {
+  try {
+    Logger.log('🔄 __inserirDadosFicticios chamado');
+    var resultado = inserirDadosFicticios();
+    Logger.log('📤 Inserção resultado: ' + (resultado.sucesso ? 'sucesso' : 'falha'));
+    return serializarParaFrontend(resultado);
+  } catch (e) {
+    Logger.log('❌ Erro em __inserirDadosFicticios: ' + e.message);
+    return {
+      sucesso: false,
+      erro: e.message,
+      pedidos: 0,
+      produtos: 0,
+      estoque: 0,
+      movimentacoes: 0,
+      erros: [e.message]
+    };
+  }
+}
+
+/**
+ * Wrapper para limpar dados fictícios
+ */
+function __limparDadosFicticios() {
+  try {
+    Logger.log('🔄 __limparDadosFicticios chamado');
+    var resultado = limparDadosFicticios();
+    Logger.log('📤 Limpeza resultado: ' + (resultado.sucesso ? 'sucesso' : 'falha'));
+    return serializarParaFrontend(resultado);
+  } catch (e) {
+    Logger.log('❌ Erro em __limparDadosFicticios: ' + e.message);
+    return {
+      sucesso: false,
+      erro: e.message,
+      pedidos: 0,
+      produtos: 0,
+      estoque: 0,
+      movimentacoes: 0
+    };
+  }
+}
+
+// ========================================
 // CONFIGURAÇÕES
 // ========================================
 

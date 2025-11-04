@@ -1264,9 +1264,79 @@
         <div class="card-header">
           <h2 class="card-title">Configurações do Sistema</h2>
         </div>
-        
+
         <div id="configContent">
           <!-- Conteúdo de configurações (apenas para admin) -->
+        </div>
+      </div>
+
+      <!-- Seção de Dados Fictícios (Admin Only) -->
+      <div class="card" id="dadosFicticiosSection" style="margin-top: 24px; display: none;">
+        <div class="card-header">
+          <h2 class="card-title">🧪 Dados Fictícios para Testes</h2>
+        </div>
+
+        <div style="padding: 24px;">
+          <div style="background: #fff9e6; border: 1px solid #ffc107; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+            <p style="margin: 0; color: #856404; font-size: 0.9rem;">
+              <strong>⚠️ Atenção:</strong> Estas funções inserem ou removem dados de teste na planilha. Use apenas em ambiente de desenvolvimento/testes.
+            </p>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <div>
+              <h4 style="margin: 0 0 8px 0; font-size: 1rem; color: #333;">Inserir Dados Fictícios</h4>
+              <p style="margin: 0 0 12px 0; font-size: 0.85rem; color: #666;">
+                Insere 12 pedidos, 5 produtos, 5 registros de estoque e 3 movimentações fictícias para testar os KPIs do dashboard.
+              </p>
+              <button class="btn btn-primary" onclick="inserirDadosFicticios()" style="width: 100%;">
+                ➕ Inserir Dados de Teste
+              </button>
+            </div>
+
+            <div>
+              <h4 style="margin: 0 0 8px 0; font-size: 1rem; color: #333;">Limpar Dados Fictícios</h4>
+              <p style="margin: 0 0 12px 0; font-size: 0.85rem; color: #666;">
+                Remove APENAS os dados fictícios inseridos anteriormente (não afeta dados reais).
+              </p>
+              <button class="btn btn-outline" onclick="limparDadosFicticios()" style="width: 100%; border-color: #f44336; color: #f44336;">
+                🗑️ Limpar Dados de Teste
+              </button>
+            </div>
+          </div>
+
+          <div id="dadosFicticiosResultado" style="display: none; margin-top: 16px; padding: 16px; border-radius: 8px; font-size: 0.9rem;"></div>
+
+          <details style="margin-top: 24px; padding: 16px; background: #f8f9fa; border-radius: 8px; cursor: pointer;">
+            <summary style="font-weight: 600; color: #333; cursor: pointer;">
+              📋 Ver detalhes dos dados que serão inseridos
+            </summary>
+            <div style="margin-top: 12px; font-size: 0.85rem; color: #666; line-height: 1.6;">
+              <p><strong>Pedidos (12):</strong></p>
+              <ul style="margin: 8px 0; padding-left: 20px;">
+                <li>4 Finalizados (R$ 1.487,80)</li>
+                <li>3 Em Compra (R$ 1.065,70)</li>
+                <li>3 Solicitados (R$ 973,30)</li>
+                <li>1 Aguardando Entrega (R$ 412,30)</li>
+                <li>1 Cancelado (não conta nos totais)</li>
+              </ul>
+
+              <p><strong>Produtos (5):</strong> Caneta Azul, Caderno, Detergente, Álcool, Papel A4</p>
+
+              <p><strong>Estoque (5):</strong> Registros com alertas de estoque baixo (Caderno e Álcool)</p>
+
+              <p><strong>Movimentações (3):</strong> 1 entrada inicial + 2 baixas de pedidos</p>
+
+              <p style="margin-top: 12px;"><strong>📊 Valores esperados no Dashboard:</strong></p>
+              <ul style="margin: 8px 0; padding-left: 20px;">
+                <li>Total de Pedidos: 11 (excluindo cancelado)</li>
+                <li>Valor Total: R$ 3.526,80</li>
+                <li>Ticket Médio: R$ 320,62</li>
+                <li>Papelaria: 5 pedidos (R$ 1.876,60)</li>
+                <li>Limpeza: 6 pedidos (R$ 1.650,20)</li>
+              </ul>
+            </div>
+          </details>
         </div>
       </div>
     </section>
@@ -3738,13 +3808,180 @@ function loadGerenciamento() {
         event.target.classList.remove('active');
       }
     });
-    
+
     // Atalhos de teclado
     document.addEventListener('keydown', function(event) {
       // ESC para fechar modais
       if (event.key === 'Escape') {
         document.querySelectorAll('.modal.active').forEach(modal => {
           modal.classList.remove('active');
+        });
+      }
+    });
+
+    // ========================================
+    // FUNÇÕES PARA DADOS FICTÍCIOS
+    // ========================================
+
+    /**
+     * Insere dados fictícios na planilha
+     */
+    function inserirDadosFicticios() {
+      if (!confirm('⚠️ Confirma a inserção de dados fictícios para teste?\n\nSerão inseridos:\n• 12 pedidos\n• 5 produtos\n• 5 registros de estoque\n• 3 movimentações\n\nOs dados não serão duplicados se já existirem.')) {
+        return;
+      }
+
+      showLoading();
+      const resultadoDiv = document.getElementById('dadosFicticiosResultado');
+      resultadoDiv.style.display = 'none';
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+          console.log('✅ Inserção de dados fictícios:', response);
+
+          if (response.sucesso) {
+            resultadoDiv.style.display = 'block';
+            resultadoDiv.style.background = '#d4edda';
+            resultadoDiv.style.border = '1px solid #c3e6cb';
+            resultadoDiv.style.color = '#155724';
+
+            let html = '<strong>✅ Dados inseridos com sucesso!</strong><br><br>';
+            html += `<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px;">`;
+            html += `<div><strong>Pedidos:</strong> ${response.pedidos}</div>`;
+            html += `<div><strong>Produtos:</strong> ${response.produtos}</div>`;
+            html += `<div><strong>Estoque:</strong> ${response.estoque}</div>`;
+            html += `<div><strong>Movimentações:</strong> ${response.movimentacoes}</div>`;
+            html += `</div>`;
+
+            if (response.erros && response.erros.length > 0) {
+              html += '<br><strong>⚠️ Avisos:</strong><br>';
+              response.erros.forEach(erro => {
+                html += `• ${erro}<br>`;
+              });
+            }
+
+            html += '<br><em style="font-size: 0.85rem;">Recarregue o Dashboard para ver os novos dados.</em>';
+            resultadoDiv.innerHTML = html;
+
+            // Auto-reload do dashboard se estiver nessa página
+            if (currentPage === 'dashboard') {
+              setTimeout(() => {
+                carregarDashboard();
+              }, 2000);
+            }
+          } else {
+            resultadoDiv.style.display = 'block';
+            resultadoDiv.style.background = '#f8d7da';
+            resultadoDiv.style.border = '1px solid #f5c6cb';
+            resultadoDiv.style.color = '#721c24';
+            resultadoDiv.innerHTML = `<strong>❌ Erro ao inserir dados:</strong><br>${response.erro || 'Erro desconhecido'}`;
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          console.error('❌ Erro ao inserir dados fictícios:', error);
+
+          const resultadoDiv = document.getElementById('dadosFicticiosResultado');
+          resultadoDiv.style.display = 'block';
+          resultadoDiv.style.background = '#f8d7da';
+          resultadoDiv.style.border = '1px solid #f5c6cb';
+          resultadoDiv.style.color = '#721c24';
+          resultadoDiv.innerHTML = `<strong>❌ Erro:</strong> ${error.message}`;
+        })
+        .__inserirDadosFicticios();
+    }
+
+    /**
+     * Limpa dados fictícios da planilha
+     */
+    function limparDadosFicticios() {
+      if (!confirm('⚠️ Confirma a REMOÇÃO dos dados fictícios?\n\nSerão removidos APENAS os dados de teste inseridos anteriormente:\n• 12 pedidos (PED-001 a PED-012)\n• 5 produtos (PROD-021 a PROD-025)\n• 5 registros de estoque (EST-001 a EST-005)\n• 3 movimentações (MOV-001 a MOV-003)\n\nDados reais NÃO serão afetados.')) {
+        return;
+      }
+
+      showLoading();
+      const resultadoDiv = document.getElementById('dadosFicticiosResultado');
+      resultadoDiv.style.display = 'none';
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+          console.log('✅ Limpeza de dados fictícios:', response);
+
+          if (response.sucesso) {
+            resultadoDiv.style.display = 'block';
+            resultadoDiv.style.background = '#d4edda';
+            resultadoDiv.style.border = '1px solid #c3e6cb';
+            resultadoDiv.style.color = '#155724';
+
+            let html = '<strong>✅ Dados fictícios removidos com sucesso!</strong><br><br>';
+            html += `<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px;">`;
+            html += `<div><strong>Pedidos:</strong> ${response.pedidos}</div>`;
+            html += `<div><strong>Produtos:</strong> ${response.produtos}</div>`;
+            html += `<div><strong>Estoque:</strong> ${response.estoque}</div>`;
+            html += `<div><strong>Movimentações:</strong> ${response.movimentacoes}</div>`;
+            html += `</div>`;
+
+            html += '<br><em style="font-size: 0.85rem;">Recarregue o Dashboard para ver os dados atualizados.</em>';
+            resultadoDiv.innerHTML = html;
+
+            // Auto-reload do dashboard se estiver nessa página
+            if (currentPage === 'dashboard') {
+              setTimeout(() => {
+                carregarDashboard();
+              }, 2000);
+            }
+          } else {
+            resultadoDiv.style.display = 'block';
+            resultadoDiv.style.background = '#f8d7da';
+            resultadoDiv.style.border = '1px solid #f5c6cb';
+            resultadoDiv.style.color = '#721c24';
+            resultadoDiv.innerHTML = `<strong>❌ Erro ao limpar dados:</strong><br>${response.erro || 'Erro desconhecido'}`;
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          console.error('❌ Erro ao limpar dados fictícios:', error);
+
+          const resultadoDiv = document.getElementById('dadosFicticiosResultado');
+          resultadoDiv.style.display = 'block';
+          resultadoDiv.style.background = '#f8d7da';
+          resultadoDiv.style.border = '1px solid #f5c6cb';
+          resultadoDiv.style.color = '#721c24';
+          resultadoDiv.innerHTML = `<strong>❌ Erro:</strong> ${error.message}`;
+        })
+        .__limparDadosFicticios();
+    }
+
+    /**
+     * Mostra seção de dados fictícios se usuário for Admin
+     */
+    function mostrarDadosFicticiosSeAdmin() {
+      if (dadosUsuario && dadosUsuario.perfil === 'Admin') {
+        document.getElementById('dadosFicticiosSection').style.display = 'block';
+      } else {
+        document.getElementById('dadosFicticiosSection').style.display = 'none';
+      }
+    }
+
+    // Executar ao carregar a página de configurações
+    document.addEventListener('DOMContentLoaded', function() {
+      // Observer para detectar quando a página de configurações é mostrada
+      const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.target.id === 'page-configuracoes' &&
+              mutation.target.style.display !== 'none') {
+            mostrarDadosFicticiosSeAdmin();
+          }
+        });
+      });
+
+      const configPage = document.getElementById('page-configuracoes');
+      if (configPage) {
+        observer.observe(configPage, {
+          attributes: true,
+          attributeFilter: ['style']
         });
       }
     });
