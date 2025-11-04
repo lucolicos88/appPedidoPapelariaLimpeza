@@ -260,7 +260,9 @@ function calcularKPIsFinanceiros(pedidosFiltrados, dadosProdutos, dadosUsuarios)
   const custoPerCapita = usuariosAtivos > 0 ? valorTotal / usuariosAtivos : 0;
 
   return {
+    totalPedidos: totalPedidos, // ✅ ADICIONADO: Total de pedidos não cancelados
     valorTotalPedidos: valorTotal,
+    valorTotal: valorTotal, // Alias para compatibilidade
     ticketMedio: ticketMedio,
     gastoPorTipo: gastoPorTipo,
     gastoPorSetor: gastoPorSetorArray,
@@ -270,7 +272,12 @@ function calcularKPIsFinanceiros(pedidosFiltrados, dadosProdutos, dadosUsuarios)
     previsaoGastos: previsaoGastos,
     taxaEconomia: taxaEconomia,
     custoPerCapita: custoPerCapita,
-    valoresPorMes: valoresMensais
+    valoresPorMes: valoresMensais,
+    // Adicionais para compatibilidade com frontend
+    pedidosPapelaria: pedidosFiltrados.filter(p => p[2] === 'Papelaria' && p[9] !== CONFIG.STATUS_PEDIDO.CANCELADO).length,
+    pedidosLimpeza: pedidosFiltrados.filter(p => p[2] === 'Limpeza' && p[9] !== CONFIG.STATUS_PEDIDO.CANCELADO).length,
+    valorPapelaria: valorPapelaria,
+    valorLimpeza: valorLimpeza
   };
 }
 

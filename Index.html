@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema Neoformula v8.0</title>
-  
+  <title>Sistema de Controle de Pedidos - Neoformula</title>
+
   <style>
     /* ========================================
-     * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v8.0
+     * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA
      * Estilos CSS
      * ======================================== */
     
@@ -277,7 +277,7 @@
       color: white;
     }
 
-    /* Tab Buttons (Dashboard Avançado v8.0) */
+    /* Tab Buttons (Dashboard) */
     .tab-btn {
       padding: 12px 24px;
       border: none;
@@ -782,7 +782,7 @@
     <section class="page-section active" id="page-dashboard">
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">📊 Dashboard Avançado v8.0</h2>
+          <h2 class="card-title">📊 Dashboard</h2>
           <button class="btn btn-primary" onclick="refreshDashboard()">🔄 Atualizar</button>
         </div>
 
@@ -1245,6 +1245,16 @@
 
   </div>
 
+  <!-- Rodapé -->
+  <footer style="background: #f5f5f5; border-top: 1px solid #e0e0e0; padding: 20px; text-align: center; color: #666; font-size: 0.9rem; margin-top: 40px;">
+    <p style="margin: 0;">
+      <strong>Sistema de Controle de Pedidos</strong> - Versão 8.0
+    </p>
+    <p style="margin: 5px 0 0 0;">
+      Elaborado por <strong style="color: var(--primary);">TI Neoformula</strong>
+    </p>
+  </footer>
+
   <!-- Modal: Novo Pedido -->
   <div class="modal" id="modalNovoPedido">
     <div class="modal-content" style="max-width: 800px;">
@@ -1620,7 +1630,7 @@ function initializeSystem() {
     }
     
     /**
- * Carrega Dashboard Avançado v8.0
+ * Carrega Dashboard
  */
 function loadDashboard() {
   showLoading();
@@ -1899,7 +1909,7 @@ function loadDashboard() {
     }
 
     /**
-     * Troca de aba no Dashboard Avançado v8.0
+     * Troca de aba no Dashboard
      */
     function switchDashboardTab(tabName) {
       // Ocultar todas as abas
