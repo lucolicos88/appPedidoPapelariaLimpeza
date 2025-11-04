@@ -150,6 +150,9 @@ function calcularKPIsFinanceiros(pedidosFiltrados, dadosProdutos, dadosUsuarios)
   const gastoPorProduto = {};
   const valoresPorMes = [];
 
+  // 🐛 DEBUG: Log inicial
+  Logger.log('💰 calcularKPIsFinanceiros - Pedidos recebidos: ' + pedidosFiltrados.length);
+
   // Processar pedidos
   pedidosFiltrados.forEach(pedido => {
     const valor = parseFloat(pedido[8]) || 0;
@@ -158,6 +161,9 @@ function calcularKPIsFinanceiros(pedidosFiltrados, dadosProdutos, dadosUsuarios)
     const status = pedido[9];
     const data = new Date(pedido[10]);
     const mesAno = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+
+    // 🐛 DEBUG: Log de cada pedido
+    Logger.log(`   Pedido: status="${status}", valor=${valor}, tipo="${tipo}"`);
 
     // Ignorar cancelados
     if (status !== CONFIG.STATUS_PEDIDO.CANCELADO) {
@@ -196,8 +202,14 @@ function calcularKPIsFinanceiros(pedidosFiltrados, dadosProdutos, dadosUsuarios)
   // 1. Valor Total de Pedidos
   const totalPedidos = pedidosFiltrados.filter(p => p[9] !== CONFIG.STATUS_PEDIDO.CANCELADO).length;
 
+  // 🐛 DEBUG: Log de totais calculados
+  Logger.log('💰 TOTAIS CALCULADOS:');
+  Logger.log('   totalPedidos (não cancelados): ' + totalPedidos);
+  Logger.log('   valorTotal: R$ ' + valorTotal.toFixed(2));
+
   // 2. Ticket Médio
   const ticketMedio = totalPedidos > 0 ? valorTotal / totalPedidos : 0;
+  Logger.log('   ticketMedio: R$ ' + ticketMedio.toFixed(2));
 
   // 3. Gasto por Tipo
   const gastoPorTipo = [
