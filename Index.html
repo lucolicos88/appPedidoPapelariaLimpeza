@@ -1842,9 +1842,12 @@ function initializeSystem() {
         configuracoes: document.querySelector('[data-page="configuracoes"]')
       };
 
-      // Funcionário: apenas Abrir Pedido e Gestão de Pedidos
-      if (permissaoUpper === 'FUNCIONARIO' || perfilNormalized === 'Funcionario') {
-        console.log('📋 [v10.0] Perfil Funcionário detectado - ocultando abas restritas');
+      // Funcionário/Usuário: apenas Abrir Pedido e Gestão de Pedidos
+      const isFuncionarioOuUsuario = permissaoUpper === 'FUNCIONARIO' || permissaoUpper === 'USUARIO' ||
+                                      perfilNormalized === 'Funcionario' || perfilNormalized === 'Usuario';
+
+      if (isFuncionarioOuUsuario && !isAdmin && !isGestor) {
+        console.log('📋 [v10.1] Perfil Funcionário/Usuário detectado - ocultando abas restritas');
 
         // Ocultar todas exceto Abrir Pedido e Gestão de Pedidos
         if (navItems.dashboard) navItems.dashboard.style.display = 'none';

@@ -175,9 +175,13 @@ const CONFIG = {
   LOGO_URL: 'https://neoformula.com.br/cdn/shop/files/Logotipo-NeoFormula-Manipulacao-Homeopatia_76b2fa98-5ffa-4cc3-ac0a-6d41e1bc8810.png?height=100&v=1677088468',
 
   // Versão do sistema
-  VERSAO: '10.0',
+  VERSAO: '10.1',
   DATA_VERSAO: '2025-11-05',
   CHANGELOG: [
+    'v10.1 - CORREÇÃO CRÍTICA: Permissões case-insensitive em verificarPermissao()',
+    'v10.1 - CORREÇÃO: Controle de abas agora funciona para perfil USUARIO',
+    'v10.1 - CORREÇÃO: Admin pode cadastrar produtos (bug de permissão)',
+    'v10.1 - CORREÇÃO: Usuário USUARIO vê apenas 2 abas (Abrir Pedido + Gestão)',
     'v10.0 - GRANDE ATUALIZAÇÃO: UX profissional + Controle de permissões avançado',
     'v10.0 - Modal de sucesso bonito com animações CSS',
     'v10.0 - Gestão de Usuários funcionando (botão Ver Usuários)',

@@ -220,8 +220,8 @@ function verificarPermissao(email, permissaoRequerida) {
       'VISUALIZADOR': 1
     };
     
-    const nivelUsuario = hierarquia[usuario.permissao] || 0;
-    const nivelRequerido = hierarquia[permissaoRequerida] || 0;
+    const nivelUsuario = hierarquia[usuario.permissao?.toUpperCase()] || 0;
+    const nivelRequerido = hierarquia[permissaoRequerida?.toUpperCase()] || 0;
     
     return nivelUsuario >= nivelRequerido;
     
