@@ -175,9 +175,12 @@ const CONFIG = {
   LOGO_URL: 'https://neoformula.com.br/cdn/shop/files/Logotipo-NeoFormula-Manipulacao-Homeopatia_76b2fa98-5ffa-4cc3-ac0a-6d41e1bc8810.png?height=100&v=1677088468',
 
   // Versão do sistema
-  VERSAO: '8.0',
-  DATA_VERSAO: '2025-11-03',
+  VERSAO: '9.0',
+  DATA_VERSAO: '2025-11-05',
   CHANGELOG: [
+    'v9.0 - Novo modal de pedidos com catálogo visual',
+    'v9.0 - Controle de status por perfil (Gestor/Admin)',
+    'v9.0 - Interface aprimorada com imagens e estoque',
     'v8.0 - Reestruturação completa com 8 abas',
     'v8.0 - Nova aba Solicitação',
     'v8.0 - Upload de imagens de produtos',

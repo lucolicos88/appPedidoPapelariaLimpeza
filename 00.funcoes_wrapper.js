@@ -100,6 +100,76 @@ function __darBaixaPedido(pedidoId) {
 }
 
 /**
+ * Wrapper para atualizar status do pedido (v9.0 - apenas Admin/Gestor)
+ */
+function __atualizarStatusPedido(pedidoId, novoStatus) {
+  try {
+    Logger.log(`🔄 __atualizarStatusPedido chamado: ${pedidoId} -> ${novoStatus}`);
+
+    // Verificar permissões
+    const userEmail = Session.getActiveUser().getEmail();
+    const perfil = obterPerfilUsuario(userEmail);
+
+    if (perfil !== 'Admin' && perfil !== 'Gestor') {
+      return {
+        success: false,
+        error: 'Você não tem permissão para alterar o status de pedidos'
+      };
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaPedidos = ss.getSheetByName(CONFIG.ABAS.ORDERS);
+
+    if (!abaPedidos) {
+      return {
+        success: false,
+        error: 'Aba de pedidos não encontrada'
+      };
+    }
+
+    const dados = abaPedidos.getDataRange().getValues();
+
+    // Procurar pedido
+    for (let i = 1; i < dados.length; i++) {
+      if (dados[i][CONFIG.COLUNAS_PEDIDOS.ID - 1] === pedidoId) {
+        // Atualizar status
+        abaPedidos.getRange(i + 1, CONFIG.COLUNAS_PEDIDOS.STATUS).setValue(novoStatus);
+
+        // Atualizar data de compra se status = "Em Compra"
+        if (novoStatus === 'Em Compra' && !dados[i][CONFIG.COLUNAS_PEDIDOS.DATA_COMPRA - 1]) {
+          abaPedidos.getRange(i + 1, CONFIG.COLUNAS_PEDIDOS.DATA_COMPRA).setValue(new Date());
+        }
+
+        // Atualizar data de finalização se status = "Finalizado"
+        if (novoStatus === 'Finalizado' && !dados[i][CONFIG.COLUNAS_PEDIDOS.DATA_FINALIZACAO - 1]) {
+          abaPedidos.getRange(i + 1, CONFIG.COLUNAS_PEDIDOS.DATA_FINALIZACAO).setValue(new Date());
+        }
+
+        registrarLog('STATUS_PEDIDO_ATUALIZADO', `Pedido ${dados[i][CONFIG.COLUNAS_PEDIDOS.NUMERO_PEDIDO - 1]} -> ${novoStatus}`, 'SUCESSO');
+
+        return {
+          success: true,
+          message: 'Status atualizado com sucesso'
+        };
+      }
+    }
+
+    return {
+      success: false,
+      error: 'Pedido não encontrado'
+    };
+
+  } catch (e) {
+    Logger.log('❌ Erro em __atualizarStatusPedido: ' + e.message);
+    Logger.log('Stack: ' + e.stack);
+    return {
+      success: false,
+      error: e.message
+    };
+  }
+}
+
+/**
  * Wrapper para obter histórico de solicitações do usuário (v8.0)
  */
 function __getMinhasSolicitacoes(email) {
@@ -179,6 +249,73 @@ function __buscarProdutos(termo, tipo) {
       success: false,
       error: e.message,
       produtos: []
+    };
+  }
+}
+
+/**
+ * Wrapper para obter catálogo de produtos com estoque (v9.0)
+ * Usado no novo modal de pedidos com catálogo visual
+ */
+function __obterCatalogoProdutosComEstoque() {
+  try {
+    Logger.log('🔄 __obterCatalogoProdutosComEstoque chamado (v9.0)');
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+    const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
+
+    if (!abaProdutos) {
+      return {
+        success: false,
+        error: 'Aba de produtos não encontrada',
+        produtos: [],
+        estoque: {}
+      };
+    }
+
+    // Listar produtos ativos
+    const resultadoProdutos = listarProdutos({ ativo: 'Sim' });
+    if (!resultadoProdutos.success) {
+      return resultadoProdutos;
+    }
+
+    // Obter dados de estoque
+    const estoqueMap = {};
+    if (abaEstoque) {
+      const dadosEstoque = abaEstoque.getDataRange().getValues();
+      for (let i = 1; i < dadosEstoque.length; i++) {
+        if (!dadosEstoque[i][0]) continue;
+
+        const produtoId = dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.PRODUTO_ID - 1];
+        const qtdAtual = dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL - 1] || 0;
+        const qtdReservada = dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_RESERVADA - 1] || 0;
+        const qtdDisponivel = dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.ESTOQUE_DISPONIVEL - 1] || 0;
+
+        estoqueMap[produtoId] = {
+          qtdAtual: qtdAtual,
+          qtdReservada: qtdReservada,
+          qtdDisponivel: qtdDisponivel
+        };
+      }
+    }
+
+    Logger.log(`✅ Catálogo carregado: ${resultadoProdutos.produtos.length} produtos, ${Object.keys(estoqueMap).length} com estoque`);
+
+    return serializarParaFrontend({
+      success: true,
+      produtos: resultadoProdutos.produtos,
+      estoque: estoqueMap
+    });
+
+  } catch (e) {
+    Logger.log('❌ Erro em __obterCatalogoProdutosComEstoque: ' + e.message);
+    Logger.log('Stack: ' + e.stack);
+    return {
+      success: false,
+      error: e.message,
+      produtos: [],
+      estoque: {}
     };
   }
 }
