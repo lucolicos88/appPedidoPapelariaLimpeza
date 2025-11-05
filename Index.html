@@ -3637,10 +3637,12 @@ function loadProdutos() {
       if (imagemInput.files && imagemInput.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
-          dadosProduto.imagemBase64 = e.target.result;
+          // Remover prefixo "data:image/...;base64," do DataURL
+          const base64Data = e.target.result.split(',')[1];
+          dadosProduto.imagemBase64 = base64Data;
           dadosProduto.imagemFileName = imagemInput.files[0].name;
           dadosProduto.imagemMimeType = imagemInput.files[0].type;
-          
+
           enviarProduto(dadosProduto);
         };
         reader.readAsDataURL(imagemInput.files[0]);
