@@ -279,6 +279,50 @@ function getInfoImagemDrive(fileIdOrUrl) {
 }
 
 /**
+ * Upload de imagem de produto (wrapper com validações)
+ *
+ * @param {object} dados - { base64Data, fileName, mimeType, produtoId, produtoNome, tipo }
+ * @returns {object} - { success: boolean, imageUrl: string, fileId: string }
+ */
+function uploadImagemProduto(dados) {
+  try {
+    Logger.log(`📤 [v10.1] Upload de imagem para produto: ${dados.produtoNome}`);
+
+    // Validações
+    if (!dados || !dados.base64Data) {
+      return {
+        success: false,
+        error: 'Dados de imagem não fornecidos'
+      };
+    }
+
+    // Gerar nome de arquivo único
+    const timestamp = new Date().getTime();
+    const nomeArquivo = `${dados.produtoId || 'produto'}_${timestamp}_${dados.fileName || 'imagem.jpg'}`;
+
+    // Fazer upload
+    const resultado = uploadImagemDrive(
+      dados.base64Data,
+      nomeArquivo,
+      dados.mimeType || 'image/jpeg'
+    );
+
+    if (resultado.success) {
+      Logger.log(`✅ Upload de imagem concluído: ${resultado.imageUrl}`);
+    }
+
+    return resultado;
+
+  } catch (error) {
+    Logger.log(`❌ Erro ao fazer upload de imagem de produto: ${error.message}`);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
  * ========================================
  * FUNÇÕES DE TESTE
  * ========================================

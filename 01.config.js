@@ -178,6 +178,7 @@ const CONFIG = {
   VERSAO: '10.1',
   DATA_VERSAO: '2025-11-05',
   CHANGELOG: [
+    'v10.1 - CORREÇÃO CRÍTICA: uploadImagemProduto não definida (cadastro de produtos falhava)',
     'v10.1 - CORREÇÃO CRÍTICA: Permissões case-insensitive em verificarPermissao()',
     'v10.1 - CORREÇÃO: Controle de abas agora funciona para perfil USUARIO',
     'v10.1 - CORREÇÃO: Admin pode cadastrar produtos (bug de permissão)',
