@@ -175,9 +175,13 @@ const CONFIG = {
   LOGO_URL: 'https://neoformula.com.br/cdn/shop/files/Logotipo-NeoFormula-Manipulacao-Homeopatia_76b2fa98-5ffa-4cc3-ac0a-6d41e1bc8810.png?height=100&v=1677088468',
 
   // Versão do sistema
-  VERSAO: '9.1',
+  VERSAO: '9.2',
   DATA_VERSAO: '2025-11-05',
   CHANGELOG: [
+    'v9.2 - Correção erro "Cannot set properties of null" (renderPedidosTable)',
+    'v9.2 - Adicionados logs de debug extensivos para diagnóstico',
+    'v9.2 - Proteção contra elemento não encontrado no DOM',
+    'v9.2 - Melhor rastreamento de permissões de usuário',
     'v9.1 - Correção loop infinito no catálogo de pedidos',
     'v9.1 - Remoção de preços (apenas quantidade e estoque)',
     'v9.1 - Seleção de tipo ANTES do catálogo (dropdown obrigatório)',
