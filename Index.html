@@ -7,7 +7,7 @@
 
   <style>
     /* ========================================
-     * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v9.3
+     * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v10.0
      * Estilos CSS
      * ======================================== */
     
@@ -536,7 +536,28 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-    
+
+    /* v10.0: Animações para modal de sucesso */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideDown {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
     /* Alerts */
     .alert {
       padding: 15px 20px;
@@ -1578,7 +1599,7 @@
   <script>
     /**
      * ========================================
-     * SISTEMA NEOFORMULA v9.3 - JavaScript
+     * SISTEMA NEOFORMULA v10.0 - JavaScript
      * ========================================
      */
 
@@ -1778,7 +1799,7 @@ function initializeSystem() {
 
       console.log('👤 [v9.2 DEBUG] currentUser:', JSON.stringify(currentUser, null, 2));
 
-      // v9.3: Verificação case-insensitive para compatibilidade com diferentes formatos (Admin, ADMIN, admin)
+      // v10.0: Verificação case-insensitive para compatibilidade com diferentes formatos (Admin, ADMIN, admin)
       const permissaoUpper = (currentUser.permissao || '').toUpperCase();
       const perfilNormalized = currentUser.perfil || '';
 
@@ -1807,6 +1828,35 @@ function initializeSystem() {
         }
       } else {
         console.log('❌ [v9.2 DEBUG] Usuário NÃO é Gestor/Admin - aba não será exibida');
+      }
+
+      // v10.0: Controle de visibilidade de abas por perfil
+      const navItems = {
+        dashboard: document.querySelector('[data-page="dashboard"]'),
+        abrirPedido: document.querySelector('[data-page="pedidos"]'),
+        gestaoPedidos: document.querySelector('[data-page="gestao-pedidos"]'),
+        produtos: document.querySelector('[data-page="produtos"]'),
+        estoque: document.querySelector('[data-page="estoque"]'),
+        gerenciamento: document.querySelector('[data-page="gerenciamento"]'),
+        relatorios: document.querySelector('[data-page="relatorios"]'),
+        configuracoes: document.querySelector('[data-page="configuracoes"]')
+      };
+
+      // Funcionário: apenas Abrir Pedido e Gestão de Pedidos
+      if (permissaoUpper === 'FUNCIONARIO' || perfilNormalized === 'Funcionario') {
+        console.log('📋 [v10.0] Perfil Funcionário detectado - ocultando abas restritas');
+
+        // Ocultar todas exceto Abrir Pedido e Gestão de Pedidos
+        if (navItems.dashboard) navItems.dashboard.style.display = 'none';
+        if (navItems.produtos) navItems.produtos.style.display = 'none';
+        if (navItems.estoque) navItems.estoque.style.display = 'none';
+        if (navItems.gerenciamento) navItems.gerenciamento.style.display = 'none';
+        if (navItems.relatorios) navItems.relatorios.style.display = 'none';
+        if (navItems.configuracoes) navItems.configuracoes.style.display = 'none';
+
+        // Mostrar apenas Abrir Pedido e Gestão de Pedidos
+        if (navItems.abrirPedido) navItems.abrirPedido.style.display = 'block';
+        if (navItems.gestaoPedidos) navItems.gestaoPedidos.style.display = 'block';
       }
 
       // Produtos: apenas gestor/admin pode cadastrar
@@ -2874,15 +2924,26 @@ function loadPedidos() {
     // ========================================
 
     /**
-     * Carrega pedidos para a aba Gestão de Pedidos (v9.1)
+     * Carrega pedidos para a aba Gestão de Pedidos (v10.0 - com filtro por perfil)
      */
     function loadGestaoPedidos() {
       showLoading();
+      console.log('📋 [v10.0] Carregando Gestão de Pedidos...');
 
       const filtros = {
         status: document.getElementById('gestaoPedidosFilterStatus')?.value || null,
         tipo: document.getElementById('gestaoPedidosFilterTipo')?.value || null
       };
+
+      // v10.0: Se for Funcionário, filtrar apenas seus pedidos
+      const permissaoUpper = (currentUser?.permissao || '').toUpperCase();
+      const perfilNormalized = currentUser?.perfil || '';
+      const isFuncionario = permissaoUpper === 'FUNCIONARIO' || perfilNormalized === 'Funcionario';
+
+      if (isFuncionario) {
+        filtros.solicitanteEmail = currentUser.email;
+        console.log('👤 [v10.0] Funcionário - filtrando pedidos por email:', currentUser.email);
+      }
 
       google.script.run
         .withSuccessHandler(function(response) {
@@ -2890,22 +2951,22 @@ function loadPedidos() {
             if (!response) {
               console.error('Resposta vazia ao carregar pedidos');
               hideLoading();
-              renderGestaoPedidosTable([]);
+              renderGestaoPedidosTable([], isFuncionario);
               showError('Erro ao carregar pedidos: Resposta vazia do servidor');
               return;
             }
 
             if (response.success) {
-              renderGestaoPedidosTable(response.pedidos || []);
+              renderGestaoPedidosTable(response.pedidos || [], isFuncionario);
             } else {
               console.error('Erro ao carregar pedidos:', response.error);
-              renderGestaoPedidosTable([]);
+              renderGestaoPedidosTable([], isFuncionario);
               showError('Erro ao carregar pedidos: ' + (response.error || 'Erro desconhecido'));
             }
 
           } catch (error) {
             console.error('Erro ao processar pedidos:', error);
-            renderGestaoPedidosTable([]);
+            renderGestaoPedidosTable([], isFuncionario);
             showError('Erro ao processar pedidos: ' + error.message);
           }
 
@@ -2914,25 +2975,24 @@ function loadPedidos() {
         .withFailureHandler(function(error) {
           console.error('Erro de conexão ao carregar pedidos:', error);
           hideLoading();
-          renderGestaoPedidosTable([]);
+          renderGestaoPedidosTable([], isFuncionario);
           showError('Erro de conexão ao carregar pedidos: ' + error.message);
         })
         .__listarPedidos(filtros);
     }
 
     /**
-     * Renderiza tabela de gestão de pedidos (v9.1)
+     * Renderiza tabela de gestão de pedidos (v10.0 - com controle de edição)
      */
-    function renderGestaoPedidosTable(pedidos) {
+    function renderGestaoPedidosTable(pedidos, isReadOnly = false) {
       const tbody = document.getElementById('gestaoPedidosTableBody');
 
       if (!pedidos || pedidos.length === 0) {
         tbody.innerHTML = `
           <tr>
             <td colspan="7" class="empty-state">
-              <div class="empty-state-icon">📦</div>
+              <div class="empty-state-icon">📋</div>
               <div class="empty-state-title">Nenhum pedido encontrado</div>
-              <div class="empty-state-text">Use os filtros acima para buscar pedidos</div>
             </td>
           </tr>
         `;
@@ -2954,8 +3014,13 @@ function loadPedidos() {
             <td>${statusBadge}</td>
             <td>
               <button class="btn btn-outline" onclick="verDetalhesPedido('${pedido.id}')" style="padding: 5px 10px; font-size: 0.85rem;">
-                Ver Detalhes
+                👁️ Ver
               </button>
+              ${!isReadOnly ? `
+                <button class="btn btn-primary" onclick="abrirModalAlterarStatus('${pedido.id}', '${pedido.status}')" style="padding: 5px 10px; font-size: 0.85rem; margin-left: 5px;">
+                  🔄 Status
+                </button>
+              ` : ''}
             </td>
           </tr>
         `;
@@ -4019,7 +4084,7 @@ function loadGerenciamento() {
      * Carrega configurações
      */
     function loadConfiguracoes() {
-      // v9.3: Verificação case-insensitive para Admin
+      // v10.0: Verificação case-insensitive para Admin
       const permissaoUpper = (currentUser?.permissao || '').toUpperCase();
       const isAdmin = permissaoUpper === 'ADMIN' || currentUser?.permissao === 'Admin';
 
@@ -4139,7 +4204,96 @@ function loadGerenciamento() {
         })
         .atualizarConfiguracao(chave, valor);
     }
-    
+
+    /**
+     * Carrega lista de usuários (v10.0)
+     */
+    function carregarUsuarios() {
+      console.log('📋 Carregando usuários...');
+      showLoading();
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+          if (response && response.success) {
+            renderTabelaUsuarios(response.usuarios || []);
+          } else {
+            showError('Erro ao carregar usuários: ' + (response ? response.error : 'Resposta vazia'));
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro de conexão ao carregar usuários: ' + error.message);
+        })
+        .__listarUsuarios();
+    }
+
+    /**
+     * Renderiza tabela de usuários (v10.0)
+     */
+    function renderTabelaUsuarios(usuarios) {
+      const container = document.getElementById('configContent');
+
+      let html = `
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">👥 Usuários Cadastrados</h2>
+            <button class="btn btn-primary" onclick="abrirModalNovoUsuario()">➕ Novo Usuário</button>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Perfil</th>
+                <th>Setor</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      if (usuarios.length === 0) {
+        html += `
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 40px; color: #999;">
+              Nenhum usuário cadastrado
+            </td>
+          </tr>
+        `;
+      } else {
+        usuarios.forEach(user => {
+          const statusBadge = user.ativo === 'Sim'
+            ? '<span class="badge badge-success">Ativo</span>'
+            : '<span class="badge badge-danger">Inativo</span>';
+
+          html += `
+            <tr>
+              <td><strong>${user.nome}</strong></td>
+              <td>${user.email}</td>
+              <td>${user.permissao || user.perfil}</td>
+              <td>${user.setor}</td>
+              <td>${statusBadge}</td>
+              <td>
+                <button class="btn btn-outline" onclick="editarUsuario('${user.email}')" style="padding: 5px 10px; font-size: 0.85rem;">
+                  ✏️ Editar
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+      }
+
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
     /**
      * Exporta relatório de pedidos
      */
@@ -4164,26 +4318,32 @@ function loadGerenciamento() {
     }
     
     /**
-     * Exporta relatório de produtos
+     * Exporta relatório de produtos em CSV (v10.0)
      */
     function exportarRelatorioProdutos() {
+      console.log('📥 Exportando relatório de produtos...');
       showLoading();
-      
+
       google.script.run
         .withSuccessHandler(function(response) {
-          if (response.success) {
-            downloadCSV(response.csv, response.fileName);
+          hideLoading();
+          if (response && response.success) {
+            // Criar link de download
+            const blob = new Blob([response.csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `produtos_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
             showSuccess('Relatório exportado com sucesso!');
           } else {
-            showError('Erro ao exportar: ' + response.error);
+            showError('Erro ao exportar relatório: ' + (response ? response.error : 'Erro desconhecido'));
           }
-          hideLoading();
         })
         .withFailureHandler(function(error) {
           hideLoading();
-          showError('Erro: ' + error.message);
+          showError('Erro ao exportar relatório: ' + error.message);
         })
-        .exportarRelatorioCSV('produtos', {});
+        .__exportarProdutosCSV();
     }
     
     /**
@@ -4268,11 +4428,60 @@ function loadGerenciamento() {
     }
     
     /**
-     * Mostra mensagem de sucesso
+     * Mostra mensagem de sucesso (v10.0 - Modal bonito)
      */
     function showSuccess(message) {
-      alert('✅ ' + message);
-      console.log('Sucesso:', message);
+      // Criar overlay
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+      `;
+
+      // Criar modal
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        max-width: 400px;
+        animation: slideDown 0.3s ease;
+      `;
+
+      modal.innerHTML = `
+        <div style="font-size: 4rem; margin-bottom: 20px; color: #4CAF50;">✅</div>
+        <h2 style="color: var(--primary); margin-bottom: 15px; font-size: 1.5rem;">Sucesso!</h2>
+        <p style="color: #666; font-size: 1.1rem; margin-bottom: 25px;">${message}</p>
+        <button onclick="this.closest('[data-success-overlay]').remove()"
+                style="background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 6px; font-size: 1rem; cursor: pointer; transition: all 0.3s;">
+          OK
+        </button>
+      `;
+
+      overlay.setAttribute('data-success-overlay', 'true');
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+
+      // Fechar automaticamente após 3 segundos
+      setTimeout(() => {
+        if (overlay.parentNode) {
+          overlay.style.opacity = '0';
+          setTimeout(() => overlay.remove(), 300);
+        }
+      }, 3000);
+
+      console.log('✅ Sucesso:', message);
     }
     
     /**

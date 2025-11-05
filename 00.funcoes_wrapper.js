@@ -726,7 +726,125 @@ function testeRetornoSimples() {
     success: true,
     message: 'Função wrapper funcionando!',
     timestamp: new Date().toISOString(),
-    totalWrappers: 21,
-    versao: '8.0'
+    totalWrappers: 24,
+    versao: '10.0'
   };
+}
+
+// ========================================
+// NOVOS WRAPPERS v10.0
+// ========================================
+
+/**
+ * Wrapper para listar usuários (v10.0)
+ */
+function __listarUsuarios() {
+  try {
+    Logger.log('👥 __listarUsuarios chamado');
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaUsuarios = ss.getSheetByName(CONFIG.ABAS.USERS);
+
+    if (!abaUsuarios) {
+      return {
+        success: false,
+        error: 'Aba de usuários não encontrada',
+        usuarios: []
+      };
+    }
+
+    const dados = abaUsuarios.getDataRange().getValues();
+    const usuarios = [];
+
+    // Assumindo estrutura: Email | Nome | Setor | Perfil/Permissão | Ativo
+    for (let i = 1; i < dados.length; i++) {
+      if (!dados[i][0]) continue; // Pular linhas vazias
+
+      usuarios.push({
+        email: dados[i][0],
+        nome: dados[i][1] || dados[i][0].split('@')[0],
+        setor: dados[i][2] || 'Sem Setor',
+        permissao: dados[i][3] || 'Funcionario',
+        perfil: dados[i][3] || 'Funcionario',
+        ativo: dados[i][4] !== undefined ? dados[i][4] : 'Sim'
+      });
+    }
+
+    Logger.log(`✅ ${usuarios.length} usuários encontrados`);
+
+    return {
+      success: true,
+      usuarios: usuarios
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro em __listarUsuarios: ' + error.message);
+    return {
+      success: false,
+      error: error.message,
+      usuarios: []
+    };
+  }
+}
+
+/**
+ * Wrapper para exportar produtos em CSV (v10.0)
+ */
+function __exportarProdutosCSV() {
+  try {
+    Logger.log('📥 __exportarProdutosCSV chamado');
+
+    const resultado = listarProdutos({});
+
+    if (!resultado.success) {
+      return {
+        success: false,
+        error: resultado.error
+      };
+    }
+
+    const produtos = resultado.produtos || [];
+
+    if (produtos.length === 0) {
+      return {
+        success: false,
+        error: 'Nenhum produto encontrado para exportar'
+      };
+    }
+
+    // Cabeçalho CSV
+    let csv = 'ID,Código,Nome,Tipo,Categoria,Unidade,Preço Unitário,Estoque Mínimo,Ponto de Pedido,Fornecedor,Ativo\n';
+
+    // Linhas de dados
+    produtos.forEach(function(produto) {
+      csv += [
+        produto.id || '',
+        produto.codigo || '',
+        '"' + (produto.nome || '').replace(/"/g, '""') + '"', // Escapar aspas
+        produto.tipo || '',
+        produto.categoria || '',
+        produto.unidade || '',
+        (produto.precoUnitario || 0).toString().replace('.', ','),
+        produto.estoqueMinimo || 0,
+        produto.pontoPedido || 0,
+        '"' + (produto.fornecedor || '').replace(/"/g, '""') + '"',
+        produto.ativo || 'Sim'
+      ].join(',') + '\n';
+    });
+
+    Logger.log(`✅ CSV gerado com ${produtos.length} produtos`);
+
+    return {
+      success: true,
+      csv: csv,
+      totalProdutos: produtos.length
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro em __exportarProdutosCSV: ' + error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
 }

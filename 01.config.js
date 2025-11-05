@@ -175,9 +175,17 @@ const CONFIG = {
   LOGO_URL: 'https://neoformula.com.br/cdn/shop/files/Logotipo-NeoFormula-Manipulacao-Homeopatia_76b2fa98-5ffa-4cc3-ac0a-6d41e1bc8810.png?height=100&v=1677088468',
 
   // Versão do sistema
-  VERSAO: '9.3',
+  VERSAO: '10.0',
   DATA_VERSAO: '2025-11-05',
   CHANGELOG: [
+    'v10.0 - GRANDE ATUALIZAÇÃO: UX profissional + Controle de permissões avançado',
+    'v10.0 - Modal de sucesso bonito com animações CSS',
+    'v10.0 - Gestão de Usuários funcionando (botão Ver Usuários)',
+    'v10.0 - Controle de abas por perfil (Funcionário vê apenas 2 abas)',
+    'v10.0 - Filtro automático de pedidos por usuário (Funcionário)',
+    'v10.0 - Controle de edição de status (apenas Gestor/Admin)',
+    'v10.0 - Exportação CSV de produtos implementada',
+    'v10.0 - Funções backend: __listarUsuarios e __exportarProdutosCSV',
     'v9.3 - CORREÇÃO CRÍTICA: Bug de case-sensitive em permissões (Admin vs ADMIN)',
     'v9.3 - Aba "Gestão de Pedidos" agora aparece corretamente para Admin',
     'v9.3 - Aba Configurações agora acessível para usuários Admin',
