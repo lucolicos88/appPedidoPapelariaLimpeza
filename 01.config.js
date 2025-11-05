@@ -175,9 +175,13 @@ const CONFIG = {
   LOGO_URL: 'https://neoformula.com.br/cdn/shop/files/Logotipo-NeoFormula-Manipulacao-Homeopatia_76b2fa98-5ffa-4cc3-ac0a-6d41e1bc8810.png?height=100&v=1677088468',
 
   // Versão do sistema
-  VERSAO: '9.2',
+  VERSAO: '9.3',
   DATA_VERSAO: '2025-11-05',
   CHANGELOG: [
+    'v9.3 - CORREÇÃO CRÍTICA: Bug de case-sensitive em permissões (Admin vs ADMIN)',
+    'v9.3 - Aba "Gestão de Pedidos" agora aparece corretamente para Admin',
+    'v9.3 - Aba Configurações agora acessível para usuários Admin',
+    'v9.3 - Verificação case-insensitive em todas as checagens de permissão',
     'v9.2 - Correção erro "Cannot set properties of null" (renderPedidosTable)',
     'v9.2 - Adicionados logs de debug extensivos para diagnóstico',
     'v9.2 - Proteção contra elemento não encontrado no DOM',

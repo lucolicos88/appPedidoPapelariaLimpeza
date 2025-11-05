@@ -7,7 +7,7 @@
 
   <style>
     /* ========================================
-     * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v9.2
+     * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v9.3
      * Estilos CSS
      * ======================================== */
     
@@ -1578,7 +1578,7 @@
   <script>
     /**
      * ========================================
-     * SISTEMA NEOFORMULA v9.2 - JavaScript
+     * SISTEMA NEOFORMULA v9.3 - JavaScript
      * ========================================
      */
 
@@ -1778,8 +1778,14 @@ function initializeSystem() {
 
       console.log('👤 [v9.2 DEBUG] currentUser:', JSON.stringify(currentUser, null, 2));
 
-      const isGestor = currentUser.permissao === 'GESTOR' || currentUser.permissao === 'ADMIN' || currentUser.perfil === 'Gestor' || currentUser.perfil === 'Admin';
-      const isAdmin = currentUser.permissao === 'ADMIN' || currentUser.perfil === 'Admin';
+      // v9.3: Verificação case-insensitive para compatibilidade com diferentes formatos (Admin, ADMIN, admin)
+      const permissaoUpper = (currentUser.permissao || '').toUpperCase();
+      const perfilNormalized = currentUser.perfil || '';
+
+      const isGestor = permissaoUpper === 'GESTOR' || permissaoUpper === 'ADMIN' ||
+                       perfilNormalized === 'Gestor' || perfilNormalized === 'Admin' ||
+                       currentUser.permissao === 'Admin' || currentUser.permissao === 'Gestor';
+      const isAdmin = permissaoUpper === 'ADMIN' || perfilNormalized === 'Admin' || currentUser.permissao === 'Admin';
 
       console.log('🔐 [v9.2 DEBUG] Permissões detectadas:', {
         isGestor: isGestor,
@@ -3717,7 +3723,7 @@ function loadEstoque() {
                   <td>${estoqueMinimo}</td>
                   <td>${statusBadge}</td>
                   <td>
-                    ${currentUser && (currentUser.permissao === 'GESTOR' || currentUser.permissao === 'ADMIN') ? `
+                    ${currentUser && ((currentUser.permissao || '').toUpperCase() === 'GESTOR' || (currentUser.permissao || '').toUpperCase() === 'ADMIN' || currentUser.permissao === 'Admin' || currentUser.permissao === 'Gestor') ? `
                       <button class="btn btn-success" onclick="abrirModalEntrada('${item.produtoId}', '${item.produtoNome}')" 
                               style="padding: 5px 10px; font-size: 0.85rem; margin-right: 5px;">
                         ⬆️
@@ -4013,7 +4019,11 @@ function loadGerenciamento() {
      * Carrega configurações
      */
     function loadConfiguracoes() {
-      if (!currentUser || currentUser.permissao !== 'ADMIN') {
+      // v9.3: Verificação case-insensitive para Admin
+      const permissaoUpper = (currentUser?.permissao || '').toUpperCase();
+      const isAdmin = permissaoUpper === 'ADMIN' || currentUser?.permissao === 'Admin';
+
+      if (!currentUser || !isAdmin) {
         document.getElementById('configContent').innerHTML = `
           <div class="alert alert-warning">
             ⚠️ Apenas administradores podem acessar as configurações do sistema.
