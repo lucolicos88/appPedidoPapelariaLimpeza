@@ -384,17 +384,27 @@ function calcularKPIsLogisticos(pedidosFiltrados) {
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
+  // Calcular taxa de finalização
+  const pedidosNaoCancelados = totalPedidos - pedidosCancelados;
+  const taxaFinalizacao = pedidosNaoCancelados > 0 ? (pedidosFinalizados / pedidosNaoCancelados) * 100 : 0;
+
   return {
     tempoMedioAprovacao: tempoMedioAprovacao,
     leadTimeTotal: leadTimeTotal,
     taxaPedidosNoPrazo: taxaPedidosNoPrazo,
     taxaCancelamento: taxaCancelamento,
+    taxaFinalizacao: taxaFinalizacao,
     pedidosPorStatus: pedidosPorStatusArray,
     eficienciaProcessamento: eficienciaProcessamento,
     taxaPedidosUrgentes: taxaPedidosUrgentes,
     backlog: backlog,
     tempoRespostaGestor: tempoRespostaGestor,
-    pedidosPorSolicitante: pedidosPorSolicitanteArray
+    pedidosPorSolicitante: pedidosPorSolicitanteArray,
+    // Campos adicionais para Dashboard Resumo
+    pedidosSolicitados: pedidosPorStatus[CONFIG.STATUS_PEDIDO.SOLICITADO] || 0,
+    pedidosEmCompra: pedidosPorStatus[CONFIG.STATUS_PEDIDO.EM_COMPRA] || 0,
+    pedidosFinalizados: pedidosFinalizados,
+    pedidosCancelados: pedidosCancelados
   };
 }
 
@@ -405,6 +415,7 @@ function calcularKPIsEstoque(dadosProdutos, dadosEstoque, dadosMovimentacoes, pe
   let totalProdutos = 0;
   let produtosEstoqueBaixo = 0;
   let produtosEstoqueZero = 0;
+  let produtosPontoPedido = 0;
   let valorTotalEstoque = 0;
   let idadeTotalEstoque = 0;
   let countIdade = 0;
@@ -420,6 +431,7 @@ function calcularKPIsEstoque(dadosProdutos, dadosEstoque, dadosMovimentacoes, pe
 
     const produtoId = produto[0];
     const estoqueMinimo = parseFloat(produto[7]) || 0;
+    const pontoPedido = parseFloat(produto[8]) || 0;
     const precoUnitario = parseFloat(produto[6]) || 0;
     const dataCadastro = produto[12] ? new Date(produto[12]) : null;
 
@@ -440,6 +452,11 @@ function calcularKPIsEstoque(dadosProdutos, dadosEstoque, dadosMovimentacoes, pe
 
     if (qtdAtual <= estoqueMinimo && estoqueMinimo > 0) {
       produtosEstoqueBaixo++;
+    }
+
+    // Verificar ponto de pedido
+    if (qtdAtual <= pontoPedido && pontoPedido > 0) {
+      produtosPontoPedido++;
     }
 
     // Idade do estoque
@@ -515,7 +532,11 @@ function calcularKPIsEstoque(dadosProdutos, dadosEstoque, dadosMovimentacoes, pe
     produtosInativos: produtosInativos,
     taxaEstoqueReservado: taxaEstoqueReservado,
     previsaoReposicao: previsaoReposicao,
-    custoArmazenagem: custoArmazenagem
+    custoArmazenagem: custoArmazenagem,
+    // Campos adicionais para Dashboard Resumo
+    totalProdutos: totalProdutos,
+    valorTotal: valorTotalEstoque,
+    produtosPontoPedido: produtosPontoPedido
   };
 }
 
