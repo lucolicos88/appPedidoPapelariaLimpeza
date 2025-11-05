@@ -4,7 +4,8 @@
       "Bash(git commit:*)",
       "Bash(git add:*)",
       "Bash(clasp push:*)",
-      "Bash(clasp open:*)"
+      "Bash(clasp open:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
