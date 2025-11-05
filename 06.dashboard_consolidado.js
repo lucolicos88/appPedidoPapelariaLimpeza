@@ -183,8 +183,8 @@ function calcularKPIsFinanceiros(pedidosFiltrados, dadosProdutos, dadosUsuarios)
       gastoPorSetor[setor] += valor;
 
       // Por produto
-      const produtos = pedido[6].split('; ');
-      const quantidades = pedido[7].split('; ');
+      const produtos = (pedido[6] || '').toString().split('; ');
+      const quantidades = (pedido[7] || '').toString().split('; ');
       produtos.forEach((produto, idx) => {
         if (!gastoPorProduto[produto]) {
           gastoPorProduto[produto] = 0;
@@ -469,8 +469,8 @@ function calcularKPIsEstoque(dadosProdutos, dadosEstoque, dadosMovimentacoes, pe
 
   // Contar solicitações por produto
   pedidosFiltrados.forEach(pedido => {
-    const produtos = pedido[6].split('; ');
-    const quantidades = pedido[7].split('; ');
+    const produtos = (pedido[6] || '').toString().split('; ');
+    const quantidades = (pedido[7] || '').toString().split('; ');
     produtos.forEach((produto, idx) => {
       if (!produtosSolicitacoes[produto]) {
         produtosSolicitacoes[produto] = 0;

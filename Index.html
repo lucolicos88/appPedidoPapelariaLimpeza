@@ -1733,9 +1733,22 @@ function initializeSystem() {
         });
       });
 
-      // CORREÇÃO v6.0.1: Carregar dashboard com delay para evitar HTTP 429
+      // CORREÇÃO v10.1: Carregar página inicial baseada no perfil
       setTimeout(() => {
-        loadDashboard();
+        const permissaoUpper = currentUser?.permissao?.toUpperCase() || '';
+        const perfilNormalized = currentUser?.perfil?.toLowerCase() || '';
+        const isAdmin = permissaoUpper === 'ADMIN' || perfilNormalized === 'admin';
+        const isGestor = permissaoUpper === 'GESTOR' || perfilNormalized === 'gestor';
+        const isFuncionarioOuUsuario = permissaoUpper === 'FUNCIONARIO' || permissaoUpper === 'USUARIO' ||
+                                        perfilNormalized === 'funcionario' || perfilNormalized === 'usuario';
+
+        if (isFuncionarioOuUsuario && !isAdmin && !isGestor) {
+          console.log('📋 [v10.1] Redirecionando Funcionário/Usuário para "Abrir Pedido"');
+          navigateTo('abrir-pedido');
+        } else {
+          console.log('📊 [v10.1] Carregando Dashboard para Admin/Gestor');
+          loadDashboard();
+        }
       }, 500);
     }
     
@@ -4295,6 +4308,28 @@ function loadGerenciamento() {
       `;
 
       container.innerHTML = html;
+    }
+
+    /**
+     * Edita usuário (v10.1)
+     */
+    function editarUsuario(email) {
+      console.log('✏️ Editando usuário:', email);
+      showError('Funcionalidade de edição de usuários será implementada em breve.');
+      // TODO v10.2: Implementar modal de edição de usuário
+    }
+
+    /**
+     * Exclui usuário (v10.1)
+     */
+    function excluirUsuario(email) {
+      if (!confirm(`Tem certeza que deseja excluir o usuário ${email}?`)) {
+        return;
+      }
+
+      console.log('🗑️ Excluindo usuário:', email);
+      showError('Funcionalidade de exclusão de usuários será implementada em breve.');
+      // TODO v10.2: Implementar exclusão de usuário com backend
     }
 
     /**
