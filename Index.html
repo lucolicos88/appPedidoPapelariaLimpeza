@@ -7,7 +7,7 @@
 
   <style>
     /* ========================================
-     * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA
+     * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v9.1
      * Estilos CSS
      * ======================================== */
     
@@ -793,7 +793,8 @@
     <div class="nav-container">
       <ul class="nav-menu">
         <li class="nav-item active" data-page="dashboard">📊 Dashboard</li>
-        <li class="nav-item" data-page="pedidos">🛒 Pedidos</li>
+        <li class="nav-item" data-page="pedidos">🛒 Abrir Pedido</li>
+        <li class="nav-item" data-page="gestao-pedidos" id="nav-gestao-pedidos" style="display: none;">📋 Gestão de Pedidos</li>
         <li class="nav-item" data-page="produtos">📦 Produtos</li>
         <li class="nav-item" data-page="estoque">📊 Estoque</li>
         <li class="nav-item" data-page="gerenciamento">📈 Gerenciamento</li>
@@ -1010,20 +1011,40 @@
         </div>
       </div>
     </section>
-    <!-- Pedidos Page -->
+    <!-- Abrir Pedido Page (v9.1 - Simplificado) -->
     <section class="page-section" id="page-pedidos">
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">Meus Pedidos</h2>
+          <h2 class="card-title">🛒 Abrir Novo Pedido</h2>
+        </div>
+
+        <div style="text-align: center; padding: 60px 20px;">
+          <div style="font-size: 5rem; margin-bottom: 30px;">🛒</div>
+          <h3 style="margin-bottom: 20px; color: var(--secondary);">Criar Novo Pedido</h3>
+          <p style="font-size: 1.1rem; color: #666; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto;">
+            Clique no botão abaixo para abrir o catálogo de produtos e criar um novo pedido de Papelaria ou Limpeza.
+          </p>
+          <button class="btn btn-primary" onclick="openModalNovoPedido()" style="font-size: 1.2rem; padding: 15px 40px;">
+            ➕ Novo Pedido
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gestão de Pedidos Page (v9.1 - Nova aba para Admin/Gestor) -->
+    <section class="page-section" id="page-gestao-pedidos" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">📋 Gestão de Pedidos</h2>
           <button class="btn btn-primary" onclick="openModalNovoPedido()">➕ Novo Pedido</button>
         </div>
-        
+
         <!-- Filters -->
         <div class="filters">
           <div class="filter-grid">
             <div class="form-group">
               <label class="form-label">Status</label>
-              <select class="form-control" id="pedidosFilterStatus">
+              <select class="form-control" id="gestaoPedidosFilterStatus">
                 <option value="">Todos</option>
                 <option value="Solicitado">Solicitado</option>
                 <option value="Em Compra">Em Compra</option>
@@ -1033,20 +1054,20 @@
             </div>
             <div class="form-group">
               <label class="form-label">Tipo</label>
-              <select class="form-control" id="pedidosFilterTipo">
+              <select class="form-control" id="gestaoPedidosFilterTipo">
                 <option value="">Todos</option>
                 <option value="Papelaria">Papelaria</option>
                 <option value="Limpeza">Limpeza</option>
               </select>
             </div>
             <div class="form-group">
-              <button class="btn btn-primary" onclick="loadPedidos()" style="width: 100%;">
+              <button class="btn btn-primary" onclick="loadGestaoPedidos()" style="width: 100%;">
                 Filtrar
               </button>
             </div>
           </div>
         </div>
-        
+
         <!-- Table -->
         <div class="table-container">
           <table>
@@ -1054,13 +1075,14 @@
               <tr>
                 <th>Número</th>
                 <th>Tipo</th>
+                <th>Solicitante</th>
                 <th>Data</th>
                 <th>Valor</th>
                 <th>Status</th>
                 <th>Ações</th>
               </tr>
             </thead>
-            <tbody id="pedidosTableBody">
+            <tbody id="gestaoPedidosTableBody">
               <!-- Pedidos serão inseridos aqui -->
             </tbody>
           </table>
@@ -1362,36 +1384,44 @@
       </div>
 
       <form id="formNovoPedido" onsubmit="submitNovoPedido(event)">
-        <!-- Etapa 1: Filtros e Catálogo -->
+        <!-- Etapa 1: Seleção de Tipo e Catálogo -->
         <div id="pedidoEtapa1" style="display: block;">
-          <div class="form-group">
-            <label class="form-label">Filtrar por Tipo</label>
-            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-              <button type="button" class="btn btn-outline" onclick="filtrarCatalogoPedido('')" id="btnTodosProdutos">Todos</button>
-              <button type="button" class="btn btn-outline" onclick="filtrarCatalogoPedido('Papelaria')" id="btnPapelaria">📝 Papelaria</button>
-              <button type="button" class="btn btn-outline" onclick="filtrarCatalogoPedido('Limpeza')" id="btnLimpeza">🧹 Limpeza</button>
+          <!-- NOVO: Seleção de Tipo OBRIGATÓRIA -->
+          <div class="form-group" style="background: #e3f2fd; padding: 20px; border-radius: 8px; border: 2px solid #2196F3; margin-bottom: 20px;">
+            <label class="form-label" style="font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; display: block;">1️⃣ Selecione o Tipo de Pedido *</label>
+            <select class="form-control" id="tipoPedidoSelect" onchange="selecionarTipoPedido(this.value)" style="font-size: 1rem; padding: 12px;">
+              <option value="">-- Selecione: Papelaria ou Limpeza --</option>
+              <option value="Papelaria">📝 Papelaria</option>
+              <option value="Limpeza">🧹 Limpeza</option>
+            </select>
+          </div>
+
+          <!-- Catálogo (só aparece após selecionar tipo) -->
+          <div id="catalogoContainer" style="display: none;">
+            <div class="form-group">
+              <label class="form-label" style="font-size: 1.1rem; font-weight: bold;">2️⃣ Selecione os Produtos</label>
             </div>
-          </div>
 
-          <div class="form-group">
-            <label class="form-label">Buscar Produto</label>
-            <input type="text" class="form-control" id="buscaCatalogoPedido" placeholder="Digite o nome do produto..." oninput="buscarProdutoCatalogo(this.value)">
-          </div>
+            <div class="form-group">
+              <label class="form-label">Buscar Produto</label>
+              <input type="text" class="form-control" id="buscaCatalogoPedido" placeholder="Digite o nome do produto..." oninput="buscarProdutoCatalogo(this.value)">
+            </div>
 
-          <!-- Catálogo de Produtos em Grid -->
-          <div id="catalogoProdutosPedido" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; max-height: 400px; overflow-y: auto; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">
-            <!-- Produtos serão inseridos aqui -->
-          </div>
+            <!-- Catálogo de Produtos em Grid -->
+            <div id="catalogoProdutosPedido" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; max-height: 400px; overflow-y: auto; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">
+              <!-- Produtos serão inseridos aqui -->
+            </div>
 
-          <!-- Resumo do Carrinho -->
-          <div id="resumoCarrinho" style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px; border: 2px solid #2196F3;">
-            <h4 style="margin: 0 0 10px 0; color: #2196F3;">🛒 Carrinho (0 itens)</h4>
-            <div id="itensCarrinho"></div>
-          </div>
+            <!-- Resumo do Carrinho -->
+            <div id="resumoCarrinho" style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px; border: 2px solid #2196F3;">
+              <h4 style="margin: 0 0 10px 0; color: #2196F3;">🛒 Carrinho (0 itens)</h4>
+              <div id="itensCarrinho"></div>
+            </div>
 
-          <div style="display: flex; gap: 10px; margin-top: 20px;">
-            <button type="button" class="btn btn-primary" onclick="avancarParaResumo()" style="flex: 1;">Continuar para Resumo ➡️</button>
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modalNovoPedido')" style="flex: 1;">❌ Cancelar</button>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+              <button type="button" class="btn btn-primary" onclick="avancarParaResumo()" style="flex: 1;">Continuar para Resumo ➡️</button>
+              <button type="button" class="btn btn-secondary" onclick="closeModal('modalNovoPedido')" style="flex: 1;">❌ Cancelar</button>
+            </div>
           </div>
         </div>
 
@@ -1548,10 +1578,10 @@
   <script>
     /**
      * ========================================
-     * SISTEMA NEOFORMULA v8.0 - JavaScript
+     * SISTEMA NEOFORMULA v9.1 - JavaScript
      * ========================================
      */
-    
+
     // Variáveis Globais
     let currentUser = null;
     let systemConfig = null;
@@ -1561,10 +1591,10 @@
     // Gráficos do Dashboard (v6.0.2)
     let chartStatus = null;
     let chartTipo = null;
-    
+
     // Inicialização
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('🚀 Iniciando Sistema Neoformula v8.0...');
+      console.log('🚀 Iniciando Sistema Neoformula v9.1...');
       initializeSystem();
     });
     
@@ -1706,7 +1736,10 @@ function initializeSystem() {
             loadDashboard();
             break;
           case 'pedidos':
-            loadPedidos();
+            // v9.1: Não carrega mais pedidos na aba "Abrir Pedido"
+            break;
+          case 'gestao-pedidos':
+            loadGestaoPedidos();
             break;
           case 'produtos':
             loadProdutos();
@@ -1729,10 +1762,18 @@ function initializeSystem() {
      */
     function checkUserPermissions() {
       if (!currentUser) return;
-      
-      const isGestor = currentUser.permissao === 'GESTOR' || currentUser.permissao === 'ADMIN';
-      const isAdmin = currentUser.permissao === 'ADMIN';
-      
+
+      const isGestor = currentUser.permissao === 'GESTOR' || currentUser.permissao === 'ADMIN' || currentUser.perfil === 'Gestor' || currentUser.perfil === 'Admin';
+      const isAdmin = currentUser.permissao === 'ADMIN' || currentUser.perfil === 'Admin';
+
+      // v9.1: Mostrar aba "Gestão de Pedidos" apenas para Admin/Gestor
+      if (isGestor) {
+        const navGestao = document.getElementById('nav-gestao-pedidos');
+        if (navGestao) {
+          navGestao.style.display = 'block';
+        }
+      }
+
       // Produtos: apenas gestor/admin pode cadastrar
       if (isGestor) {
         document.getElementById('produtosActions').innerHTML = `
@@ -1740,7 +1781,7 @@ function initializeSystem() {
           <button class="btn btn-outline" onclick="exportarRelatorioProdutos()">📥 Exportar</button>
         `;
       }
-      
+
       // Estoque: apenas gestor/admin pode movimentar
       if (isGestor) {
         document.getElementById('estoqueActions').innerHTML = `
@@ -2786,7 +2827,102 @@ function loadPedidos() {
         })
         .__atualizarStatusPedido(pedidoId, novoStatus);
     }
-    
+
+    // ========================================
+    // GESTÃO DE PEDIDOS v9.1 (Nova Aba)
+    // ========================================
+
+    /**
+     * Carrega pedidos para a aba Gestão de Pedidos (v9.1)
+     */
+    function loadGestaoPedidos() {
+      showLoading();
+
+      const filtros = {
+        status: document.getElementById('gestaoPedidosFilterStatus')?.value || null,
+        tipo: document.getElementById('gestaoPedidosFilterTipo')?.value || null
+      };
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          try {
+            if (!response) {
+              console.error('Resposta vazia ao carregar pedidos');
+              hideLoading();
+              renderGestaoPedidosTable([]);
+              showError('Erro ao carregar pedidos: Resposta vazia do servidor');
+              return;
+            }
+
+            if (response.success) {
+              renderGestaoPedidosTable(response.pedidos || []);
+            } else {
+              console.error('Erro ao carregar pedidos:', response.error);
+              renderGestaoPedidosTable([]);
+              showError('Erro ao carregar pedidos: ' + (response.error || 'Erro desconhecido'));
+            }
+
+          } catch (error) {
+            console.error('Erro ao processar pedidos:', error);
+            renderGestaoPedidosTable([]);
+            showError('Erro ao processar pedidos: ' + error.message);
+          }
+
+          hideLoading();
+        })
+        .withFailureHandler(function(error) {
+          console.error('Erro de conexão ao carregar pedidos:', error);
+          hideLoading();
+          renderGestaoPedidosTable([]);
+          showError('Erro de conexão ao carregar pedidos: ' + error.message);
+        })
+        .__listarPedidos(filtros);
+    }
+
+    /**
+     * Renderiza tabela de gestão de pedidos (v9.1)
+     */
+    function renderGestaoPedidosTable(pedidos) {
+      const tbody = document.getElementById('gestaoPedidosTableBody');
+
+      if (!pedidos || pedidos.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="empty-state">
+              <div class="empty-state-icon">📦</div>
+              <div class="empty-state-title">Nenhum pedido encontrado</div>
+              <div class="empty-state-text">Use os filtros acima para buscar pedidos</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      let html = '';
+      pedidos.forEach(pedido => {
+        const statusBadge = getStatusBadge(pedido.status);
+        const dataFormatada = formatDate(pedido.dataSolicitacao);
+
+        html += `
+          <tr>
+            <td><strong>${pedido.numeroPedido}</strong></td>
+            <td>${pedido.tipo}</td>
+            <td>${pedido.solicitanteNome || pedido.solicitanteEmail}</td>
+            <td>${dataFormatada}</td>
+            <td><strong>R$ ${formatMoney(pedido.valorTotal)}</strong></td>
+            <td>${statusBadge}</td>
+            <td>
+              <button class="btn btn-outline" onclick="verDetalhesPedido('${pedido.id}')" style="padding: 5px 10px; font-size: 0.85rem;">
+                Ver Detalhes
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
     // ========================================
     // NOVO MODAL DE PEDIDOS v9.0
     // ========================================
@@ -2808,6 +2944,11 @@ function loadPedidos() {
       // Resetar para etapa 1
       document.getElementById('pedidoEtapa1').style.display = 'block';
       document.getElementById('pedidoEtapa2').style.display = 'none';
+
+      // v9.1: Resetar dropdown e ocultar catálogo
+      document.getElementById('tipoPedidoSelect').value = '';
+      document.getElementById('catalogoContainer').style.display = 'none';
+      document.getElementById('buscaCatalogoPedido').value = '';
 
       loadCatalogoProdutos();
     }
@@ -2855,8 +2996,8 @@ function loadPedidos() {
         const noCarrinho = carrinhoPedido[produto.id] || 0;
 
         html += `
-          <div class="product-card" style="border: 2px solid ${noCarrinho > 0 ? '#4CAF50' : '#ddd'}; border-radius: 8px; padding: 10px; background: white; position: relative;">
-            ${noCarrinho > 0 ? '<div style="position: absolute; top: 5px; right: 5px; background: #4CAF50; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">✓</div>' : ''}
+          <div class="product-card" data-produto-id="${produto.id}" style="border: 2px solid ${noCarrinho > 0 ? '#4CAF50' : '#ddd'}; border-radius: 8px; padding: 10px; background: white; position: relative;">
+            <div class="product-checkmark" style="position: absolute; top: 5px; right: 5px; background: #4CAF50; color: white; border-radius: 50%; width: 24px; height: 24px; display: ${noCarrinho > 0 ? 'flex' : 'none'}; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">✓</div>
 
             <div style="width: 100%; height: 120px; background: #f5f5f5; border-radius: 4px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
               ${produto.imagemURL ?
@@ -2866,10 +3007,9 @@ function loadPedidos() {
             </div>
 
             <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 4px; min-height: 36px;">${produto.nome}</div>
-            <div style="color: #666; font-size: 0.8rem; margin-bottom: 4px;">${produto.tipo}</div>
-            <div style="color: #00A651; font-weight: bold; margin-bottom: 8px;">R$ ${formatMoney(produto.precoUnitario || 0)}</div>
+            <div style="color: #666; font-size: 0.8rem; margin-bottom: 8px;">${produto.tipo}</div>
 
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 4px; background: ${emEstoque ? '#e8f5e9' : '#ffebee'}; border-radius: 4px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 8px; background: ${emEstoque ? '#e8f5e9' : '#ffebee'}; border-radius: 4px;">
               <span style="font-size: 0.75rem; font-weight: bold; color: ${emEstoque ? '#2e7d32' : '#c62828'};">
                 ${emEstoque ? '✅ Estoque: ' + estoque.qtdDisponivel : '❌ Sem estoque'}
               </span>
@@ -2950,38 +3090,55 @@ function loadPedidos() {
       }
 
       let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
-      let valorTotal = 0;
 
       Object.keys(carrinhoPedido).forEach(produtoId => {
         const produto = catalogoCompleto.find(p => p.id === produtoId);
         if (!produto) return;
 
         const qtd = carrinhoPedido[produtoId];
-        const subtotal = qtd * (produto.precoUnitario || 0);
-        valorTotal += subtotal;
 
         html += `
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: white; border-radius: 4px; border: 1px solid #ddd;">
             <div style="flex: 1;">
               <strong>${produto.nome}</strong>
-              <div style="font-size: 0.85rem; color: #666;">${qtd}x R$ ${formatMoney(produto.precoUnitario || 0)}</div>
+              <div style="font-size: 0.85rem; color: #666;">Quantidade: ${qtd} ${produto.unidade || 'UN'}</div>
             </div>
-            <div style="font-weight: bold; color: #00A651;">R$ ${formatMoney(subtotal)}</div>
             <button type="button" onclick="removerDoCarrinho('${produtoId}')" style="margin-left: 10px; background: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">🗑️</button>
           </div>
         `;
       });
 
-      html += `
-        </div>
-        <div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #2196F3; display: flex; justify-content: space-between; align-items: center;">
-          <strong style="font-size: 1.1rem;">TOTAL:</strong>
-          <strong style="font-size: 1.3rem; color: #00A651;">R$ ${formatMoney(valorTotal)}</strong>
-        </div>
-      `;
+      html += '</div>';
 
       container.innerHTML = html;
-      renderCatalogoProdutos(); // Re-render para atualizar checkmarks
+      atualizarCheckmarksProdutos(); // Atualiza apenas as bordas, sem re-renderizar tudo
+    }
+
+    /**
+     * Atualizar checkmarks e bordas dos produtos sem re-renderizar
+     */
+    function atualizarCheckmarksProdutos() {
+      catalogoFiltrado.forEach(produto => {
+        const card = document.querySelector(`[data-produto-id="${produto.id}"]`);
+        if (card) {
+          const noCarrinho = carrinhoPedido[produto.id] || 0;
+
+          // Atualizar borda
+          card.style.border = noCarrinho > 0 ? '2px solid #4CAF50' : '2px solid #ddd';
+
+          // Atualizar checkmark
+          const checkmark = card.querySelector('.product-checkmark');
+          if (checkmark) {
+            checkmark.style.display = noCarrinho > 0 ? 'flex' : 'none';
+          }
+
+          // Atualizar input de quantidade
+          const qtdInput = document.getElementById(`qtd-${produto.id}`);
+          if (qtdInput) {
+            qtdInput.value = noCarrinho;
+          }
+        }
+      });
     }
 
     /**
@@ -2994,7 +3151,24 @@ function loadPedidos() {
     }
 
     /**
-     * Filtrar catálogo por tipo
+     * Selecionar tipo de pedido (v9.1)
+     */
+    function selecionarTipoPedido(tipo) {
+      if (!tipo) {
+        document.getElementById('catalogoContainer').style.display = 'none';
+        return;
+      }
+
+      // Mostrar catálogo
+      document.getElementById('catalogoContainer').style.display = 'block';
+
+      // Filtrar produtos por tipo
+      filtroTipoAtual = tipo;
+      aplicarFiltrosCatalogo();
+    }
+
+    /**
+     * Filtrar catálogo por tipo (Mantido para compatibilidade)
      */
     function filtrarCatalogoPedido(tipo) {
       filtroTipoAtual = tipo;
@@ -3043,10 +3217,9 @@ function loadPedidos() {
 
       // Gerar resumo
       let html = '<table style="width: 100%; border-collapse: collapse;">';
-      html += '<thead><tr style="background: #f5f5f5;"><th style="padding: 8px; text-align: left;">Produto</th><th style="padding: 8px; text-align: center;">Qtd</th><th style="padding: 8px; text-align: right;">Preço Unit.</th><th style="padding: 8px; text-align: right;">Subtotal</th></tr></thead>';
+      html += '<thead><tr style="background: #f5f5f5;"><th style="padding: 8px; text-align: left;">Produto</th><th style="padding: 8px; text-align: center;">Quantidade</th><th style="padding: 8px; text-align: center;">Unidade</th></tr></thead>';
       html += '<tbody>';
 
-      let valorTotal = 0;
       let tiposProdutos = new Set();
 
       Object.keys(carrinhoPedido).forEach(produtoId => {
@@ -3054,22 +3227,18 @@ function loadPedidos() {
         if (!produto) return;
 
         const qtd = carrinhoPedido[produtoId];
-        const subtotal = qtd * (produto.precoUnitario || 0);
-        valorTotal += subtotal;
         tiposProdutos.add(produto.tipo);
 
         html += `
           <tr style="border-bottom: 1px solid #ddd;">
             <td style="padding: 8px;">${produto.nome}</td>
-            <td style="padding: 8px; text-align: center;">${qtd}</td>
-            <td style="padding: 8px; text-align: right;">R$ ${formatMoney(produto.precoUnitario || 0)}</td>
-            <td style="padding: 8px; text-align: right; font-weight: bold;">R$ ${formatMoney(subtotal)}</td>
+            <td style="padding: 8px; text-align: center; font-weight: bold;">${qtd}</td>
+            <td style="padding: 8px; text-align: center;">${produto.unidade || 'UN'}</td>
           </tr>
         `;
       });
 
       html += '</tbody>';
-      html += `<tfoot><tr style="background: #e8f5e9; font-weight: bold; font-size: 1.1rem;"><td colspan="3" style="padding: 12px; text-align: right;">TOTAL:</td><td style="padding: 12px; text-align: right; color: #00A651;">R$ ${formatMoney(valorTotal)}</td></tr></tfoot>`;
       html += '</table>';
 
       html += `<div style="margin-top: 15px; padding: 10px; background: #e3f2fd; border-radius: 4px;"><strong>Tipo(s) de Produto:</strong> ${Array.from(tiposProdutos).join(', ')}</div>`;

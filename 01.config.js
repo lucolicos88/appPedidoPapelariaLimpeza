@@ -175,9 +175,15 @@ const CONFIG = {
   LOGO_URL: 'https://neoformula.com.br/cdn/shop/files/Logotipo-NeoFormula-Manipulacao-Homeopatia_76b2fa98-5ffa-4cc3-ac0a-6d41e1bc8810.png?height=100&v=1677088468',
 
   // Versão do sistema
-  VERSAO: '9.0',
+  VERSAO: '9.1',
   DATA_VERSAO: '2025-11-05',
   CHANGELOG: [
+    'v9.1 - Correção loop infinito no catálogo de pedidos',
+    'v9.1 - Remoção de preços (apenas quantidade e estoque)',
+    'v9.1 - Seleção de tipo ANTES do catálogo (dropdown obrigatório)',
+    'v9.1 - Nova aba "Gestão de Pedidos" (Admin/Gestor)',
+    'v9.1 - Renomeação: "Pedidos" para "Abrir Pedido"',
+    'v9.1 - Busca de nome real do usuário (não email)',
     'v9.0 - Novo modal de pedidos com catálogo visual',
     'v9.0 - Controle de status por perfil (Gestor/Admin)',
     'v9.0 - Interface aprimorada com imagens e estoque',
