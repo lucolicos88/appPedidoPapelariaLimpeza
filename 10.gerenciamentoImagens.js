@@ -36,9 +36,9 @@ function uploadImagemDrive(base64, fileName, mimeType) {
     // 4. Tornar arquivo público (leitura para qualquer um com o link)
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
-    // 5. Obter URL pública
+    // 5. Obter URL pública (v10.1 - Formato de thumbnail)
     const fileId = file.getId();
-    const imageUrl = `https://drive.google.com/uc?id=${fileId}`;
+    const imageUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
 
     Logger.log(`✅ Upload concluído: ${imageUrl}`);
 
@@ -131,13 +131,13 @@ function deletarImagemDrive(fileIdOrUrl) {
 }
 
 /**
- * Obter URL pública de uma imagem dado o File ID
+ * Obter URL pública de uma imagem dado o File ID (v10.1 - Formato thumbnail)
  *
  * @param {string} fileId - ID do arquivo no Drive
  * @returns {string} - URL pública da imagem
  */
 function getImageUrl(fileId) {
-  return `https://drive.google.com/uc?id=${fileId}`;
+  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
 }
 
 /**
@@ -327,6 +327,50 @@ function uploadImagemProduto(dados) {
  * FUNÇÕES DE TESTE
  * ========================================
  */
+
+/**
+ * Corrige URLs antigas de imagens para o novo formato (v10.1)
+ */
+function corrigirURLsImagensAntigas() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+
+    if (!abaProdutos) {
+      return { success: false, error: 'Aba de produtos não encontrada' };
+    }
+
+    const dados = abaProdutos.getDataRange().getValues();
+    let corrigidos = 0;
+
+    for (let i = 1; i < dados.length; i++) {
+      const imagemURL = dados[i][CONFIG.COLUNAS_PRODUTOS.IMAGEM_URL - 1];
+
+      // Se tiver URL no formato antigo (uc?id=), converter para thumbnail
+      if (imagemURL && imagemURL.includes('drive.google.com/uc?id=')) {
+        const fileId = imagemURL.match(/id=([^&]+)/)[1];
+        const novaURL = `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
+
+        abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.IMAGEM_URL).setValue(novaURL);
+        Logger.log(`✅ Corrigida URL do produto linha ${i + 1}: ${novaURL}`);
+        corrigidos++;
+      }
+    }
+
+    return {
+      success: true,
+      corrigidos: corrigidos,
+      message: `${corrigidos} URL(s) corrigida(s)`
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao corrigir URLs: ' + error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
 
 /**
  * Função de teste para verificar se upload está funcionando
