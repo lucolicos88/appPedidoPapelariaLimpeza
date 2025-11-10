@@ -4222,8 +4222,19 @@ function loadProdutos() {
      * Mostra detalhes do produto
      */
     function showProdutoDetails(produto) {
-      const imagemHtml = produto.imagemURL 
-        ? `<img src="${produto.imagemURL}" style="max-width: 200px; border-radius: 10px; margin: 10px 0;">`
+      // v10.1: Verificar múltiplas variações do campo de imagem
+      const imagemUrl = produto.imagemURL || produto.imagemUrl || produto.imagem || '';
+
+      console.log('[v10.1 DEBUG] Detalhes produto imagem:', {
+        nome: produto.nome,
+        imagemURL: produto.imagemURL,
+        imagemUrl: produto.imagemUrl,
+        imagem: produto.imagem,
+        imagemFinal: imagemUrl
+      });
+
+      const imagemHtml = imagemUrl
+        ? `<img src="${imagemUrl}" alt="${produto.nome}" style="max-width: 200px; border-radius: 10px; margin: 10px 0;" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='block';"><p style="color: #999; display: none;">Erro ao carregar imagem</p>`
         : '<p style="color: #999;">Sem imagem</p>';
       
       const html = `
