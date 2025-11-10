@@ -3767,8 +3767,9 @@ function loadPedidos() {
         const emEstoque = estoque.qtdDisponivel > 0;
         const noCarrinho = carrinhoPedido[produto.id] || 0;
 
-        // v10.1: Verificar múltiplas variações do campo de imagem
-        const imagemUrl = produto.imagemURL || produto.imagemUrl || produto.imagem || '';
+        // v10.1: Verificar múltiplas variações do campo de imagem e converter URL
+        let imagemUrl = produto.imagemURL || produto.imagemUrl || produto.imagem || '';
+        imagemUrl = converterURLDrive(imagemUrl);
 
         // Debug apenas no primeiro produto
         if (catalogoFiltrado.indexOf(produto) === 0) {
@@ -3777,7 +3778,8 @@ function loadPedidos() {
             imagemURL: produto.imagemURL,
             imagemUrl: produto.imagemUrl,
             imagem: produto.imagem,
-            imagemFinal: imagemUrl,
+            imagemOriginal: produto.imagemURL || produto.imagemUrl || produto.imagem || '',
+            imagemConvertida: imagemUrl,
             todasChaves: Object.keys(produto)
           });
         }
@@ -4219,18 +4221,45 @@ function loadProdutos() {
     }
     
     /**
+     * Converte URL antiga do Drive para formato thumbnail (v10.1)
+     */
+    function converterURLDrive(url) {
+      if (!url) return '';
+
+      // Se já estiver no formato thumbnail, retornar como está
+      if (url.includes('drive.google.com/thumbnail')) {
+        return url;
+      }
+
+      // Se estiver no formato antigo (uc?id=), converter para thumbnail
+      if (url.includes('drive.google.com/uc?id=')) {
+        const match = url.match(/id=([^&]+)/);
+        if (match && match[1]) {
+          return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w400`;
+        }
+      }
+
+      // Se não for URL do Drive, retornar como está
+      return url;
+    }
+
+    /**
      * Mostra detalhes do produto
      */
     function showProdutoDetails(produto) {
       // v10.1: Verificar múltiplas variações do campo de imagem
-      const imagemUrl = produto.imagemURL || produto.imagemUrl || produto.imagem || '';
+      let imagemUrl = produto.imagemURL || produto.imagemUrl || produto.imagem || '';
+
+      // v10.1: Converter URL antiga para formato thumbnail
+      imagemUrl = converterURLDrive(imagemUrl);
 
       console.log('[v10.1 DEBUG] Detalhes produto imagem:', {
         nome: produto.nome,
         imagemURL: produto.imagemURL,
         imagemUrl: produto.imagemUrl,
         imagem: produto.imagem,
-        imagemFinal: imagemUrl
+        imagemOriginal: produto.imagemURL || produto.imagemUrl || produto.imagem || '',
+        imagemConvertida: imagemUrl
       });
 
       const imagemHtml = imagemUrl
