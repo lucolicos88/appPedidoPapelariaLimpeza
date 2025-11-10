@@ -1650,6 +1650,54 @@
     </div>
   </div>
 
+  <!-- Modal: Alterar Status do Pedido (v10.1) -->
+  <div class="modal" id="modalAlterarStatus">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">🔄 Alterar Status do Pedido</h3>
+        <button class="modal-close" onclick="closeModal('modalAlterarStatus')">&times;</button>
+      </div>
+
+      <form id="formAlterarStatus" onsubmit="submitAlterarStatus(event)">
+        <input type="hidden" id="alterarStatusPedidoId">
+
+        <div class="form-group">
+          <label class="form-label">Pedido</label>
+          <input type="text" class="form-control" id="alterarStatusPedidoInfo" readonly>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Status Atual</label>
+          <input type="text" class="form-control" id="alterarStatusAtual" readonly>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Novo Status *</label>
+          <select class="form-control" id="alterarStatusNovo" required>
+            <option value="">Selecione...</option>
+            <option value="Pendente">⏳ Pendente</option>
+            <option value="Em Análise">🔍 Em Análise</option>
+            <option value="Aprovado">✅ Aprovado</option>
+            <option value="Em Separação">📦 Em Separação</option>
+            <option value="Pronto para Retirada">🎯 Pronto para Retirada</option>
+            <option value="Concluído">✔️ Concluído</option>
+            <option value="Cancelado">❌ Cancelado</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Observações</label>
+          <textarea class="form-control" id="alterarStatusObs" rows="3" placeholder="Adicione observações sobre a mudança de status (opcional)"></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modalAlterarStatus')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Alteração</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Modal: Movimentação de Estoque -->
   <div class="modal" id="modalMovimentacaoEstoque">
     <div class="modal-content">
@@ -3056,6 +3104,8 @@ function loadPedidos() {
       google.script.run
         .withSuccessHandler(function(response) {
           try {
+            console.log('📦 [v10.1 DEBUG] Resposta de __listarPedidos:', response);
+
             if (!response) {
               console.error('Resposta vazia ao carregar pedidos');
               hideLoading();
@@ -3064,7 +3114,12 @@ function loadPedidos() {
               return;
             }
 
+            console.log('✅ [v10.1 DEBUG] response.success:', response.success);
+            console.log('📋 [v10.1 DEBUG] response.pedidos length:', (response.pedidos || []).length);
+            console.log('📋 [v10.1 DEBUG] response.message:', response.message);
+
             if (response.success) {
+              console.log('📋 [v10.1 DEBUG] Renderizando', (response.pedidos || []).length, 'pedidos');
               renderGestaoPedidosTable(response.pedidos || [], isFuncionario);
             } else {
               console.error('Erro ao carregar pedidos:', response.error);
@@ -3093,9 +3148,19 @@ function loadPedidos() {
      * Renderiza tabela de gestão de pedidos (v10.0 - com controle de edição)
      */
     function renderGestaoPedidosTable(pedidos, isReadOnly = false) {
+      console.log('🎨 [v10.1 DEBUG] renderGestaoPedidosTable chamado');
+      console.log('📊 [v10.1 DEBUG] Número de pedidos recebidos:', (pedidos || []).length);
+      console.log('🔒 [v10.1 DEBUG] isReadOnly:', isReadOnly);
+
       const tbody = document.getElementById('gestaoPedidosTableBody');
 
+      if (!tbody) {
+        console.error('❌ [v10.1 DEBUG] Elemento gestaoPedidosTableBody não encontrado!');
+        return;
+      }
+
       if (!pedidos || pedidos.length === 0) {
+        console.log('📭 [v10.1 DEBUG] Nenhum pedido para renderizar - mostrando empty state');
         tbody.innerHTML = `
           <tr>
             <td colspan="7" class="empty-state">
@@ -3823,10 +3888,18 @@ function loadProdutos() {
       document.getElementById('editProdutoPontoPedido').value = produto.pontoPedido || 0;
       document.getElementById('editProdutoFornecedor').value = produto.fornecedor || '';
 
-      // Preview da imagem atual
+      // Preview da imagem atual (v10.1 - Maior)
       const preview = document.getElementById('previewEditProduto');
       if (produto.imagemURL) {
-        preview.innerHTML = `<img src="${produto.imagemURL}" style="max-width: 100%; max-height: 200px;"><p style="color: #666; font-size: 0.85rem; margin-top: 5px;">Imagem atual (selecione nova para substituir)</p>`;
+        preview.innerHTML = `
+          <div style="text-align: center; padding: 15px; background: #f5f5f5; border-radius: 8px;">
+            <img src="${produto.imagemURL}" style="max-width: 100%; max-height: 400px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <p style="color: #666; font-size: 0.9rem; margin-top: 15px; font-weight: 500;">
+              📷 Imagem Atual<br>
+              <span style="font-size: 0.8rem; color: #999;">Selecione um novo arquivo abaixo para substituir esta imagem</span>
+            </p>
+          </div>
+        `;
       } else {
         preview.innerHTML = '<div class="image-preview-placeholder">Sem imagem atual (selecione para adicionar)</div>';
       }
@@ -3893,6 +3966,76 @@ function loadProdutos() {
           showError('Erro: ' + error.message);
         })
         .atualizarProduto(dadosProduto);
+    }
+
+    /**
+     * Abre modal para alterar status do pedido (v10.1)
+     */
+    function abrirModalAlterarStatus(pedidoId, statusAtual) {
+      console.log('🔄 [v10.1] Abrindo modal para alterar status do pedido:', pedidoId);
+
+      // Preencher campos do modal
+      document.getElementById('alterarStatusPedidoId').value = pedidoId;
+      document.getElementById('alterarStatusPedidoInfo').value = `Pedido #${pedidoId}`;
+      document.getElementById('alterarStatusAtual').value = statusAtual || 'Pendente';
+      document.getElementById('alterarStatusNovo').value = '';
+      document.getElementById('alterarStatusObs').value = '';
+
+      // Abrir modal
+      openModal('modalAlterarStatus');
+    }
+
+    /**
+     * Processa submissão do formulário de alteração de status (v10.1)
+     */
+    function submitAlterarStatus(event) {
+      event.preventDefault();
+
+      const pedidoId = document.getElementById('alterarStatusPedidoId').value;
+      const novoStatus = document.getElementById('alterarStatusNovo').value;
+      const observacoes = document.getElementById('alterarStatusObs').value;
+
+      if (!pedidoId || !novoStatus) {
+        showError('Por favor, selecione um novo status');
+        return;
+      }
+
+      console.log('💾 [v10.1] Alterando status do pedido:', {
+        pedidoId,
+        novoStatus,
+        observacoes
+      });
+
+      enviarAlteracaoStatus({
+        pedidoId,
+        novoStatus,
+        observacoes
+      });
+    }
+
+    /**
+     * Envia alteração de status para o backend (v10.1)
+     */
+    function enviarAlteracaoStatus(dados) {
+      showLoading();
+      closeModal('modalAlterarStatus');
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response && response.success) {
+            showSuccess('Status alterado com sucesso!');
+            // Recarregar lista de pedidos
+            loadGestaoPedidos();
+          } else {
+            showError('Erro ao alterar status: ' + (response.error || 'Erro desconhecido'));
+          }
+          hideLoading();
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .__atualizarStatusPedido(dados.pedidoId, dados.novoStatus, dados.observacoes);
     }
 
     /**

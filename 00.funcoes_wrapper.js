@@ -102,15 +102,19 @@ function __darBaixaPedido(pedidoId) {
 /**
  * Wrapper para atualizar status do pedido (v9.0 - apenas Admin/Gestor)
  */
-function __atualizarStatusPedido(pedidoId, novoStatus) {
+function __atualizarStatusPedido(pedidoId, novoStatus, observacoes) {
   try {
-    Logger.log(`🔄 __atualizarStatusPedido chamado: ${pedidoId} -> ${novoStatus}`);
+    Logger.log(`🔄 [v10.1] __atualizarStatusPedido chamado: ${pedidoId} -> ${novoStatus}`);
+    if (observacoes) {
+      Logger.log(`📝 [v10.1] Observações: ${observacoes}`);
+    }
 
-    // Verificar permissões
+    // Verificar permissões - CASE INSENSITIVE (v10.1)
     const userEmail = Session.getActiveUser().getEmail();
     const perfil = obterPerfilUsuario(userEmail);
+    const perfilUpper = (perfil || '').toUpperCase();
 
-    if (perfil !== 'Admin' && perfil !== 'Gestor') {
+    if (perfilUpper !== 'ADMIN' && perfilUpper !== 'GESTOR') {
       return {
         success: false,
         error: 'Você não tem permissão para alterar o status de pedidos'
@@ -145,7 +149,11 @@ function __atualizarStatusPedido(pedidoId, novoStatus) {
           abaPedidos.getRange(i + 1, CONFIG.COLUNAS_PEDIDOS.DATA_FINALIZACAO).setValue(new Date());
         }
 
-        registrarLog('STATUS_PEDIDO_ATUALIZADO', `Pedido ${dados[i][CONFIG.COLUNAS_PEDIDOS.NUMERO_PEDIDO - 1]} -> ${novoStatus}`, 'SUCESSO');
+        // v10.1: Registrar log com observações se fornecidas
+        const logMsg = observacoes
+          ? `Pedido ${dados[i][CONFIG.COLUNAS_PEDIDOS.NUMERO_PEDIDO - 1]} -> ${novoStatus} | Obs: ${observacoes}`
+          : `Pedido ${dados[i][CONFIG.COLUNAS_PEDIDOS.NUMERO_PEDIDO - 1]} -> ${novoStatus}`;
+        registrarLog('STATUS_PEDIDO_ATUALIZADO', logMsg, 'SUCESSO');
 
         return {
           success: true,

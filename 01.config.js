@@ -176,8 +176,13 @@ const CONFIG = {
 
   // Versão do sistema
   VERSAO: '10.1',
-  DATA_VERSAO: '2025-11-05',
+  DATA_VERSAO: '2025-11-10',
   CHANGELOG: [
+    'v10.1 - FEATURE: Modal de alteração de status de pedido para Gestor/Admin',
+    'v10.1 - FEATURE: Observações opcionais na mudança de status de pedido',
+    'v10.1 - DEBUG: Logs detalhados para investigar problema de pedidos não aparecendo',
+    'v10.1 - MELHORIA: Preview de imagem aumentado (400px) no modal de edição',
+    'v10.1 - CORREÇÃO: Permissões case-insensitive em __atualizarStatusPedido',
     'v10.1 - CORREÇÃO CRÍTICA: Formato de URL do Drive alterado para thumbnail',
     'v10.1 - CORREÇÃO: URLs antigas convertidas (uc?id → thumbnail?id)',
     'v10.1 - FEATURE: Editar Produto implementado com upload de imagem',
