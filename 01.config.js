@@ -178,6 +178,7 @@ const CONFIG = {
   VERSAO: '10.1',
   DATA_VERSAO: '2025-11-05',
   CHANGELOG: [
+    'v10.1 - CORREÇÃO: Imagens não apareciam no catálogo de pedidos (debug + fallback)',
     'v10.1 - CORREÇÃO CRÍTICA: Upload de imagem não salvava URL na planilha (Base64 incorreto)',
     'v10.1 - CORREÇÃO CRÍTICA: uploadImagemProduto não definida (cadastro de produtos falhava)',
     'v10.1 - CORREÇÃO CRÍTICA: Permissões case-insensitive em verificarPermissao()',

@@ -1,12 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git commit:*)",
       "Bash(git add:*)",
-      "Bash(clasp push:*)",
-      "Bash(clasp open:*)",
+      "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(base64,\"\n- Backend esperava apenas Base64 puro sem prefixo\n\nSOLUÇÃO:\n- Modificado submitNovoProduto para remover prefixo do DataURL\n- Usa split('','')[1] para extrair apenas Base64 puro\n- Agora uploadImagemDrive recebe formato correto\n\nARQUIVOS MODIFICADOS:\n- Index.html: Linha 3640-3641 - Extração correta de Base64\n- 01.config.js: Changelog atualizado\n\nTESTE:\n1. Cadastrar produto com imagem\n2. Verificar coluna K na planilha Produtos\n3. URL do Drive deve aparecer corretamente\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(clasp push:*)"
     ],
     "deny": [],
     "ask": []
