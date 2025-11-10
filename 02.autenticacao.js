@@ -156,8 +156,9 @@ function obterPerfilUsuario(email) {
     for (let i = 1; i < dados.length; i++) {
       const emailUsuario = dados[i][0]; // Coluna A - Email
       if (emailUsuario && emailUsuario.toLowerCase() === email.toLowerCase()) {
-        const perfil = dados[i][4] || 'Usuario'; // Coluna E - Perfil/Permissão
+        const perfil = dados[i][3] || 'Usuario'; // Coluna D - Permissão (índice 3)
         Logger.log('✅ [v10.1] Perfil encontrado:', perfil, 'para', email);
+        Logger.log('🔍 [v10.1] Dados da linha:', dados[i]);
         return perfil;
       }
     }

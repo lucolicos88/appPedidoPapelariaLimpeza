@@ -111,15 +111,23 @@ function __atualizarStatusPedido(pedidoId, novoStatus, observacoes) {
 
     // Verificar permissões - CASE INSENSITIVE (v10.1)
     const userEmail = Session.getActiveUser().getEmail();
+    Logger.log(`📧 [v10.1] Email do usuário: ${userEmail}`);
+
     const perfil = obterPerfilUsuario(userEmail);
+    Logger.log(`👤 [v10.1] Perfil retornado: ${perfil}`);
+
     const perfilUpper = (perfil || '').toUpperCase();
+    Logger.log(`🔠 [v10.1] Perfil uppercase: ${perfilUpper}`);
 
     if (perfilUpper !== 'ADMIN' && perfilUpper !== 'GESTOR') {
+      Logger.log(`❌ [v10.1] Permissão negada para perfil: ${perfilUpper}`);
       return {
         success: false,
         error: 'Você não tem permissão para alterar o status de pedidos'
       };
     }
+
+    Logger.log(`✅ [v10.1] Permissão concedida para perfil: ${perfilUpper}`);
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaPedidos = ss.getSheetByName(CONFIG.ABAS.ORDERS);
