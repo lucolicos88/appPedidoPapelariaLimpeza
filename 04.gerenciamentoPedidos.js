@@ -323,19 +323,22 @@ function calcularPrazoEntrega(tipo) {
  */
 function listarPedidos(filtros) {
   try {
+    Logger.log('📋 [v10.1] listarPedidos chamado com filtros:', JSON.stringify(filtros));
+
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaPedidos = ss.getSheetByName(CONFIG.ABAS.ORDERS);
-    
+
     if (!abaPedidos) {
       Logger.log('❌ Aba de pedidos não encontrada');
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: 'Aba de pedidos não encontrada',
         pedidos: []
       };
     }
-    
+
     const dados = abaPedidos.getDataRange().getValues();
+    Logger.log('📊 [v10.1] Total de linhas na planilha:', dados.length);
     
     // Verificar se há dados além do cabeçalho
     if (dados.length <= 1) {
@@ -375,6 +378,8 @@ function listarPedidos(filtros) {
         if (filtros) {
           if (filtros.tipo && pedido.tipo !== filtros.tipo) continue;
           if (filtros.status && pedido.status !== filtros.status) continue;
+          // v10.1: Suporte para filtros de email (solicitanteEmail ou solicitante)
+          if (filtros.solicitanteEmail && pedido.solicitanteEmail !== filtros.solicitanteEmail) continue;
           if (filtros.solicitante && pedido.solicitanteEmail !== filtros.solicitante) continue;
           if (filtros.setor && pedido.setor !== filtros.setor) continue;
           
@@ -398,9 +403,14 @@ function listarPedidos(filtros) {
         continue;
       }
     }
-    
-    Logger.log('✅ ' + pedidos.length + ' pedidos carregados com sucesso');
-    
+
+    Logger.log('✅ [v10.1] ' + pedidos.length + ' pedidos carregados com sucesso (após filtros)');
+
+    // v10.1: Log de debug para o primeiro pedido
+    if (pedidos.length > 0) {
+      Logger.log('🔍 [v10.1] Primeiro pedido:', JSON.stringify(pedidos[0]));
+    }
+
     return {
       success: true,
       pedidos: pedidos

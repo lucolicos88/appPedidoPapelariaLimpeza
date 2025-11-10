@@ -3084,21 +3084,38 @@ function loadPedidos() {
      */
     function loadGestaoPedidos() {
       showLoading();
-      console.log('📋 [v10.0] Carregando Gestão de Pedidos...');
+      console.log('📋 [v10.1] Carregando Gestão de Pedidos...');
 
       const filtros = {
         status: document.getElementById('gestaoPedidosFilterStatus')?.value || null,
         tipo: document.getElementById('gestaoPedidosFilterTipo')?.value || null
       };
 
-      // v10.0: Se for Funcionário, filtrar apenas seus pedidos
+      // v10.1: Verificar perfil do usuário (case-insensitive)
       const permissaoUpper = (currentUser?.permissao || '').toUpperCase();
       const perfilNormalized = currentUser?.perfil || '';
-      const isFuncionario = permissaoUpper === 'FUNCIONARIO' || perfilNormalized === 'Funcionario';
 
-      if (isFuncionario) {
+      // Admin e Gestor veem todos os pedidos
+      const isAdmin = permissaoUpper === 'ADMIN' || perfilNormalized === 'Admin';
+      const isGestor = permissaoUpper === 'GESTOR' || perfilNormalized === 'Gestor';
+
+      // Usuário comum (Funcionário/Usuario) vê apenas seus pedidos
+      const isUsuarioComum = !isAdmin && !isGestor;
+
+      console.log('🔍 [v10.1 DEBUG] Perfil atual:', {
+        email: currentUser?.email,
+        permissao: currentUser?.permissao,
+        perfil: currentUser?.perfil,
+        isAdmin,
+        isGestor,
+        isUsuarioComum
+      });
+
+      if (isUsuarioComum) {
         filtros.solicitanteEmail = currentUser.email;
-        console.log('👤 [v10.0] Funcionário - filtrando pedidos por email:', currentUser.email);
+        console.log('👤 [v10.1] Usuário comum - filtrando pedidos por email:', currentUser.email);
+      } else {
+        console.log('👑 [v10.1] Admin/Gestor - mostrando todos os pedidos');
       }
 
       google.script.run
@@ -3120,16 +3137,17 @@ function loadPedidos() {
 
             if (response.success) {
               console.log('📋 [v10.1 DEBUG] Renderizando', (response.pedidos || []).length, 'pedidos');
-              renderGestaoPedidosTable(response.pedidos || [], isFuncionario);
+              // v10.1: Usuário comum não pode editar status (isReadOnly = true)
+              renderGestaoPedidosTable(response.pedidos || [], isUsuarioComum);
             } else {
               console.error('Erro ao carregar pedidos:', response.error);
-              renderGestaoPedidosTable([], isFuncionario);
+              renderGestaoPedidosTable([], isUsuarioComum);
               showError('Erro ao carregar pedidos: ' + (response.error || 'Erro desconhecido'));
             }
 
           } catch (error) {
             console.error('Erro ao processar pedidos:', error);
-            renderGestaoPedidosTable([], isFuncionario);
+            renderGestaoPedidosTable([], isUsuarioComum);
             showError('Erro ao processar pedidos: ' + error.message);
           }
 
@@ -3138,7 +3156,7 @@ function loadPedidos() {
         .withFailureHandler(function(error) {
           console.error('Erro de conexão ao carregar pedidos:', error);
           hideLoading();
-          renderGestaoPedidosTable([], isFuncionario);
+          renderGestaoPedidosTable([], isUsuarioComum);
           showError('Erro de conexão ao carregar pedidos: ' + error.message);
         })
         .__listarPedidos(filtros);
@@ -3172,34 +3190,61 @@ function loadPedidos() {
         return;
       }
 
-      let html = '';
-      pedidos.forEach(pedido => {
-        const statusBadge = getStatusBadge(pedido.status);
-        const dataFormatada = formatDate(pedido.dataSolicitacao);
+      // v10.1: Log do primeiro pedido para debug
+      console.log('🔍 [v10.1 DEBUG] Estrutura do primeiro pedido:', pedidos[0]);
+      console.log('🔍 [v10.1 DEBUG] Chaves disponíveis:', Object.keys(pedidos[0]));
 
-        html += `
+      let html = '';
+
+      try {
+        pedidos.forEach((pedido, index) => {
+          try {
+            console.log(`🔍 [v10.1 DEBUG] Processando pedido ${index + 1}:`, pedido);
+
+            const statusBadge = getStatusBadge(pedido.status || 'Pendente');
+            const dataFormatada = formatDate(pedido.dataSolicitacao || pedido.data || new Date());
+
+            html += `
+              <tr>
+                <td><strong>${pedido.numeroPedido || pedido.numero || 'N/A'}</strong></td>
+                <td>${pedido.tipo || 'N/A'}</td>
+                <td>${pedido.solicitanteNome || pedido.solicitante || pedido.solicitanteEmail || 'N/A'}</td>
+                <td>${dataFormatada}</td>
+                <td><strong>R$ ${formatMoney(pedido.valorTotal || pedido.valor || 0)}</strong></td>
+                <td>${statusBadge}</td>
+                <td>
+                  <button class="btn btn-outline" onclick="verDetalhesPedido('${pedido.id}')" style="padding: 5px 10px; font-size: 0.85rem;">
+                    👁️ Ver
+                  </button>
+                  ${!isReadOnly ? `
+                    <button class="btn btn-primary" onclick="abrirModalAlterarStatus('${pedido.id}', '${pedido.status || 'Pendente'}')" style="padding: 5px 10px; font-size: 0.85rem; margin-left: 5px;">
+                      🔄 Status
+                    </button>
+                  ` : ''}
+                </td>
+              </tr>
+            `;
+          } catch (pedidoError) {
+            console.error('❌ [v10.1 DEBUG] Erro ao processar pedido individual:', pedidoError, pedido);
+          }
+        });
+
+        console.log('✅ [v10.1 DEBUG] HTML gerado, tamanho:', html.length);
+        tbody.innerHTML = html;
+        console.log('✅ [v10.1 DEBUG] Tabela renderizada com sucesso!');
+
+      } catch (error) {
+        console.error('❌ [v10.1 DEBUG] Erro ao gerar HTML da tabela:', error);
+        tbody.innerHTML = `
           <tr>
-            <td><strong>${pedido.numeroPedido}</strong></td>
-            <td>${pedido.tipo}</td>
-            <td>${pedido.solicitanteNome || pedido.solicitanteEmail}</td>
-            <td>${dataFormatada}</td>
-            <td><strong>R$ ${formatMoney(pedido.valorTotal)}</strong></td>
-            <td>${statusBadge}</td>
-            <td>
-              <button class="btn btn-outline" onclick="verDetalhesPedido('${pedido.id}')" style="padding: 5px 10px; font-size: 0.85rem;">
-                👁️ Ver
-              </button>
-              ${!isReadOnly ? `
-                <button class="btn btn-primary" onclick="abrirModalAlterarStatus('${pedido.id}', '${pedido.status}')" style="padding: 5px 10px; font-size: 0.85rem; margin-left: 5px;">
-                  🔄 Status
-                </button>
-              ` : ''}
+            <td colspan="7" class="empty-state">
+              <div class="empty-state-icon">⚠️</div>
+              <div class="empty-state-title">Erro ao renderizar pedidos</div>
+              <div style="color: #666; font-size: 0.9rem; margin-top: 10px;">${error.message}</div>
             </td>
           </tr>
         `;
-      });
-
-      tbody.innerHTML = html;
+      }
     }
 
     // ========================================
