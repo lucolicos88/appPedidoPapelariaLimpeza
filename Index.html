@@ -3177,6 +3177,12 @@ function loadPedidos() {
         return;
       }
 
+      // v10.1: Verificar se o elemento está visível
+      const pageSection = document.getElementById('page-gestao-pedidos');
+      console.log('🔍 [v10.1 DEBUG] Seção gestão-pedidos display:', pageSection?.style.display);
+      console.log('🔍 [v10.1 DEBUG] tbody display:', tbody.style.display);
+      console.log('🔍 [v10.1 DEBUG] tbody offsetParent:', tbody.offsetParent); // null = invisível
+
       if (!pedidos || pedidos.length === 0) {
         console.log('📭 [v10.1 DEBUG] Nenhum pedido para renderizar - mostrando empty state');
         tbody.innerHTML = `
@@ -3232,6 +3238,8 @@ function loadPedidos() {
         console.log('✅ [v10.1 DEBUG] HTML gerado, tamanho:', html.length);
         tbody.innerHTML = html;
         console.log('✅ [v10.1 DEBUG] Tabela renderizada com sucesso!');
+        console.log('🔍 [v10.1 DEBUG] tbody.children.length após renderização:', tbody.children.length);
+        console.log('🔍 [v10.1 DEBUG] Primeiras 200 chars do HTML:', html.substring(0, 200));
 
       } catch (error) {
         console.error('❌ [v10.1 DEBUG] Erro ao gerar HTML da tabela:', error);
