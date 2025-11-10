@@ -1241,6 +1241,7 @@
               <select class="form-control" id="gestaoPedidosFilterStatus">
                 <option value="">Todos</option>
                 <option value="Solicitado">Solicitado</option>
+                <option value="Em Compra">Em Compra</option>
                 <option value="Concluído">Concluído</option>
                 <option value="Cancelado">Cancelado</option>
               </select>
@@ -1301,6 +1302,17 @@
                 <span class="kanban-count" id="kanban-count-Solicitado">0</span>
               </div>
               <div class="kanban-column-body" id="kanban-column-Solicitado">
+                <!-- Cards aqui -->
+              </div>
+            </div>
+
+            <!-- Em Compra -->
+            <div class="kanban-column">
+              <div class="kanban-column-header" style="background: #42a5f5;">
+                <h3>🔍 Em Compra</h3>
+                <span class="kanban-count" id="kanban-count-Em Compra">0</span>
+              </div>
+              <div class="kanban-column-body" id="kanban-column-Em Compra">
                 <!-- Cards aqui -->
               </div>
             </div>
@@ -1953,6 +1965,7 @@
           <label class="form-label">Status *</label>
           <select class="form-control" id="editPedidoStatus" required>
             <option value="Solicitado">⏳ Solicitado</option>
+            <option value="Em Compra">🔍 Em Compra</option>
             <option value="Concluído">✔️ Concluído</option>
             <option value="Cancelado">❌ Cancelado</option>
           </select>
@@ -3599,9 +3612,10 @@ function loadPedidos() {
       // Armazenar dados para toggle
       gestaoPedidosCurrentData = pedidos;
 
-      // Status possíveis (v10.1 - Simplificado)
+      // Status possíveis (v10.1)
       const statusList = [
         'Solicitado',
+        'Em Compra',
         'Concluído',
         'Cancelado'
       ];
