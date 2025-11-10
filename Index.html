@@ -732,6 +732,168 @@
       display: block;
     }
 
+    /* Kanban Board (v10.1) */
+    .kanban-board {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding: 10px 0;
+      min-height: 500px;
+    }
+
+    .kanban-column {
+      flex: 0 0 280px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      max-height: 70vh;
+    }
+
+    .kanban-column-header {
+      padding: 12px 16px;
+      border-radius: 8px 8px 0 0;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+    }
+
+    .kanban-column-header h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .kanban-count {
+      background: rgba(255, 255, 255, 0.3);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .kanban-column-body {
+      flex: 1;
+      padding: 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .kanban-card {
+      background: white;
+      border-radius: 8px;
+      padding: 14px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 4px solid var(--primary);
+    }
+
+    .kanban-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .kanban-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .kanban-card-number {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 0.9rem;
+    }
+
+    .kanban-card-type {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: var(--light);
+      color: var(--dark);
+    }
+
+    .kanban-card-body {
+      margin-bottom: 10px;
+    }
+
+    .kanban-card-solicitante {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .kanban-card-date {
+      font-size: 0.85rem;
+      color: #999;
+      margin-bottom: 8px;
+    }
+
+    .kanban-card-value {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--success);
+      margin-bottom: 10px;
+    }
+
+    .kanban-card-actions {
+      display: flex;
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1px solid #eee;
+    }
+
+    .kanban-card-btn {
+      flex: 1;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      background: white;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .kanban-card-btn:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .kanban-card-btn-status {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .kanban-card-btn-status:hover {
+      background: var(--secondary);
+      border-color: var(--secondary);
+    }
+
+    /* Empty state for Kanban */
+    .kanban-empty {
+      text-align: center;
+      padding: 30px 10px;
+      color: #999;
+      font-size: 0.9rem;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .header-content {
@@ -1067,9 +1229,12 @@
               <label class="form-label">Status</label>
               <select class="form-control" id="gestaoPedidosFilterStatus">
                 <option value="">Todos</option>
-                <option value="Solicitado">Solicitado</option>
-                <option value="Em Compra">Em Compra</option>
-                <option value="Finalizado">Finalizado</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Em Análise">Em Análise</option>
+                <option value="Aprovado">Aprovado</option>
+                <option value="Em Separação">Em Separação</option>
+                <option value="Pronto para Retirada">Pronto para Retirada</option>
+                <option value="Concluído">Concluído</option>
                 <option value="Cancelado">Cancelado</option>
               </select>
             </div>
@@ -1083,14 +1248,24 @@
             </div>
             <div class="form-group">
               <button class="btn btn-primary" onclick="loadGestaoPedidos()" style="width: 100%;">
-                Filtrar
+                🔄 Filtrar
               </button>
             </div>
           </div>
         </div>
 
-        <!-- Table -->
-        <div class="table-container">
+        <!-- View Toggle (v10.1 - Kanban) -->
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 20px; gap: 10px;">
+          <button class="btn btn-outline" id="btnViewTable" onclick="toggleGestaoPedidosView('table')" style="padding: 8px 20px;">
+            📊 Tabela
+          </button>
+          <button class="btn btn-outline" id="btnViewKanban" onclick="toggleGestaoPedidosView('kanban')" style="padding: 8px 20px;">
+            📋 Kanban
+          </button>
+        </div>
+
+        <!-- Table View -->
+        <div id="gestaoPedidosTableView" class="table-container">
           <table>
             <thead>
               <tr>
@@ -1107,6 +1282,88 @@
               <!-- Pedidos serão inseridos aqui -->
             </tbody>
           </table>
+        </div>
+
+        <!-- Kanban View (v10.1) -->
+        <div id="gestaoPedidosKanbanView" style="display: none;">
+          <div class="kanban-board">
+            <!-- Pendente -->
+            <div class="kanban-column">
+              <div class="kanban-column-header" style="background: #ffa726;">
+                <h3>⏳ Pendente</h3>
+                <span class="kanban-count" id="kanban-count-Pendente">0</span>
+              </div>
+              <div class="kanban-column-body" id="kanban-column-Pendente">
+                <!-- Cards aqui -->
+              </div>
+            </div>
+
+            <!-- Em Análise -->
+            <div class="kanban-column">
+              <div class="kanban-column-header" style="background: #42a5f5;">
+                <h3>🔍 Em Análise</h3>
+                <span class="kanban-count" id="kanban-count-Em Análise">0</span>
+              </div>
+              <div class="kanban-column-body" id="kanban-column-Em Análise">
+                <!-- Cards aqui -->
+              </div>
+            </div>
+
+            <!-- Aprovado -->
+            <div class="kanban-column">
+              <div class="kanban-column-header" style="background: #66bb6a;">
+                <h3>✅ Aprovado</h3>
+                <span class="kanban-count" id="kanban-count-Aprovado">0</span>
+              </div>
+              <div class="kanban-column-body" id="kanban-column-Aprovado">
+                <!-- Cards aqui -->
+              </div>
+            </div>
+
+            <!-- Em Separação -->
+            <div class="kanban-column">
+              <div class="kanban-column-header" style="background: #ab47bc;">
+                <h3>📦 Em Separação</h3>
+                <span class="kanban-count" id="kanban-count-Em Separação">0</span>
+              </div>
+              <div class="kanban-column-body" id="kanban-column-Em Separação">
+                <!-- Cards aqui -->
+              </div>
+            </div>
+
+            <!-- Pronto para Retirada -->
+            <div class="kanban-column">
+              <div class="kanban-column-header" style="background: #26a69a;">
+                <h3>🎯 Pronto</h3>
+                <span class="kanban-count" id="kanban-count-Pronto para Retirada">0</span>
+              </div>
+              <div class="kanban-column-body" id="kanban-column-Pronto para Retirada">
+                <!-- Cards aqui -->
+              </div>
+            </div>
+
+            <!-- Concluído -->
+            <div class="kanban-column">
+              <div class="kanban-column-header" style="background: #4caf50;">
+                <h3>✔️ Concluído</h3>
+                <span class="kanban-count" id="kanban-count-Concluído">0</span>
+              </div>
+              <div class="kanban-column-body" id="kanban-column-Concluído">
+                <!-- Cards aqui -->
+              </div>
+            </div>
+
+            <!-- Cancelado -->
+            <div class="kanban-column">
+              <div class="kanban-column-header" style="background: #ef5350;">
+                <h3>❌ Cancelado</h3>
+                <span class="kanban-count" id="kanban-count-Cancelado">0</span>
+              </div>
+              <div class="kanban-column-body" id="kanban-column-Cancelado">
+                <!-- Cards aqui -->
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -3182,6 +3439,9 @@ function loadPedidos() {
       console.log('📊 [v10.1 DEBUG] Número de pedidos recebidos:', (pedidos || []).length);
       console.log('🔒 [v10.1 DEBUG] isReadOnly:', isReadOnly);
 
+      // v10.1: Armazenar dados para sincronizar com Kanban
+      gestaoPedidosCurrentData = pedidos;
+
       const tbody = document.getElementById('gestaoPedidosTableBody');
 
       if (!tbody) {
@@ -3265,6 +3525,136 @@ function loadPedidos() {
           </tr>
         `;
       }
+    }
+
+    /**
+     * Toggle entre visualização de tabela e Kanban (v10.1)
+     */
+    let gestaoPedidosCurrentView = 'table';
+    let gestaoPedidosCurrentData = [];
+
+    function toggleGestaoPedidosView(view) {
+      console.log('🔄 [v10.1] Alternando visualização para:', view);
+
+      gestaoPedidosCurrentView = view;
+
+      const tableView = document.getElementById('gestaoPedidosTableView');
+      const kanbanView = document.getElementById('gestaoPedidosKanbanView');
+      const btnTable = document.getElementById('btnViewTable');
+      const btnKanban = document.getElementById('btnViewKanban');
+
+      if (view === 'table') {
+        tableView.style.display = 'block';
+        kanbanView.style.display = 'none';
+        btnTable.classList.add('btn-primary');
+        btnTable.classList.remove('btn-outline');
+        btnKanban.classList.add('btn-outline');
+        btnKanban.classList.remove('btn-primary');
+      } else {
+        tableView.style.display = 'none';
+        kanbanView.style.display = 'block';
+        btnTable.classList.add('btn-outline');
+        btnTable.classList.remove('btn-primary');
+        btnKanban.classList.add('btn-primary');
+        btnKanban.classList.remove('btn-outline');
+
+        // Renderizar Kanban com os dados atuais
+        renderGestaoPedidosKanban(gestaoPedidosCurrentData);
+      }
+    }
+
+    /**
+     * Renderiza visualização Kanban (v10.1)
+     */
+    function renderGestaoPedidosKanban(pedidos, isReadOnly = false) {
+      console.log('📋 [v10.1] Renderizando Kanban com', pedidos.length, 'pedidos');
+
+      // Armazenar dados para toggle
+      gestaoPedidosCurrentData = pedidos;
+
+      // Status possíveis
+      const statusList = [
+        'Pendente',
+        'Em Análise',
+        'Aprovado',
+        'Em Separação',
+        'Pronto para Retirada',
+        'Concluído',
+        'Cancelado'
+      ];
+
+      // Agrupar pedidos por status
+      const pedidosPorStatus = {};
+      statusList.forEach(status => {
+        pedidosPorStatus[status] = [];
+      });
+
+      pedidos.forEach(pedido => {
+        const status = pedido.status || 'Pendente';
+        if (pedidosPorStatus[status]) {
+          pedidosPorStatus[status].push(pedido);
+        }
+      });
+
+      // Renderizar cada coluna
+      statusList.forEach(status => {
+        const columnBody = document.getElementById(`kanban-column-${status}`);
+        const countBadge = document.getElementById(`kanban-count-${status}`);
+
+        if (!columnBody || !countBadge) {
+          console.error('❌ [v10.1] Coluna Kanban não encontrada:', status);
+          return;
+        }
+
+        const pedidosStatus = pedidosPorStatus[status];
+        countBadge.textContent = pedidosStatus.length;
+
+        if (pedidosStatus.length === 0) {
+          columnBody.innerHTML = '<div class="kanban-empty">Nenhum pedido</div>';
+          return;
+        }
+
+        let html = '';
+        pedidosStatus.forEach(pedido => {
+          const dataFormatada = formatDate(pedido.dataSolicitacao || pedido.data || new Date());
+
+          html += `
+            <div class="kanban-card" onclick="verDetalhesPedido('${pedido.id}')">
+              <div class="kanban-card-header">
+                <span class="kanban-card-number">${pedido.numeroPedido || pedido.numero || 'N/A'}</span>
+                <span class="kanban-card-type">${pedido.tipo || 'N/A'}</span>
+              </div>
+
+              <div class="kanban-card-body">
+                <div class="kanban-card-solicitante">
+                  👤 ${pedido.solicitanteNome || pedido.solicitante || pedido.solicitanteEmail || 'N/A'}
+                </div>
+                <div class="kanban-card-date">
+                  📅 ${dataFormatada}
+                </div>
+                <div class="kanban-card-value">
+                  R$ ${formatMoney(pedido.valorTotal || pedido.valor || 0)}
+                </div>
+              </div>
+
+              <div class="kanban-card-actions" onclick="event.stopPropagation()">
+                <button class="kanban-card-btn" onclick="verDetalhesPedido('${pedido.id}')">
+                  👁️ Ver
+                </button>
+                ${!isReadOnly ? `
+                  <button class="kanban-card-btn kanban-card-btn-status" onclick="abrirModalAlterarStatus('${pedido.id}', '${pedido.status || 'Pendente'}')">
+                    🔄 Status
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        });
+
+        columnBody.innerHTML = html;
+      });
+
+      console.log('✅ [v10.1] Kanban renderizado com sucesso');
     }
 
     // ========================================
