@@ -1893,9 +1893,11 @@ function initializeSystem() {
     }
     
     /**
-     * Navega para uma página (v6.0.1 - COM DELAY)
+     * Navega para uma página (v10.1 - CORREÇÃO: display inline style)
      */
     function navigateTo(pageName) {
+      console.log('🚀 [v10.1 DEBUG] navigateTo chamado para:', pageName);
+
       // Atualizar navegação ativa
       document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
@@ -1904,11 +1906,21 @@ function initializeSystem() {
         }
       });
 
-      // Mostrar página
+      // v10.1: CORREÇÃO - Esconder todas as páginas usando style.display (para sobrescrever inline styles)
       document.querySelectorAll('.page-section').forEach(section => {
+        section.style.display = 'none';
         section.classList.remove('active');
       });
-      document.getElementById('page-' + pageName).classList.add('active');
+
+      // v10.1: CORREÇÃO - Mostrar página usando style.display = 'block'
+      const targetPage = document.getElementById('page-' + pageName);
+      if (targetPage) {
+        targetPage.style.display = 'block';
+        targetPage.classList.add('active');
+        console.log('✅ [v10.1 DEBUG] Página mostrada:', pageName, 'display:', targetPage.style.display);
+      } else {
+        console.error('❌ [v10.1 DEBUG] Página não encontrada:', 'page-' + pageName);
+      }
 
       // CORREÇÃO v6.0.1: Adicionar pequeno delay antes de carregar dados
       // Isso evita HTTP 429 ao navegar rapidamente entre páginas
