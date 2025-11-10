@@ -178,6 +178,8 @@ const CONFIG = {
   VERSAO: '10.1',
   DATA_VERSAO: '2025-11-05',
   CHANGELOG: [
+    'v10.1 - FEATURE: Editar Produto implementado com upload de imagem',
+    'v10.1 - FEATURE: Botão Editar na tabela de produtos',
     'v10.1 - CORREÇÃO: Imagens não apareciam no catálogo de pedidos (debug + fallback)',
     'v10.1 - CORREÇÃO CRÍTICA: Upload de imagem não salvava URL na planilha (Base64 incorreto)',
     'v10.1 - CORREÇÃO CRÍTICA: uploadImagemProduto não definida (cadastro de produtos falhava)',

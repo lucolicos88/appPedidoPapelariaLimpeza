@@ -1558,6 +1558,98 @@
     </div>
   </div>
 
+  <!-- Modal: Editar Produto (v10.1) -->
+  <div class="modal" id="modalEditarProduto">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">✏️ Editar Produto</h3>
+        <button class="modal-close" onclick="closeModal('modalEditarProduto')">&times;</button>
+      </div>
+
+      <form id="formEditarProduto" onsubmit="submitEditarProduto(event)">
+        <input type="hidden" id="editProdutoId">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Código *</label>
+            <input type="text" class="form-control" id="editProdutoCodigo" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Nome *</label>
+            <input type="text" class="form-control" id="editProdutoNome" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tipo *</label>
+            <select class="form-control" id="editProdutoTipo" required>
+              <option value="">Selecione...</option>
+              <option value="Papelaria">Papelaria</option>
+              <option value="Limpeza">Limpeza</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Categoria</label>
+            <input type="text" class="form-control" id="editProdutoCategoria">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Unidade</label>
+            <select class="form-control" id="editProdutoUnidade">
+              <option value="UN">Unidade (UN)</option>
+              <option value="CX">Caixa (CX)</option>
+              <option value="PCT">Pacote (PCT)</option>
+              <option value="KG">Quilograma (KG)</option>
+              <option value="L">Litro (L)</option>
+              <option value="RESMA">Resma</option>
+              <option value="PAR">Par</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Preço Unitário (R$)</label>
+            <input type="number" class="form-control" id="editProdutoPreco" step="0.01" min="0">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Estoque Mínimo</label>
+            <input type="number" class="form-control" id="editProdutoEstoqueMin" min="0">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Ponto de Pedido</label>
+            <input type="number" class="form-control" id="editProdutoPontoPedido" min="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Fornecedor</label>
+          <input type="text" class="form-control" id="editProdutoFornecedor">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Imagem do Produto</label>
+          <input type="file" class="form-control" id="editProdutoImagem" accept="image/*" onchange="previewImage(event, 'previewEditProduto')">
+          <div class="image-preview" id="previewEditProduto">
+            <div class="image-preview-placeholder">Imagem atual será mantida se não selecionar nova</div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="submit" class="btn btn-success" style="flex: 1;">💾 Salvar Alterações</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modalEditarProduto')" style="flex: 1;">❌ Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Modal: Movimentação de Estoque -->
   <div class="modal" id="modalMovimentacaoEstoque">
     <div class="modal-content">
@@ -3532,8 +3624,11 @@ function loadProdutos() {
             <td>${produto.categoria}</td>
             <td><strong>R$ ${formatMoney(produto.precoUnitario)}</strong></td>
             <td>
-              <button class="btn btn-outline" onclick="verDetalhesProduto('${produto.id}')" style="padding: 5px 10px; font-size: 0.85rem;">
+              <button class="btn btn-outline" onclick="verDetalhesProduto('${produto.id}')" style="padding: 5px 10px; font-size: 0.85rem; margin-right: 5px;">
                 👁️ Ver
+              </button>
+              <button class="btn btn-primary" onclick="abrirModalEditarProduto('${produto.id}')" style="padding: 5px 10px; font-size: 0.85rem;">
+                ✏️ Editar
               </button>
             </td>
           </tr>
@@ -3689,7 +3784,117 @@ function loadProdutos() {
         })
         .cadastrarProduto(dadosProduto);
     }
-    
+
+    /**
+     * Abre modal de editar produto (v10.1)
+     */
+    function abrirModalEditarProduto(produtoId) {
+      showLoading();
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+          if (response && response.success) {
+            preencherFormEditarProduto(response.produto);
+            document.getElementById('modalEditarProduto').classList.add('active');
+          } else {
+            showError('Erro ao carregar produto: ' + (response ? response.error : 'Resposta vazia'));
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .__buscarProduto(produtoId);
+    }
+
+    /**
+     * Preenche form de editar produto (v10.1)
+     */
+    function preencherFormEditarProduto(produto) {
+      document.getElementById('editProdutoId').value = produto.id;
+      document.getElementById('editProdutoCodigo').value = produto.codigo;
+      document.getElementById('editProdutoNome').value = produto.nome;
+      document.getElementById('editProdutoTipo').value = produto.tipo;
+      document.getElementById('editProdutoCategoria').value = produto.categoria || '';
+      document.getElementById('editProdutoUnidade').value = produto.unidade || 'UN';
+      document.getElementById('editProdutoPreco').value = produto.precoUnitario || 0;
+      document.getElementById('editProdutoEstoqueMin').value = produto.estoqueMinimo || 0;
+      document.getElementById('editProdutoPontoPedido').value = produto.pontoPedido || 0;
+      document.getElementById('editProdutoFornecedor').value = produto.fornecedor || '';
+
+      // Preview da imagem atual
+      const preview = document.getElementById('previewEditProduto');
+      if (produto.imagemURL) {
+        preview.innerHTML = `<img src="${produto.imagemURL}" style="max-width: 100%; max-height: 200px;"><p style="color: #666; font-size: 0.85rem; margin-top: 5px;">Imagem atual (selecione nova para substituir)</p>`;
+      } else {
+        preview.innerHTML = '<div class="image-preview-placeholder">Sem imagem atual (selecione para adicionar)</div>';
+      }
+    }
+
+    /**
+     * Submete edição de produto (v10.1)
+     */
+    function submitEditarProduto(event) {
+      event.preventDefault();
+
+      showLoading();
+
+      const dadosProduto = {
+        id: document.getElementById('editProdutoId').value,
+        codigo: document.getElementById('editProdutoCodigo').value,
+        nome: document.getElementById('editProdutoNome').value,
+        tipo: document.getElementById('editProdutoTipo').value,
+        categoria: document.getElementById('editProdutoCategoria').value,
+        unidade: document.getElementById('editProdutoUnidade').value,
+        precoUnitario: parseFloat(document.getElementById('editProdutoPreco').value) || 0,
+        estoqueMinimo: parseInt(document.getElementById('editProdutoEstoqueMin').value) || 0,
+        pontoPedido: parseInt(document.getElementById('editProdutoPontoPedido').value) || 0,
+        fornecedor: document.getElementById('editProdutoFornecedor').value
+      };
+
+      // Processar imagem se houver
+      const imagemInput = document.getElementById('editProdutoImagem');
+      if (imagemInput.files && imagemInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          // Remover prefixo "data:image/...;base64,"
+          const base64Data = e.target.result.split(',')[1];
+          dadosProduto.imagemBase64 = base64Data;
+          dadosProduto.imagemFileName = imagemInput.files[0].name;
+          dadosProduto.imagemMimeType = imagemInput.files[0].type;
+
+          enviarEdicaoProduto(dadosProduto);
+        };
+        reader.readAsDataURL(imagemInput.files[0]);
+      } else {
+        enviarEdicaoProduto(dadosProduto);
+      }
+    }
+
+    /**
+     * Envia edição de produto para o backend (v10.1)
+     */
+    function enviarEdicaoProduto(dadosProduto) {
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            showSuccess('Produto atualizado com sucesso!');
+            closeModal('modalEditarProduto');
+            document.getElementById('formEditarProduto').reset();
+            loadProdutos();
+          } else {
+            showError('Erro ao atualizar produto: ' + response.error);
+          }
+          hideLoading();
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .atualizarProduto(dadosProduto);
+    }
+
     /**
  * Carrega estoque (CORRIGIDO v6.0.1)
  */

@@ -315,9 +315,9 @@ function cadastrarProduto(dadosProduto) {
 }
 
 /**
- * Atualiza dados de um produto
+ * Atualiza dados de um produto (Core - v10.1)
  */
-function atualizarProduto(produtoId, dadosAtualizados) {
+function atualizarProdutoCore(produtoId, dadosAtualizados) {
   try {
     const email = Session.getActiveUser().getEmail();
     

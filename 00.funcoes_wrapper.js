@@ -545,6 +545,49 @@ function __atualizarImagemProduto(imagemUrlAntiga, base64Nova, fileName, mimeTyp
   }
 }
 
+/**
+ * Wrapper para atualizar produto (v10.1)
+ * Aceita objeto com id e dados, chama atualizarProdutoCore do módulo 03
+ */
+function atualizarProduto(dadosProduto) {
+  try {
+    Logger.log('🔄 [v10.1] atualizarProduto wrapper chamado para ID: ' + dadosProduto.id);
+
+    if (!dadosProduto || !dadosProduto.id) {
+      return {
+        success: false,
+        error: 'ID do produto não fornecido'
+      };
+    }
+
+    const produtoId = dadosProduto.id;
+    const dadosAtualizados = {
+      codigo: dadosProduto.codigo,
+      nome: dadosProduto.nome,
+      tipo: dadosProduto.tipo,
+      categoria: dadosProduto.categoria,
+      unidade: dadosProduto.unidade,
+      precoUnitario: dadosProduto.precoUnitario,
+      estoqueMinimo: dadosProduto.estoqueMinimo,
+      pontoPedido: dadosProduto.pontoPedido,
+      fornecedor: dadosProduto.fornecedor,
+      imagemBase64: dadosProduto.imagemBase64,
+      imagemFileName: dadosProduto.imagemFileName,
+      imagemMimeType: dadosProduto.imagemMimeType
+    };
+
+    // Chamar função original do módulo 03 com 2 parâmetros
+    const resultado = atualizarProdutoCore(produtoId, dadosAtualizados);
+    return serializarParaFrontend(resultado);
+  } catch (e) {
+    Logger.log('❌ Erro em atualizarProduto wrapper: ' + e.message);
+    return {
+      success: false,
+      error: e.message
+    };
+  }
+}
+
 // ========================================
 // DADOS FICTÍCIOS (v8.0)
 // ========================================
