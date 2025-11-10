@@ -3521,12 +3521,10 @@ function loadPedidos() {
                   <button class="btn btn-outline" onclick="verDetalhesPedido('${pedido.id}')" style="padding: 5px 10px; font-size: 0.85rem;">
                     👁️ Ver
                   </button>
-                  ${!isReadOnly && podeEditarPedido(pedido) ? `
+                  ${!isReadOnly ? `
                     <button class="btn btn-success" onclick="abrirModalEditarPedido('${pedido.id}')" style="padding: 5px 10px; font-size: 0.85rem; margin-left: 5px;">
                       ✏️ Editar
                     </button>
-                  ` : ''}
-                  ${!isReadOnly ? `
                     <button class="btn btn-primary" onclick="abrirModalAlterarStatus('${pedido.id}', '${pedido.status || 'Pendente'}')" style="padding: 5px 10px; font-size: 0.85rem; margin-left: 5px;">
                       🔄 Status
                     </button>
@@ -3669,12 +3667,10 @@ function loadPedidos() {
                 <button class="kanban-card-btn" onclick="verDetalhesPedido('${pedido.id}')">
                   👁️ Ver
                 </button>
-                ${!isReadOnly && podeEditarPedido(pedido) ? `
+                ${!isReadOnly ? `
                   <button class="kanban-card-btn kanban-card-btn-edit" onclick="abrirModalEditarPedido('${pedido.id}')">
                     ✏️ Editar
                   </button>
-                ` : ''}
-                ${!isReadOnly ? `
                   <button class="kanban-card-btn kanban-card-btn-status" onclick="abrirModalAlterarStatus('${pedido.id}', '${pedido.status || 'Pendente'}')">
                     🔄 Status
                   </button>
