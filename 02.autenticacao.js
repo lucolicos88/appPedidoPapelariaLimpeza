@@ -131,6 +131,47 @@ function getUserContext() {
 }
 
 /**
+ * Obtém perfil do usuário (v10.1)
+ */
+function obterPerfilUsuario(email) {
+  try {
+    Logger.log('🔍 [v10.1] obterPerfilUsuario chamado para:', email);
+
+    if (!email) {
+      Logger.log('⚠️ [v10.1] Email não fornecido');
+      return null;
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaUsers = ss.getSheetByName(CONFIG.ABAS.USERS);
+
+    if (!abaUsers) {
+      Logger.log('❌ [v10.1] Aba de usuários não encontrada');
+      return null;
+    }
+
+    const dados = abaUsers.getDataRange().getValues();
+
+    // Procurar usuário por email
+    for (let i = 1; i < dados.length; i++) {
+      const emailUsuario = dados[i][0]; // Coluna A - Email
+      if (emailUsuario && emailUsuario.toLowerCase() === email.toLowerCase()) {
+        const perfil = dados[i][4] || 'Usuario'; // Coluna E - Perfil/Permissão
+        Logger.log('✅ [v10.1] Perfil encontrado:', perfil, 'para', email);
+        return perfil;
+      }
+    }
+
+    Logger.log('⚠️ [v10.1] Usuário não encontrado:', email);
+    return 'Usuario'; // Default
+
+  } catch (error) {
+    Logger.log('❌ [v10.1] Erro em obterPerfilUsuario:', error.message);
+    return null;
+  }
+}
+
+/**
  * Limpa cache de usuários (NOVO v6.0.1)
  */
 function limparCacheUsuarios(email) {
