@@ -875,6 +875,17 @@
       border-color: var(--primary);
     }
 
+    .kanban-card-btn-edit {
+      background: #4caf50;
+      color: white;
+      border-color: #4caf50;
+    }
+
+    .kanban-card-btn-edit:hover {
+      background: #45a049;
+      border-color: #45a049;
+    }
+
     .kanban-card-btn-status {
       background: var(--primary);
       color: white;
@@ -1229,11 +1240,7 @@
               <label class="form-label">Status</label>
               <select class="form-control" id="gestaoPedidosFilterStatus">
                 <option value="">Todos</option>
-                <option value="Pendente">Pendente</option>
-                <option value="Em Análise">Em Análise</option>
-                <option value="Aprovado">Aprovado</option>
-                <option value="Em Separação">Em Separação</option>
-                <option value="Pronto para Retirada">Pronto para Retirada</option>
+                <option value="Solicitado">Solicitado</option>
                 <option value="Concluído">Concluído</option>
                 <option value="Cancelado">Cancelado</option>
               </select>
@@ -1287,57 +1294,13 @@
         <!-- Kanban View (v10.1) -->
         <div id="gestaoPedidosKanbanView" style="display: none;">
           <div class="kanban-board">
-            <!-- Pendente -->
+            <!-- Solicitado -->
             <div class="kanban-column">
               <div class="kanban-column-header" style="background: #ffa726;">
-                <h3>⏳ Pendente</h3>
-                <span class="kanban-count" id="kanban-count-Pendente">0</span>
+                <h3>⏳ Solicitado</h3>
+                <span class="kanban-count" id="kanban-count-Solicitado">0</span>
               </div>
-              <div class="kanban-column-body" id="kanban-column-Pendente">
-                <!-- Cards aqui -->
-              </div>
-            </div>
-
-            <!-- Em Análise -->
-            <div class="kanban-column">
-              <div class="kanban-column-header" style="background: #42a5f5;">
-                <h3>🔍 Em Análise</h3>
-                <span class="kanban-count" id="kanban-count-Em Análise">0</span>
-              </div>
-              <div class="kanban-column-body" id="kanban-column-Em Análise">
-                <!-- Cards aqui -->
-              </div>
-            </div>
-
-            <!-- Aprovado -->
-            <div class="kanban-column">
-              <div class="kanban-column-header" style="background: #66bb6a;">
-                <h3>✅ Aprovado</h3>
-                <span class="kanban-count" id="kanban-count-Aprovado">0</span>
-              </div>
-              <div class="kanban-column-body" id="kanban-column-Aprovado">
-                <!-- Cards aqui -->
-              </div>
-            </div>
-
-            <!-- Em Separação -->
-            <div class="kanban-column">
-              <div class="kanban-column-header" style="background: #ab47bc;">
-                <h3>📦 Em Separação</h3>
-                <span class="kanban-count" id="kanban-count-Em Separação">0</span>
-              </div>
-              <div class="kanban-column-body" id="kanban-column-Em Separação">
-                <!-- Cards aqui -->
-              </div>
-            </div>
-
-            <!-- Pronto para Retirada -->
-            <div class="kanban-column">
-              <div class="kanban-column-header" style="background: #26a69a;">
-                <h3>🎯 Pronto</h3>
-                <span class="kanban-count" id="kanban-count-Pronto para Retirada">0</span>
-              </div>
-              <div class="kanban-column-body" id="kanban-column-Pronto para Retirada">
+              <div class="kanban-column-body" id="kanban-column-Solicitado">
                 <!-- Cards aqui -->
               </div>
             </div>
@@ -1932,11 +1895,7 @@
           <label class="form-label">Novo Status *</label>
           <select class="form-control" id="alterarStatusNovo" required>
             <option value="">Selecione...</option>
-            <option value="Pendente">⏳ Pendente</option>
-            <option value="Em Análise">🔍 Em Análise</option>
-            <option value="Aprovado">✅ Aprovado</option>
-            <option value="Em Separação">📦 Em Separação</option>
-            <option value="Pronto para Retirada">🎯 Pronto para Retirada</option>
+            <option value="Solicitado">⏳ Solicitado</option>
             <option value="Concluído">✔️ Concluído</option>
             <option value="Cancelado">❌ Cancelado</option>
           </select>
@@ -1950,6 +1909,74 @@
         <div class="modal-actions">
           <button type="button" class="btn btn-secondary" onclick="closeModal('modalAlterarStatus')">Cancelar</button>
           <button type="submit" class="btn btn-primary">Salvar Alteração</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Editar Pedido (v10.1) -->
+  <div class="modal" id="modalEditarPedido">
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="modal-header">
+        <h3 class="modal-title">✏️ Editar Pedido</h3>
+        <button class="modal-close" onclick="closeModal('modalEditarPedido')">&times;</button>
+      </div>
+
+      <form id="formEditarPedido" onsubmit="submitEditarPedido(event)">
+        <input type="hidden" id="editPedidoId">
+
+        <div class="form-group">
+          <label class="form-label">Número do Pedido</label>
+          <input type="text" class="form-control" id="editPedidoNumero" readonly>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tipo *</label>
+          <select class="form-control" id="editPedidoTipo" required>
+            <option value="">Selecione...</option>
+            <option value="Papelaria">Papelaria</option>
+            <option value="Limpeza">Limpeza</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Solicitante</label>
+          <input type="text" class="form-control" id="editPedidoSolicitante" readonly>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Setor</label>
+          <input type="text" class="form-control" id="editPedidoSetor">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Status *</label>
+          <select class="form-control" id="editPedidoStatus" required>
+            <option value="Solicitado">⏳ Solicitado</option>
+            <option value="Concluído">✔️ Concluído</option>
+            <option value="Cancelado">❌ Cancelado</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Prazo de Entrega</label>
+          <input type="date" class="form-control" id="editPedidoPrazo">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Observações</label>
+          <textarea class="form-control" id="editPedidoObs" rows="3"></textarea>
+        </div>
+
+        <div id="editPedidoProdutosInfo" style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
+          <h4 style="margin-bottom: 10px;">Produtos do Pedido:</h4>
+          <p style="color: #666; font-size: 0.9rem;">Para alterar produtos, cancele este pedido e crie um novo.</p>
+          <div id="editPedidoProdutosList"></div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modalEditarPedido')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">💾 Salvar Alterações</button>
         </div>
       </form>
     </div>
@@ -3494,6 +3521,11 @@ function loadPedidos() {
                   <button class="btn btn-outline" onclick="verDetalhesPedido('${pedido.id}')" style="padding: 5px 10px; font-size: 0.85rem;">
                     👁️ Ver
                   </button>
+                  ${!isReadOnly && podeEditarPedido(pedido) ? `
+                    <button class="btn btn-success" onclick="abrirModalEditarPedido('${pedido.id}')" style="padding: 5px 10px; font-size: 0.85rem; margin-left: 5px;">
+                      ✏️ Editar
+                    </button>
+                  ` : ''}
                   ${!isReadOnly ? `
                     <button class="btn btn-primary" onclick="abrirModalAlterarStatus('${pedido.id}', '${pedido.status || 'Pendente'}')" style="padding: 5px 10px; font-size: 0.85rem; margin-left: 5px;">
                       🔄 Status
@@ -3572,13 +3604,9 @@ function loadPedidos() {
       // Armazenar dados para toggle
       gestaoPedidosCurrentData = pedidos;
 
-      // Status possíveis
+      // Status possíveis (v10.1 - Simplificado)
       const statusList = [
-        'Pendente',
-        'Em Análise',
-        'Aprovado',
-        'Em Separação',
-        'Pronto para Retirada',
+        'Solicitado',
         'Concluído',
         'Cancelado'
       ];
@@ -3641,6 +3669,11 @@ function loadPedidos() {
                 <button class="kanban-card-btn" onclick="verDetalhesPedido('${pedido.id}')">
                   👁️ Ver
                 </button>
+                ${!isReadOnly && podeEditarPedido(pedido) ? `
+                  <button class="kanban-card-btn kanban-card-btn-edit" onclick="abrirModalEditarPedido('${pedido.id}')">
+                    ✏️ Editar
+                  </button>
+                ` : ''}
                 ${!isReadOnly ? `
                   <button class="kanban-card-btn kanban-card-btn-status" onclick="abrirModalAlterarStatus('${pedido.id}', '${pedido.status || 'Pendente'}')">
                     🔄 Status
@@ -4491,6 +4524,145 @@ function loadProdutos() {
           showError('Erro: ' + error.message);
         })
         .__atualizarStatusPedido(dados.pedidoId, dados.novoStatus, dados.observacoes);
+    }
+
+    /**
+     * Verifica se o usuário pode editar o pedido (v10.1)
+     * Admin/Gestor podem editar qualquer pedido
+     * Usuário comum pode editar apenas os próprios pedidos
+     */
+    function podeEditarPedido(pedido) {
+      if (!pedido || !window.currentUser) {
+        return false;
+      }
+
+      // Admin e Gestor podem editar qualquer pedido
+      const isAdmin = window.currentUser.role === 'Admin';
+      const isGestor = window.currentUser.role === 'Gestor';
+
+      if (isAdmin || isGestor) {
+        return true;
+      }
+
+      // Usuário comum só pode editar seus próprios pedidos
+      const currentUserEmail = window.currentUser.email;
+      const pedidoEmail = pedido.solicitanteEmail || pedido.email;
+
+      return pedidoEmail === currentUserEmail;
+    }
+
+    /**
+     * Abre modal de edição completa do pedido (v10.1)
+     */
+    function abrirModalEditarPedido(pedidoId) {
+      console.log('✏️ [v10.1] Abrindo modal de edição para pedido:', pedidoId);
+
+      showLoading();
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+
+          if (!response || !response.success) {
+            showError('Erro ao carregar dados do pedido: ' + (response?.error || 'Erro desconhecido'));
+            return;
+          }
+
+          const pedido = response.data;
+
+          // Verificar permissão
+          if (!podeEditarPedido(pedido)) {
+            showError('Você não tem permissão para editar este pedido');
+            return;
+          }
+
+          // Preencher formulário
+          document.getElementById('editPedidoId').value = pedido.id || pedidoId;
+          document.getElementById('editPedidoNumero').value = pedido.numeroPedido || pedido.numero || 'N/A';
+          document.getElementById('editPedidoTipo').value = pedido.tipo || '';
+          document.getElementById('editPedidoSolicitante').value = pedido.solicitanteNome || pedido.solicitante || pedido.solicitanteEmail || 'N/A';
+          document.getElementById('editPedidoSetor').value = pedido.setor || '';
+          document.getElementById('editPedidoStatus').value = pedido.status || 'Solicitado';
+          document.getElementById('editPedidoPrazo').value = pedido.prazoEntrega || pedido.prazo || '';
+          document.getElementById('editPedidoObs').value = pedido.observacoes || '';
+
+          // Renderizar lista de produtos
+          const produtosList = document.getElementById('editPedidoProdutosList');
+          if (pedido.produtos && pedido.produtos.length > 0) {
+            let html = '<ul style="margin-top: 10px;">';
+            pedido.produtos.forEach(prod => {
+              html += `<li>${prod.nome || prod.produto || 'Produto'} - Qtd: ${prod.quantidade || 0} - R$ ${formatMoney(prod.precoUnitario || 0)}</li>`;
+            });
+            html += '</ul>';
+            produtosList.innerHTML = html;
+          } else {
+            produtosList.innerHTML = '<p style="color: #999;">Nenhum produto no pedido</p>';
+          }
+
+          // Abrir modal
+          openModal('modalEditarPedido');
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro ao carregar pedido: ' + error.message);
+        })
+        .__buscarPedidoPorId(pedidoId);
+    }
+
+    /**
+     * Submete formulário de edição do pedido (v10.1)
+     */
+    function submitEditarPedido(event) {
+      event.preventDefault();
+
+      const pedidoId = document.getElementById('editPedidoId').value;
+      const tipo = document.getElementById('editPedidoTipo').value;
+      const setor = document.getElementById('editPedidoSetor').value;
+      const status = document.getElementById('editPedidoStatus').value;
+      const prazo = document.getElementById('editPedidoPrazo').value;
+      const observacoes = document.getElementById('editPedidoObs').value;
+
+      if (!pedidoId || !tipo || !status) {
+        showError('Por favor, preencha todos os campos obrigatórios');
+        return;
+      }
+
+      console.log('💾 [v10.1] Salvando alterações do pedido:', {
+        pedidoId,
+        tipo,
+        setor,
+        status,
+        prazo,
+        observacoes
+      });
+
+      showLoading();
+      closeModal('modalEditarPedido');
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+
+          if (response && response.success) {
+            showSuccess('Pedido atualizado com sucesso!');
+            // Recarregar lista de pedidos
+            loadGestaoPedidos();
+          } else {
+            showError('Erro ao atualizar pedido: ' + (response.error || 'Erro desconhecido'));
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .__atualizarPedido({
+          id: pedidoId,
+          tipo: tipo,
+          setor: setor,
+          status: status,
+          prazoEntrega: prazo,
+          observacoes: observacoes
+        });
     }
 
     /**

@@ -847,6 +847,190 @@ function __listarUsuarios() {
 }
 
 /**
+ * Wrapper para buscar pedido por ID (v10.1)
+ * Usado para edição completa de pedidos
+ */
+function __buscarPedidoPorId(pedidoId) {
+  try {
+    Logger.log('🔍 [v10.1] __buscarPedidoPorId chamado: ' + pedidoId);
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaPedidos = ss.getSheetByName(CONFIG.ABAS.ORDERS);
+
+    if (!abaPedidos) {
+      return {
+        success: false,
+        error: 'Aba de pedidos não encontrada'
+      };
+    }
+
+    const dados = abaPedidos.getDataRange().getValues();
+
+    // Procurar pedido por ID
+    for (let i = 1; i < dados.length; i++) {
+      if (dados[i][CONFIG.COLUNAS_PEDIDOS.ID - 1] === pedidoId) {
+        const pedido = {
+          id: dados[i][CONFIG.COLUNAS_PEDIDOS.ID - 1],
+          numeroPedido: dados[i][CONFIG.COLUNAS_PEDIDOS.NUMERO_PEDIDO - 1],
+          tipo: dados[i][CONFIG.COLUNAS_PEDIDOS.TIPO - 1],
+          dataSolicitacao: dados[i][CONFIG.COLUNAS_PEDIDOS.DATA_SOLICITACAO - 1],
+          solicitanteEmail: dados[i][CONFIG.COLUNAS_PEDIDOS.SOLICITANTE_EMAIL - 1],
+          solicitanteNome: dados[i][CONFIG.COLUNAS_PEDIDOS.SOLICITANTE_NOME - 1],
+          setor: dados[i][CONFIG.COLUNAS_PEDIDOS.SETOR - 1],
+          status: dados[i][CONFIG.COLUNAS_PEDIDOS.STATUS - 1],
+          prazoEntrega: dados[i][CONFIG.COLUNAS_PEDIDOS.PRAZO_ENTREGA - 1],
+          observacoes: dados[i][CONFIG.COLUNAS_PEDIDOS.OBSERVACOES - 1],
+          produtos: [],
+          valorTotal: dados[i][CONFIG.COLUNAS_PEDIDOS.VALOR_TOTAL - 1] || 0
+        };
+
+        // Buscar produtos do pedido
+        const produtosJson = dados[i][CONFIG.COLUNAS_PEDIDOS.PRODUTOS_JSON - 1];
+        if (produtosJson) {
+          try {
+            pedido.produtos = JSON.parse(produtosJson);
+          } catch (e) {
+            Logger.log('⚠️ Erro ao parsear produtos JSON: ' + e.message);
+            pedido.produtos = [];
+          }
+        }
+
+        Logger.log('✅ Pedido encontrado: ' + pedido.numeroPedido);
+
+        return serializarParaFrontend({
+          success: true,
+          data: pedido
+        });
+      }
+    }
+
+    return {
+      success: false,
+      error: 'Pedido não encontrado'
+    };
+
+  } catch (e) {
+    Logger.log('❌ Erro em __buscarPedidoPorId: ' + e.message);
+    Logger.log('Stack: ' + e.stack);
+    return {
+      success: false,
+      error: e.message
+    };
+  }
+}
+
+/**
+ * Wrapper para atualizar pedido completo (v10.1)
+ * Admin/Gestor podem editar qualquer pedido
+ * Usuário comum só pode editar seus próprios pedidos
+ */
+function __atualizarPedido(dadosPedido) {
+  try {
+    Logger.log('💾 [v10.1] __atualizarPedido chamado para ID: ' + dadosPedido.id);
+
+    if (!dadosPedido || !dadosPedido.id) {
+      return {
+        success: false,
+        error: 'ID do pedido não fornecido'
+      };
+    }
+
+    // Verificar permissões
+    const userEmail = Session.getActiveUser().getEmail();
+    const perfil = obterPerfilUsuario(userEmail);
+    const perfilUpper = (perfil || '').toUpperCase();
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaPedidos = ss.getSheetByName(CONFIG.ABAS.ORDERS);
+
+    if (!abaPedidos) {
+      return {
+        success: false,
+        error: 'Aba de pedidos não encontrada'
+      };
+    }
+
+    const dados = abaPedidos.getDataRange().getValues();
+
+    // Procurar pedido e verificar permissão
+    for (let i = 1; i < dados.length; i++) {
+      if (dados[i][CONFIG.COLUNAS_PEDIDOS.ID - 1] === dadosPedido.id) {
+        const pedidoEmail = dados[i][CONFIG.COLUNAS_PEDIDOS.SOLICITANTE_EMAIL - 1];
+
+        // Verificar permissão: Admin/Gestor OU criador do pedido
+        const isAdminOuGestor = (perfilUpper === 'ADMIN' || perfilUpper === 'GESTOR');
+        const isCriador = (pedidoEmail === userEmail);
+
+        if (!isAdminOuGestor && !isCriador) {
+          Logger.log(`❌ Permissão negada para ${userEmail} (perfil: ${perfilUpper}, criador: ${pedidoEmail})`);
+          return {
+            success: false,
+            error: 'Você não tem permissão para editar este pedido'
+          };
+        }
+
+        Logger.log(`✅ Permissão concedida para ${userEmail}`);
+
+        // Atualizar campos
+        if (dadosPedido.tipo) {
+          abaPedidos.getRange(i + 1, CONFIG.COLUNAS_PEDIDOS.TIPO).setValue(dadosPedido.tipo);
+        }
+
+        if (dadosPedido.setor) {
+          abaPedidos.getRange(i + 1, CONFIG.COLUNAS_PEDIDOS.SETOR).setValue(dadosPedido.setor);
+        }
+
+        if (dadosPedido.status) {
+          abaPedidos.getRange(i + 1, CONFIG.COLUNAS_PEDIDOS.STATUS).setValue(dadosPedido.status);
+
+          // Atualizar data de compra se status = "Em Compra"
+          if (dadosPedido.status === 'Em Compra' && !dados[i][CONFIG.COLUNAS_PEDIDOS.DATA_COMPRA - 1]) {
+            abaPedidos.getRange(i + 1, CONFIG.COLUNAS_PEDIDOS.DATA_COMPRA).setValue(new Date());
+          }
+
+          // Atualizar data de finalização se status = "Concluído"
+          if (dadosPedido.status === 'Concluído' && !dados[i][CONFIG.COLUNAS_PEDIDOS.DATA_FINALIZACAO - 1]) {
+            abaPedidos.getRange(i + 1, CONFIG.COLUNAS_PEDIDOS.DATA_FINALIZACAO).setValue(new Date());
+          }
+        }
+
+        if (dadosPedido.prazoEntrega) {
+          abaPedidos.getRange(i + 1, CONFIG.COLUNAS_PEDIDOS.PRAZO_ENTREGA).setValue(dadosPedido.prazoEntrega);
+        }
+
+        if (dadosPedido.observacoes !== undefined) {
+          abaPedidos.getRange(i + 1, CONFIG.COLUNAS_PEDIDOS.OBSERVACOES).setValue(dadosPedido.observacoes);
+        }
+
+        // Registrar log
+        const numeroPedido = dados[i][CONFIG.COLUNAS_PEDIDOS.NUMERO_PEDIDO - 1];
+        registrarLog('PEDIDO_ATUALIZADO', `Pedido ${numeroPedido} atualizado por ${userEmail}`, 'SUCESSO');
+
+        Logger.log(`✅ Pedido ${numeroPedido} atualizado com sucesso`);
+
+        return {
+          success: true,
+          message: 'Pedido atualizado com sucesso'
+        };
+      }
+    }
+
+    return {
+      success: false,
+      error: 'Pedido não encontrado'
+    };
+
+  } catch (e) {
+    Logger.log('❌ Erro em __atualizarPedido: ' + e.message);
+    Logger.log('Stack: ' + e.stack);
+    return {
+      success: false,
+      error: e.message
+    };
+  }
+}
+
+/**
  * Wrapper para exportar produtos em CSV (v10.0)
  */
 function __exportarProdutosCSV() {
