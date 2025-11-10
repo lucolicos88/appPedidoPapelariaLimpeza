@@ -4857,7 +4857,20 @@ function loadGerenciamento() {
     // ========================================
     // FUNÇÕES AUXILIARES
     // ========================================
-    
+
+    /**
+     * Abre modal (v10.1)
+     */
+    function openModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.classList.add('active');
+        console.log('✅ [v10.1] Modal aberto:', modalId);
+      } else {
+        console.error('❌ [v10.1] Modal não encontrado:', modalId);
+      }
+    }
+
     /**
      * Fecha modal
      */
