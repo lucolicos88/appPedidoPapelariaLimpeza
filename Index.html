@@ -3525,9 +3525,6 @@ function loadPedidos() {
                     <button class="btn btn-success" onclick="abrirModalEditarPedido('${pedido.id}')" style="padding: 5px 10px; font-size: 0.85rem; margin-left: 5px;">
                       ✏️ Editar
                     </button>
-                    <button class="btn btn-primary" onclick="abrirModalAlterarStatus('${pedido.id}', '${pedido.status || 'Pendente'}')" style="padding: 5px 10px; font-size: 0.85rem; margin-left: 5px;">
-                      🔄 Status
-                    </button>
                   ` : ''}
                 </td>
               </tr>
@@ -3670,9 +3667,6 @@ function loadPedidos() {
                 ${!isReadOnly ? `
                   <button class="kanban-card-btn kanban-card-btn-edit" onclick="abrirModalEditarPedido('${pedido.id}')">
                     ✏️ Editar
-                  </button>
-                  <button class="kanban-card-btn kanban-card-btn-status" onclick="abrirModalAlterarStatus('${pedido.id}', '${pedido.status || 'Pendente'}')">
-                    🔄 Status
                   </button>
                 ` : ''}
               </div>
@@ -4566,13 +4560,7 @@ function loadProdutos() {
 
           const pedido = response.data;
 
-          // Verificar permissão
-          if (!podeEditarPedido(pedido)) {
-            showError('Você não tem permissão para editar este pedido');
-            return;
-          }
-
-          // Preencher formulário
+          // Preencher formulário (validação de permissão será feita no backend ao salvar)
           document.getElementById('editPedidoId').value = pedido.id || pedidoId;
           document.getElementById('editPedidoNumero').value = pedido.numeroPedido || pedido.numero || 'N/A';
           document.getElementById('editPedidoTipo').value = pedido.tipo || '';
