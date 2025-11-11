@@ -3787,17 +3787,19 @@ function loadPedidos() {
         const noCarrinho = carrinhoPedido[produto.id] || 0;
 
         // v10.1: Verificar múltiplas variações do campo de imagem
-        const imagemUrl = produto.imagemURL || produto.imagemUrl || produto.imagem || '';
+        const imagemUrl = produto.imagemURL || produto.imagemUrl || produto.imagem || produto.imagemUrl || '';
 
-        // Debug apenas no primeiro produto
+        // Debug completo do primeiro produto
         if (catalogoFiltrado.indexOf(produto) === 0) {
           console.log('[v10.1 DEBUG] Primeiro produto do catálogo:', {
+            objetoCompleto: produto,
             nome: produto.nome,
             imagemURL: produto.imagemURL,
             imagemUrl: produto.imagemUrl,
             imagem: produto.imagem,
             imagemFinal: imagemUrl,
-            todasChaves: Object.keys(produto)
+            todasChaves: Object.keys(produto),
+            todosValores: Object.values(produto)
           });
         }
 
@@ -5800,19 +5802,30 @@ function loadGerenciamento() {
      * Mostra seções de admin se usuário for Admin
      */
     function mostrarDadosFicticiosSeAdmin() {
-      // Usar window.currentUser ao invés de dadosUsuario
-      const user = window.currentUser || window.dadosUsuario;
+      // Tentar todas as possíveis variáveis de usuário
+      const user = window.currentUser || window.dadosUsuario || window.usuario;
 
-      if (user && user.role === 'Admin') {
-        const manutencaoSection = document.getElementById('manutencaoSection');
-        const ficticiosSection = document.getElementById('dadosFicticiosSection');
+      console.log('[DEBUG] mostrarDadosFicticiosSeAdmin:', {
+        currentUser: window.currentUser,
+        dadosUsuario: window.dadosUsuario,
+        usuario: window.usuario,
+        user: user,
+        role: user?.role,
+        perfil: user?.perfil
+      });
 
+      // Verificar se é Admin usando role ou perfil
+      const isAdmin = user && (user.role === 'Admin' || user.perfil === 'Admin');
+
+      const manutencaoSection = document.getElementById('manutencaoSection');
+      const ficticiosSection = document.getElementById('dadosFicticiosSection');
+
+      if (isAdmin) {
+        console.log('[DEBUG] Usuário é Admin - mostrando seções');
         if (manutencaoSection) manutencaoSection.style.display = 'block';
         if (ficticiosSection) ficticiosSection.style.display = 'block';
       } else {
-        const manutencaoSection = document.getElementById('manutencaoSection');
-        const ficticiosSection = document.getElementById('dadosFicticiosSection');
-
+        console.log('[DEBUG] Usuário NÃO é Admin - escondendo seções');
         if (manutencaoSection) manutencaoSection.style.display = 'none';
         if (ficticiosSection) ficticiosSection.style.display = 'none';
       }
