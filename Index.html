@@ -3767,9 +3767,8 @@ function loadPedidos() {
         const emEstoque = estoque.qtdDisponivel > 0;
         const noCarrinho = carrinhoPedido[produto.id] || 0;
 
-        // v10.1: Verificar múltiplas variações do campo de imagem e converter URL
-        let imagemUrl = produto.imagemURL || produto.imagemUrl || produto.imagem || '';
-        imagemUrl = converterURLDrive(imagemUrl);
+        // v10.1: Verificar múltiplas variações do campo de imagem
+        const imagemUrl = produto.imagemURL || produto.imagemUrl || produto.imagem || '';
 
         // Debug apenas no primeiro produto
         if (catalogoFiltrado.indexOf(produto) === 0) {
@@ -3778,8 +3777,7 @@ function loadPedidos() {
             imagemURL: produto.imagemURL,
             imagemUrl: produto.imagemUrl,
             imagem: produto.imagem,
-            imagemOriginal: produto.imagemURL || produto.imagemUrl || produto.imagem || '',
-            imagemConvertida: imagemUrl,
+            imagemFinal: imagemUrl,
             todasChaves: Object.keys(produto)
           });
         }
@@ -3790,7 +3788,7 @@ function loadPedidos() {
 
             <div style="width: 100%; height: 120px; background: #f5f5f5; border-radius: 4px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
               ${imagemUrl ?
-                `<img src="${imagemUrl}" alt="${produto.nome}" style="max-width: 100%; max-height: 100%; object-fit: contain;" onerror="handleImageError(this)">` :
+                `<img src="${imagemUrl}" alt="${produto.nome}" style="max-width: 100%; max-height: 100%; object-fit: contain;" onerror="this.onerror=null; this.parentElement.innerHTML='<div style=&quot;color:#999;font-size:2rem;&quot;>📦</div>'">` :
                 '<div style="color: #999; font-size: 2rem;">📦</div>'
               }
             </div>
@@ -4171,10 +4169,8 @@ function loadProdutos() {
       
       let html = '';
       produtos.forEach(produto => {
-        // v10.1: Converter URL do Drive se necessário
-        const imagemUrl = converterURLDrive(produto.imagemURL || '');
-        const imagemHtml = imagemUrl
-          ? `<img src="${imagemUrl}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;" alt="📦">`
+        const imagemHtml = produto.imagemURL
+          ? `<img src="${produto.imagemURL}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;" onerror="this.onerror=null; this.outerHTML='📦'">`
           : '📦';
         
         html += `
@@ -4223,61 +4219,30 @@ function loadProdutos() {
     }
     
     /**
-     * Converte URL antiga do Drive para formato thumbnail (v10.1)
-     */
-    function converterURLDrive(url) {
-      if (!url) return '';
-
-      // Se já estiver no formato thumbnail, retornar como está
-      if (url.includes('drive.google.com/thumbnail')) {
-        return url;
-      }
-
-      // Se estiver no formato antigo (uc?id=), converter para thumbnail
-      if (url.includes('drive.google.com/uc?id=')) {
-        const match = url.match(/id=([^&]+)/);
-        if (match && match[1]) {
-          return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w400`;
-        }
-      }
-
-      // Se não for URL do Drive, retornar como está
-      return url;
-    }
-
-    /**
-     * Handler para erro de carregamento de imagem
-     */
-    function handleImageError(imgElement) {
-      if (imgElement && imgElement.parentElement) {
-        imgElement.parentElement.innerHTML = '<div style="padding:20px;background:#f5f5f5;border-radius:8px;text-align:center;"><div style="font-size:3rem;margin-bottom:10px;">📦</div><p style="color:#999;margin:0;font-size:0.9rem;">Imagem não disponível</p></div>';
-      }
-    }
-
-    /**
      * Mostra detalhes do produto
      */
     function showProdutoDetails(produto) {
       // v10.1: Verificar múltiplas variações do campo de imagem
-      let imagemUrl = produto.imagemURL || produto.imagemUrl || produto.imagem || '';
-
-      // v10.1: Converter URL antiga para formato thumbnail
-      imagemUrl = converterURLDrive(imagemUrl);
+      const imagemUrl = produto.imagemURL || produto.imagemUrl || produto.imagem || '';
 
       console.log('[v10.1 DEBUG] Detalhes produto imagem:', {
         nome: produto.nome,
         imagemURL: produto.imagemURL,
         imagemUrl: produto.imagemUrl,
         imagem: produto.imagem,
-        imagemOriginal: produto.imagemURL || produto.imagemUrl || produto.imagem || '',
-        imagemConvertida: imagemUrl
+        imagemFinal: imagemUrl
       });
 
       const imagemHtml = imagemUrl
         ? `<div style="margin: 10px 0;">
              <img src="${imagemUrl}" alt="${produto.nome}"
                   style="max-width: 200px; max-height: 200px; border-radius: 10px; object-fit: contain;"
-                  onerror="handleImageError(this)">
+                  onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+             <div style="display: none; padding: 20px; background: #f5f5f5; border-radius: 8px; text-align: center;">
+               <div style="font-size: 3rem; margin-bottom: 10px;">📦</div>
+               <p style="color: #999; margin: 0; font-size: 0.9rem;">Imagem não disponível</p>
+               <a href="${imagemUrl}" target="_blank" style="color: #2196F3; font-size: 0.8rem; text-decoration: none;">Ver URL da imagem</a>
+             </div>
            </div>`
         : '<div style="padding: 20px; background: #f5f5f5; border-radius: 8px; text-align: center; margin: 10px 0;"><div style="font-size: 3rem;">📦</div><p style="color: #999; margin: 5px 0 0 0;">Sem imagem cadastrada</p></div>';
       
