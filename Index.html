@@ -4266,12 +4266,7 @@ function loadProdutos() {
         ? `<div style="margin: 10px 0;">
              <img src="${imagemUrl}" alt="${produto.nome}"
                   style="max-width: 200px; max-height: 200px; border-radius: 10px; object-fit: contain;"
-                  onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-             <div style="display: none; padding: 20px; background: #f5f5f5; border-radius: 8px; text-align: center;">
-               <div style="font-size: 3rem; margin-bottom: 10px;">📦</div>
-               <p style="color: #999; margin: 0; font-size: 0.9rem;">Imagem não disponível</p>
-               <a href="${imagemUrl}" target="_blank" style="color: #2196F3; font-size: 0.8rem; text-decoration: none;">Ver URL da imagem</a>
-             </div>
+                  onerror="this.onerror=null; this.src=''; this.style.display='none'; this.parentElement.innerHTML='<div style=&quot;padding:20px;background:#f5f5f5;border-radius:8px;text-align:center;&quot;><div style=&quot;font-size:3rem;margin-bottom:10px;&quot;>📦</div><p style=&quot;color:#999;margin:0;font-size:0.9rem;&quot;>Imagem não disponível</p></div>';">
            </div>`
         : '<div style="padding: 20px; background: #f5f5f5; border-radius: 8px; text-align: center; margin: 10px 0;"><div style="font-size: 3rem;">📦</div><p style="color: #999; margin: 5px 0 0 0;">Sem imagem cadastrada</p></div>';
       
