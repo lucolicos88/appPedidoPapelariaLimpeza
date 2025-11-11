@@ -5800,12 +5800,21 @@ function loadGerenciamento() {
      * Mostra seções de admin se usuário for Admin
      */
     function mostrarDadosFicticiosSeAdmin() {
-      if (dadosUsuario && dadosUsuario.perfil === 'Admin') {
-        document.getElementById('manutencaoSection').style.display = 'block';
-        document.getElementById('dadosFicticiosSection').style.display = 'block';
+      // Usar window.currentUser ao invés de dadosUsuario
+      const user = window.currentUser || window.dadosUsuario;
+
+      if (user && user.role === 'Admin') {
+        const manutencaoSection = document.getElementById('manutencaoSection');
+        const ficticiosSection = document.getElementById('dadosFicticiosSection');
+
+        if (manutencaoSection) manutencaoSection.style.display = 'block';
+        if (ficticiosSection) ficticiosSection.style.display = 'block';
       } else {
-        document.getElementById('manutencaoSection').style.display = 'none';
-        document.getElementById('dadosFicticiosSection').style.display = 'none';
+        const manutencaoSection = document.getElementById('manutencaoSection');
+        const ficticiosSection = document.getElementById('dadosFicticiosSection');
+
+        if (manutencaoSection) manutencaoSection.style.display = 'none';
+        if (ficticiosSection) ficticiosSection.style.display = 'none';
       }
     }
 
