@@ -1,12 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)",
-      "Bash(clasp push:*)",
-      "Bash(git log:*)",
-      "Bash(\"\n✅ Solução: navigateTo() agora usa style.display = ''block''/''none'' para sobrescrever inline styles\n✅ Logs adicionados para debug da navegação\n\nO problema era que:\n- CSS classes não sobrescrevem inline styles\n- section.classList.add(''active'') não mudava display: none inline\n- Agora usamos section.style.display = ''block'' diretamente\n\nArquivos modificados:\n- Index.html: Função navigateTo() corrigida (linhas 1898-1923)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []
