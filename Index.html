@@ -4171,8 +4171,10 @@ function loadProdutos() {
       
       let html = '';
       produtos.forEach(produto => {
-        const imagemHtml = produto.imagemURL
-          ? `<img src="${produto.imagemURL}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;" onerror="this.onerror=null; this.outerHTML='📦'">`
+        // v10.1: Converter URL do Drive se necessário
+        const imagemUrl = converterURLDrive(produto.imagemURL || '');
+        const imagemHtml = imagemUrl
+          ? `<img src="${imagemUrl}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;" onerror="this.outerHTML='📦'">`
           : '📦';
         
         html += `
