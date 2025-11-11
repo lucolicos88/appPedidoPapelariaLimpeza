@@ -1546,6 +1546,25 @@
         </div>
       </div>
 
+      <!-- Seção de Manutenção (Admin Only) -->
+      <div class="card" id="manutencaoSection" style="margin-top: 24px; display: none;">
+        <div class="card-header">
+          <h2 class="card-title">🔧 Manutenção do Sistema</h2>
+        </div>
+
+        <div style="padding: 24px;">
+          <div style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+            <p style="margin: 0; color: #1565c0; font-size: 0.9rem;">
+              <strong>💡 Correção de URLs de Imagens:</strong> Converte URLs antigas do Google Drive (formato uc?id=) para o novo formato de thumbnail. Execute esta função se as imagens dos produtos não estiverem aparecendo.
+            </p>
+          </div>
+
+          <button class="btn btn-primary" onclick="corrigirURLsImagens()" style="width: 100%; margin-bottom: 32px;">
+            🔄 Corrigir URLs de Imagens dos Produtos
+          </button>
+        </div>
+      </div>
+
       <!-- Seção de Dados Fictícios (Admin Only) -->
       <div class="card" id="dadosFicticiosSection" style="margin-top: 24px; display: none;">
         <div class="card-header">
@@ -5746,12 +5765,46 @@ function loadGerenciamento() {
     }
 
     /**
-     * Mostra seção de dados fictícios se usuário for Admin
+     * Corrige URLs antigas de imagens para formato thumbnail
+     */
+    function corrigirURLsImagens() {
+      if (!confirm('Deseja converter todas as URLs antigas de imagens para o novo formato?\n\nIsto irá atualizar os registros na planilha.')) {
+        return;
+      }
+
+      showLoading();
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+
+          if (response && response.success) {
+            showSuccess(`✅ ${response.corrigidos} URL(s) corrigida(s) com sucesso!`);
+
+            // Recarregar produtos se estiver na página de produtos
+            if (window.location.hash === '#produtos' || document.getElementById('page-produtos').style.display !== 'none') {
+              loadProdutos();
+            }
+          } else {
+            showError('Erro ao corrigir URLs: ' + (response.error || 'Erro desconhecido'));
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .corrigirURLsImagensAntigas();
+    }
+
+    /**
+     * Mostra seções de admin se usuário for Admin
      */
     function mostrarDadosFicticiosSeAdmin() {
       if (dadosUsuario && dadosUsuario.perfil === 'Admin') {
+        document.getElementById('manutencaoSection').style.display = 'block';
         document.getElementById('dadosFicticiosSection').style.display = 'block';
       } else {
+        document.getElementById('manutencaoSection').style.display = 'none';
         document.getElementById('dadosFicticiosSection').style.display = 'none';
       }
     }
