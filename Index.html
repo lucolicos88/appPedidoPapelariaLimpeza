@@ -992,7 +992,7 @@
         <li class="nav-item" data-page="gestao-pedidos" id="nav-gestao-pedidos" style="display: none;">📋 Gestão de Pedidos</li>
         <li class="nav-item" data-page="produtos">📦 Produtos</li>
         <li class="nav-item" data-page="estoque">📊 Estoque</li>
-        <li class="nav-item" data-page="gerenciamento">📈 Gerenciamento</li>
+        <li class="nav-item" data-page="movimentacoes">📦 Movimentações</li>
         <li class="nav-item" data-page="relatorios">📄 Relatórios</li>
         <li class="nav-item" data-page="configuracoes">⚙️ Configurações</li>
       </ul>
@@ -1436,58 +1436,79 @@
       </div>
     </section>
 
-    <!-- Gerenciamento Page (NOVO v6.0) -->
-    <section class="page-section" id="page-gerenciamento">
+    <!-- Movimentações Page (v10.1 - ATUALIZADO) -->
+    <section class="page-section" id="page-movimentacoes">
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">Gerenciamento de Produtos</h2>
+          <h2 class="card-title">📦 Movimentações de Estoque</h2>
+          <p style="margin: 8px 0 0 0; color: #666; font-size: 0.9rem;">
+            Histórico completo de movimentações de produtos e pedidos
+          </p>
         </div>
-        
+
+        <!-- Alertas de Produtos -->
         <div style="margin-bottom: 30px;">
-          <h3>📊 Análise de Produtos</h3>
-          <div class="kpi-grid" id="gerenciamentoKpiGrid">
-            <!-- KPIs serão inseridos aqui -->
-          </div>
-        </div>
-        
-        <div style="margin-bottom: 30px;">
-          <h3>⚠️ Produtos em Alerta</h3>
+          <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; color: #333;">⚠️ Produtos em Alerta</h3>
           <div id="produtosAlerta">
             <!-- Produtos em alerta serão inseridos aqui -->
           </div>
         </div>
-        
+
+        <!-- Histórico de Movimentações -->
         <div>
-          <h3>📈 Histórico de Movimentações</h3>
-          <div class="filters">
+          <h3 style="margin: 0 0 16px 0; font-size: 1.2rem; color: #333;">📈 Histórico de Movimentações</h3>
+
+          <!-- Filtros -->
+          <div class="filters" style="margin-bottom: 24px;">
             <div class="filter-grid">
               <div class="form-group">
-                <label class="form-label">Tipo Movimentação</label>
+                <label class="form-label">Tipo de Movimentação</label>
                 <select class="form-control" id="movimentacaoFilterTipo">
                   <option value="">Todas</option>
-                  <option value="ENTRADA">Entrada</option>
-                  <option value="SAIDA">Saída</option>
+                  <option value="ENTRADA">📥 Entrada</option>
+                  <option value="SAIDA">📤 Saída</option>
                 </select>
               </div>
+
               <div class="form-group">
+                <label class="form-label">Tipo de Produto</label>
+                <select class="form-control" id="movimentacaoFilterTipoProduto">
+                  <option value="">Todos</option>
+                  <option value="Papelaria">📝 Papelaria</option>
+                  <option value="Limpeza">🧹 Limpeza</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Produto</label>
+                <select class="form-control" id="movimentacaoFilterProduto">
+                  <option value="">Todos os produtos</option>
+                  <!-- Produtos serão carregados dinamicamente -->
+                </select>
+              </div>
+
+              <div class="form-group" style="display: flex; align-items: flex-end;">
                 <button class="btn btn-primary" onclick="loadHistoricoMovimentacoes()" style="width: 100%;">
-                  Filtrar
+                  🔍 Filtrar
                 </button>
               </div>
             </div>
           </div>
-          
+
+          <!-- Tabela de Movimentações -->
           <div class="table-container">
             <table>
               <thead>
                 <tr>
                   <th>Data/Hora</th>
-                  <th>Tipo</th>
+                  <th>Tipo Mov.</th>
+                  <th>Tipo Prod.</th>
                   <th>Produto</th>
                   <th>Quantidade</th>
                   <th>Estoque Anterior</th>
                   <th>Estoque Atual</th>
                   <th>Responsável</th>
+                  <th>Observações</th>
                 </tr>
               </thead>
               <tbody id="movimentacoesTableBody">
@@ -2258,8 +2279,8 @@ function initializeSystem() {
           case 'estoque':
             loadEstoque();
             break;
-          case 'gerenciamento':
-            loadGerenciamento();
+          case 'movimentacoes':
+            loadMovimentacoes();
             break;
           case 'configuracoes':
             loadConfiguracoes();
@@ -4962,79 +4983,35 @@ function loadEstoque() {
         [funcao](dadosMovimentacao);
     }
     /**
- * Carrega página de gerenciamento (CORRIGIDO v6.0.1)
+ * Carrega página de movimentações (v10.1 - ATUALIZADO)
  */
-function loadGerenciamento() {
+function loadMovimentacoes() {
   showLoading();
-  
-  // Carregar KPIs
+
+  // Carregar produtos em alerta
   google.script.run
     .withSuccessHandler(function(response) {
       try {
-        if (!response) {
-          console.error('❌ Resposta vazia ao carregar gerenciamento');
-          hideLoading();
-          return;
-        }
-        
-        if (response.success && response.analise) {
-          renderGerenciamentoKPIs(response.analise);
-          renderProdutosAlerta(response.analise.produtosEmAlerta || []);
-        } else {
-          console.error('Erro ao carregar gerenciamento:', response.error);
+        if (response && response.success) {
+          renderProdutosAlerta(response.produtosAlerta || []);
         }
       } catch (error) {
-        console.error('❌ Erro ao processar gerenciamento:', error);
+        console.error('❌ Erro ao processar alertas:', error);
       }
       hideLoading();
     })
     .withFailureHandler(function(error) {
-      console.error('❌ Erro de conexão no gerenciamento:', error);
+      console.error('❌ Erro ao carregar alertas:', error);
       hideLoading();
-      showError('Erro ao carregar gerenciamento: ' + error.message);
     })
-    .getAnaliseProdutos();
-  
+    .getProdutosEmAlerta();
+
+  // Carregar lista de produtos para o filtro
+  loadProdutosParaFiltro();
+
   // Carregar histórico de movimentações
   loadHistoricoMovimentacoes();
 }
-
-    
-    /**
-     * Renderiza KPIs de gerenciamento
-     */
-    function renderGerenciamentoKPIs(analise) {
-      const kpiGrid = document.getElementById('gerenciamentoKpiGrid');
-      
-      const html = `
-        <div class="kpi-card" style="border-left-color: var(--primary);">
-          <div class="kpi-label">Total de Produtos</div>
-          <div class="kpi-value">${analise.totalProdutos || 0}</div>
-        </div>
-        
-        <div class="kpi-card" style="border-left-color: var(--success);">
-          <div class="kpi-label">Produtos Ativos</div>
-          <div class="kpi-value">${analise.produtosAtivos || 0}</div>
-        </div>
-        
-        <div class="kpi-card" style="border-left-color: var(--danger);">
-          <div class="kpi-label">Estoque Baixo</div>
-          <div class="kpi-value">${analise.produtosEstoqueBaixo || 0}</div>
-        </div>
-        
-        <div class="kpi-card" style="border-left-color: var(--warning);">
-          <div class="kpi-label">Ponto de Pedido</div>
-          <div class="kpi-value">${analise.produtosPontoPedido || 0}</div>
-        </div>
-        
-        <div class="kpi-card" style="border-left-color: var(--info);">
-          <div class="kpi-label">Valor Total Estoque</div>
-          <div class="kpi-value">R$ ${formatMoney(analise.valorTotalEstoque || 0)}</div>
-        </div>
-      `;
-      
-      kpiGrid.innerHTML = html;
-    }
     
     /**
      * Renderiza produtos em alerta
@@ -5066,67 +5043,99 @@ function loadGerenciamento() {
       container.innerHTML = html;
     }
     
-    /**
-     * Carrega histórico de movimentações
-     */
-    function loadHistoricoMovimentacoes() {
-      const filtros = {
-        tipo: document.getElementById('movimentacaoFilterTipo')?.value || null
-      };
-      
-      google.script.run
-        .withSuccessHandler(function(response) {
-          if (response.success) {
-            renderMovimentacoesTable(response.movimentacoes);
-          } else {
-            showError('Erro ao carregar movimentações: ' + response.error);
-          }
-        })
-        .withFailureHandler(function(error) {
-          showError('Erro: ' + error.message);
-        })
-        .getHistoricoMovimentacoes(filtros);
-    }
-    
-    /**
-     * Renderiza tabela de movimentações
-     */
-    function renderMovimentacoesTable(movimentacoes) {
-      const tbody = document.getElementById('movimentacoesTableBody');
-      
-      if (!movimentacoes || movimentacoes.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="7" class="empty-state">
-              <div class="empty-state-icon">📊</div>
-              <div class="empty-state-title">Nenhuma movimentação encontrada</div>
-            </td>
-          </tr>
-        `;
-        return;
+/**
+ * Carrega produtos para o filtro (v10.1)
+ */
+function loadProdutosParaFiltro() {
+  google.script.run
+    .withSuccessHandler(function(response) {
+      if (response && response.success && response.produtos) {
+        const select = document.getElementById('movimentacaoFilterProduto');
+        if (!select) return;
+
+        let options = '<option value="">Todos os produtos</option>';
+        response.produtos.forEach(produto => {
+          options += `<option value="${produto.id}">${produto.nome}</option>`;
+        });
+        select.innerHTML = options;
       }
-      
-      let html = '';
-      movimentacoes.forEach(mov => {
-        const tipoBadge = mov.tipo === 'ENTRADA' 
-          ? '<span class="badge badge-success">⬆️ ENTRADA</span>' 
-          : '<span class="badge badge-danger">⬇️ SAÍDA</span>';
-        
-        html += `
-          <tr>
-            <td>${formatDateTime(mov.dataHora)}</td>
-            <td>${tipoBadge}</td>
-            <td>${mov.produtoNome}</td>
-            <td><strong>${mov.quantidade}</strong></td>
-            <td>${mov.estoqueAnterior}</td>
-            <td><strong>${mov.estoqueAtual}</strong></td>
-            <td>${mov.responsavel}</td>
-          </tr>
-        `;
-      });
-      
-      tbody.innerHTML = html;
-    }
+    })
+    .withFailureHandler(function(error) {
+      console.error('❌ Erro ao carregar produtos para filtro:', error);
+    })
+    .getProdutos();
+}
+
+/**
+ * Carrega histórico de movimentações (v10.1 - ATUALIZADO)
+ */
+function loadHistoricoMovimentacoes() {
+  const filtros = {
+    tipo: document.getElementById('movimentacaoFilterTipo')?.value || null,
+    tipoProduto: document.getElementById('movimentacaoFilterTipoProduto')?.value || null,
+    produtoId: document.getElementById('movimentacaoFilterProduto')?.value || null
+  };
+
+  google.script.run
+    .withSuccessHandler(function(response) {
+      if (response && response.success) {
+        renderMovimentacoesTable(response.movimentacoes);
+      } else {
+        showError('Erro ao carregar movimentações: ' + (response ? response.error : 'Resposta vazia'));
+      }
+    })
+    .withFailureHandler(function(error) {
+      showError('Erro: ' + error.message);
+    })
+    .getHistoricoMovimentacoes(filtros);
+}
+    
+/**
+ * Renderiza tabela de movimentações (v10.1 - ATUALIZADO)
+ */
+function renderMovimentacoesTable(movimentacoes) {
+  const tbody = document.getElementById('movimentacoesTableBody');
+
+  if (!movimentacoes || movimentacoes.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="9" class="empty-state">
+          <div class="empty-state-icon">📊</div>
+          <div class="empty-state-title">Nenhuma movimentação encontrada</div>
+          <div class="empty-state-message">Use os filtros acima para refinar sua busca</div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  let html = '';
+  movimentacoes.forEach(mov => {
+    const tipoBadge = mov.tipo === 'ENTRADA'
+      ? '<span class="badge badge-success">📥 ENTRADA</span>'
+      : '<span class="badge badge-danger">📤 SAÍDA</span>';
+
+    const tipoProdutoBadge = mov.tipoProduto === 'Papelaria'
+      ? '<span class="badge" style="background: #2196f3; color: white;">📝 Papelaria</span>'
+      : '<span class="badge" style="background: #4caf50; color: white;">🧹 Limpeza</span>';
+
+    html += `
+      <tr>
+        <td>${formatDateTime(mov.dataHora)}</td>
+        <td>${tipoBadge}</td>
+        <td>${tipoProdutoBadge}</td>
+        <td>${mov.produtoNome}</td>
+        <td><strong>${mov.quantidade}</strong></td>
+        <td>${mov.estoqueAnterior}</td>
+        <td><strong>${mov.estoqueAtual}</strong></td>
+        <td>${mov.responsavel || '-'}</td>
+        <td style="font-size: 0.85rem; color: #666;">${mov.observacoes || '-'}</td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+}
     
     /**
      * Carrega configurações

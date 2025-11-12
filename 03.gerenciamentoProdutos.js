@@ -566,3 +566,71 @@ function getAnaliseProdutos() {
     };
   }
 }
+
+/**
+ * Obtém apenas produtos em alerta (v10.1 - NOVO)
+ * Usado na aba Movimentações
+ */
+function getProdutosEmAlerta() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+    const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
+
+    if (!abaProdutos || !abaEstoque) {
+      return { success: false, error: 'Abas não encontradas' };
+    }
+
+    const dadosProdutos = abaProdutos.getDataRange().getValues();
+    const dadosEstoque = abaEstoque.getDataRange().getValues();
+
+    const produtosAlerta = [];
+
+    for (let i = 1; i < dadosProdutos.length; i++) {
+      if (!dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ID - 1]) continue;
+
+      const produtoId = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ID - 1];
+      const produtoNome = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.NOME - 1];
+      const estoqueMinimo = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ESTOQUE_MINIMO - 1] || 0;
+      const pontoPedido = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.PONTO_PEDIDO - 1] || 0;
+
+      // Buscar estoque atual
+      let qtdAtual = 0;
+      for (let j = 1; j < dadosEstoque.length; j++) {
+        if (dadosEstoque[j][CONFIG.COLUNAS_ESTOQUE.PRODUTO_ID - 1] === produtoId) {
+          qtdAtual = dadosEstoque[j][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL - 1] || 0;
+          break;
+        }
+      }
+
+      // Verificar alertas
+      if (qtdAtual <= estoqueMinimo && estoqueMinimo > 0) {
+        produtosAlerta.push({
+          nome: produtoNome,
+          qtdAtual: qtdAtual,
+          estoqueMinimo: estoqueMinimo,
+          tipo: 'ESTOQUE_BAIXO'
+        });
+      } else if (qtdAtual <= pontoPedido && pontoPedido > 0) {
+        produtosAlerta.push({
+          nome: produtoNome,
+          qtdAtual: qtdAtual,
+          pontoPedido: pontoPedido,
+          tipo: 'PONTO_PEDIDO'
+        });
+      }
+    }
+
+    return {
+      success: true,
+      produtosAlerta: produtosAlerta
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao obter produtos em alerta: ' + error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}

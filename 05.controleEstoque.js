@@ -355,59 +355,76 @@ function getHistoricoMovimentacoes(filtros) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaMovimentacoes = ss.getSheetByName(CONFIG.ABAS.STOCK_MOVEMENTS);
-    
+    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+
     if (!abaMovimentacoes) {
       return { success: false, error: 'Aba de movimentações não encontrada' };
     }
-    
+
     const dados = abaMovimentacoes.getDataRange().getValues();
+    const dadosProdutos = abaProdutos ? abaProdutos.getDataRange().getValues() : [];
     const movimentacoes = [];
-    
+
+    // Criar mapa de produtos para buscar tipo
+    const mapaProdutos = {};
+    for (let i = 1; i < dadosProdutos.length; i++) {
+      const produtoId = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ID - 1];
+      const tipoProduto = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.TIPO - 1];
+      if (produtoId) {
+        mapaProdutos[produtoId] = tipoProduto;
+      }
+    }
+
     for (let i = 1; i < dados.length; i++) {
       if (!dados[i][0]) continue;
-      
+
+      const produtoId = dados[i][3];
+      const tipoProduto = mapaProdutos[produtoId] || 'Não definido';
+
       const movimentacao = {
         id: dados[i][0],
         dataHora: dados[i][1],
         tipo: dados[i][2],
-        produtoId: dados[i][3],
+        produtoId: produtoId,
         produtoNome: dados[i][4],
+        tipoProduto: tipoProduto,
         quantidade: dados[i][5],
         estoqueAnterior: dados[i][6],
         estoqueAtual: dados[i][7],
         responsavel: dados[i][8],
         observacoes: dados[i][9]
       };
-      
+
       // Aplicar filtros
       if (filtros) {
         if (filtros.produtoId && movimentacao.produtoId !== filtros.produtoId) continue;
         if (filtros.tipo && movimentacao.tipo !== filtros.tipo) continue;
-        
+        if (filtros.tipoProduto && movimentacao.tipoProduto !== filtros.tipoProduto) continue;
+
         if (filtros.dataInicio) {
           const dataInicio = new Date(filtros.dataInicio);
           const dataMovimentacao = new Date(movimentacao.dataHora);
           if (dataMovimentacao < dataInicio) continue;
         }
-        
+
         if (filtros.dataFim) {
           const dataFim = new Date(filtros.dataFim);
           const dataMovimentacao = new Date(movimentacao.dataHora);
           if (dataMovimentacao > dataFim) continue;
         }
       }
-      
+
       movimentacoes.push(movimentacao);
     }
-    
+
     // Ordenar por data (mais recente primeiro)
     movimentacoes.sort((a, b) => new Date(b.dataHora) - new Date(a.dataHora));
-    
+
     return {
       success: true,
       movimentacoes: movimentacoes
     };
-    
+
   } catch (error) {
     Logger.log('❌ Erro ao obter histórico: ' + error.message);
     return {
