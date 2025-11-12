@@ -5802,20 +5802,18 @@ function loadGerenciamento() {
      * Mostra seções de admin se usuário for Admin
      */
     function mostrarDadosFicticiosSeAdmin() {
-      // Tentar todas as possíveis variáveis de usuário
-      const user = window.currentUser || window.dadosUsuario || window.usuario;
+      // currentUser é a variável global definida na linha 2064
+      const user = currentUser;
 
       console.log('[DEBUG] mostrarDadosFicticiosSeAdmin:', {
-        currentUser: window.currentUser,
-        dadosUsuario: window.dadosUsuario,
-        usuario: window.usuario,
+        currentUser: currentUser,
         user: user,
-        role: user?.role,
-        perfil: user?.perfil
+        permissao: user?.permissao,
+        role: user?.role
       });
 
-      // Verificar se é Admin usando role ou perfil
-      const isAdmin = user && (user.role === 'Admin' || user.perfil === 'Admin');
+      // Verificar se é Admin - currentUser usa "permissao" não "role"
+      const isAdmin = user && (user.permissao === 'Admin' || user.role === 'Admin');
 
       const manutencaoSection = document.getElementById('manutencaoSection');
       const ficticiosSection = document.getElementById('dadosFicticiosSection');
