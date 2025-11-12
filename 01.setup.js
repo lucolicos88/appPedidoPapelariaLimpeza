@@ -22,94 +22,137 @@
 // Não precisa redeclarar aqui
 
 /**
- * Configuração inicial da planilha v6.0
+ * Configuração inicial da planilha v10.1 (MELHORADO)
  */
 function setupPlanilha() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    
-    Logger.log('🚀 Iniciando configuração da planilha v6.0...');
-    
+    const ui = SpreadsheetApp.getUi();
+
+    // Verificar se já está configurado
+    const abaConfig = ss.getSheetByName(CONFIG.ABAS.CONFIG);
+    const abaUsuarios = ss.getSheetByName(CONFIG.ABAS.USERS);
+    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+
+    const jaConfigurado = (abaConfig && abaUsuarios && abaProdutos);
+
+    if (jaConfigurado) {
+      // Sistema já configurado - perguntar o que fazer
+      const resposta = ui.alert(
+        '⚠️ Sistema Já Configurado',
+        'O sistema já foi configurado anteriormente.\n\n' +
+        'O que você deseja fazer?\n\n' +
+        '• OK: Reconfigurar (sobrescrever abas existentes)\n' +
+        '• Cancelar: Manter configuração atual',
+        ui.ButtonSet.OK_CANCEL
+      );
+
+      if (resposta === ui.Button.CANCEL) {
+        Logger.log('⚠️ Configuração cancelada pelo usuário');
+        return {
+          success: false,
+          message: 'Configuração cancelada'
+        };
+      }
+
+      // Usuário escolheu reconfigurar
+      const confirmar = ui.alert(
+        '⚠️ Confirmação de Reconfiguração',
+        'ATENÇÃO: Esta operação irá SOBRESCREVER as abas de configuração.\n\n' +
+        '⚠️ DADOS EXISTENTES PODEM SER PERDIDOS!\n\n' +
+        'Recomendamos fazer um backup antes de continuar.\n\n' +
+        'Deseja realmente continuar?',
+        ui.ButtonSet.YES_NO
+      );
+
+      if (confirmar !== ui.Button.YES) {
+        Logger.log('⚠️ Reconfiguração cancelada pelo usuário');
+        return {
+          success: false,
+          message: 'Reconfiguração cancelada'
+        };
+      }
+    }
+
+    Logger.log('🚀 Iniciando configuração da planilha v10.1...');
+
     // 1. Criar aba de Configurações
     criarAbaConfiguracoes(ss);
     Logger.log('✅ Aba Configurações criada');
-    
+
     // 2. Criar aba de Usuários
     criarAbaUsuarios(ss);
     Logger.log('✅ Aba Usuários criada');
-    
+
     // 3. Criar aba de Produtos
     criarAbaProdutos(ss);
     Logger.log('✅ Aba Produtos criada');
-    
+
     // 4. Criar aba de Pedidos
     criarAbaPedidos(ss);
     Logger.log('✅ Aba Pedidos criada');
-    
+
     // 5. Criar aba de Estoque
     criarAbaEstoque(ss);
     Logger.log('✅ Aba Estoque criada');
-    
-    // 6. Criar aba de Movimentações de Estoque (NOVO v6.0)
+
+    // 6. Criar aba de Movimentações de Estoque
     criarAbaMovimentacoesEstoque(ss);
     Logger.log('✅ Aba Movimentações Estoque criada');
-    
+
     // 7. Criar aba de Registros
     criarAbaRegistros(ss);
     Logger.log('✅ Aba Registros criada');
-    
+
     // 8. Criar aba de Indicadores
     criarAbaIndicadores(ss);
     Logger.log('✅ Aba Indicadores criada');
-    
-    // 9. Criar estrutura de pastas no Drive
-    criarEstruturaPastas();
-    Logger.log('✅ Estrutura de pastas criada');
-    
-    // 10. Popular com dados de teste
-    popularDadosTeste(ss);
-    Logger.log('✅ Dados de teste adicionados');
-    
-    // 11. Aplicar formatação
+
+    // 9. Popular com dados de teste (APENAS se for primeira configuração)
+    if (!jaConfigurado) {
+      popularDadosTeste(ss);
+      Logger.log('✅ Dados de teste adicionados');
+    } else {
+      Logger.log('⚠️ Dados de teste NÃO adicionados (reconfiguração)');
+    }
+
+    // 10. Aplicar formatação
     aplicarFormatacao(ss);
     Logger.log('✅ Formatação aplicada');
-    
+
     Logger.log('');
-    Logger.log('🎉 CONFIGURAÇÃO v6.0 CONCLUÍDA COM SUCESSO!');
-    Logger.log('📊 Sistema Neoformula pronto para uso');
+    Logger.log('🎉 CONFIGURAÇÃO v10.1 CONCLUÍDA COM SUCESSO!');
+    Logger.log('📊 Sistema de Pedidos pronto para uso');
     Logger.log('');
-    Logger.log('⚠️ PRÓXIMOS PASSOS:');
-    Logger.log('1. Configure o ID da pasta do Google Drive em Configurações');
-    Logger.log('2. Ajuste o email do gestor para notificações');
-    Logger.log('3. Configure os tempos de entrega por tipo');
-    Logger.log('4. Implante como Web App');
-    Logger.log('');
-    
-    SpreadsheetApp.getUi().alert(
-      '✅ Sistema v6.0 Configurado!',
-      'A planilha foi configurada com sucesso.\n\n' +
+
+    const tipoConfig = jaConfigurado ? 'Reconfigurada' : 'Configurada';
+
+    ui.alert(
+      `✅ Sistema v10.1 ${tipoConfig}!`,
+      `A planilha foi ${tipoConfig.toLowerCase()} com sucesso.\n\n` +
       'Próximos passos:\n' +
-      '1. Vá em Configurações e preencha o ID da pasta do Drive\n' +
-      '2. Configure o email do gestor\n' +
-      '3. Implante como Web App (Extensões > Apps Script > Implantar)',
-      SpreadsheetApp.getUi().ButtonSet.OK
+      '1. Configure o ID da pasta do Drive em Configurações\n' +
+      '2. Menu: Sistema de Pedidos → Criar Estrutura de Pastas\n' +
+      '3. Configure o email do gestor\n' +
+      '4. Implante como Web App (Extensões > Apps Script > Implantar)',
+      ui.ButtonSet.OK
     );
-    
+
     return {
       success: true,
-      message: 'Planilha v6.0 configurada com sucesso!'
+      message: `Planilha v10.1 ${tipoConfig.toLowerCase()} com sucesso!`
     };
-    
+
   } catch (error) {
     Logger.log('❌ Erro na configuração: ' + error.message);
     Logger.log(error.stack);
-    
+
     SpreadsheetApp.getUi().alert(
       '❌ Erro na Configuração',
       'Erro: ' + error.message,
       SpreadsheetApp.getUi().ButtonSet.OK
     );
-    
+
     return {
       success: false,
       error: error.message
@@ -396,39 +439,115 @@ function criarAbaIndicadores(ss) {
 }
 
 /**
- * Cria estrutura de pastas no Google Drive
+ * Cria estrutura de pastas no Google Drive (v10.1 - MELHORADO)
  */
 function criarEstruturaPastas() {
   try {
-    const config = obterConfiguracao('PASTA_IMAGENS_ID');
-    
-    if (!config || config === '') {
-      Logger.log('⚠️ ID da pasta não configurado. Configure em Configurações.');
-      return false;
+    const ui = SpreadsheetApp.getUi();
+    const pastaId = obterConfiguracao('PASTA_IMAGENS_ID');
+
+    // Verificar se ID está configurado
+    if (!pastaId || pastaId === '') {
+      ui.alert(
+        '⚠️ Pasta Não Configurada',
+        'O ID da pasta de imagens não está configurado.\n\n' +
+        'Para configurar:\n' +
+        '1. Crie uma pasta no Google Drive\n' +
+        '2. Copie o ID da pasta (da URL)\n' +
+        '3. Cole em: Configurações > PASTA_IMAGENS_ID\n' +
+        '4. Execute esta função novamente',
+        ui.ButtonSet.OK
+      );
+      return {
+        success: false,
+        error: 'PASTA_IMAGENS_ID não configurada'
+      };
     }
-    
-    const pastaPrincipal = DriveApp.getFolderById(config);
-    
+
+    // Verificar se pasta existe e é acessível
+    let pastaPrincipal;
+    try {
+      pastaPrincipal = DriveApp.getFolderById(pastaId);
+    } catch (e) {
+      ui.alert(
+        '❌ Pasta Não Encontrada',
+        'O ID da pasta está inválido ou você não tem acesso a ela.\n\n' +
+        `ID configurado: ${pastaId}\n\n` +
+        'Verifique se:\n' +
+        '1. O ID está correto\n' +
+        '2. Você tem permissão para acessar a pasta\n' +
+        '3. A pasta não foi deletada',
+        ui.ButtonSet.OK
+      );
+      return {
+        success: false,
+        error: 'Pasta não encontrada ou sem acesso'
+      };
+    }
+
+    Logger.log(`📁 Pasta principal encontrada: ${pastaPrincipal.getName()}`);
+
+    let pastasExistentes = [];
+    let pastasCriadas = [];
+
     // Criar subpasta Papelaria
-    const folders1 = pastaPrincipal.getFoldersByName('Papelaria');
-    if (!folders1.hasNext()) {
-      pastaPrincipal.createFolder('Papelaria');
+    const foldersPapelaria = pastaPrincipal.getFoldersByName('Papelaria');
+    if (!foldersPapelaria.hasNext()) {
+      const novaPasta = pastaPrincipal.createFolder('Papelaria');
+      novaPasta.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
       Logger.log('📁 Pasta Papelaria criada');
+      pastasCriadas.push('Papelaria');
+    } else {
+      Logger.log('📁 Pasta Papelaria já existe');
+      pastasExistentes.push('Papelaria');
     }
-    
+
     // Criar subpasta Limpeza
-    const folders2 = pastaPrincipal.getFoldersByName('Limpeza');
-    if (!folders2.hasNext()) {
-      pastaPrincipal.createFolder('Limpeza');
+    const foldersLimpeza = pastaPrincipal.getFoldersByName('Limpeza');
+    if (!foldersLimpeza.hasNext()) {
+      const novaPasta = pastaPrincipal.createFolder('Limpeza');
+      novaPasta.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
       Logger.log('📁 Pasta Limpeza criada');
+      pastasCriadas.push('Limpeza');
+    } else {
+      Logger.log('📁 Pasta Limpeza já existe');
+      pastasExistentes.push('Limpeza');
     }
-    
-    return true;
-    
+
+    // Montar mensagem de resultado
+    let mensagem = '✅ Estrutura de Pastas Configurada!\n\n';
+
+    if (pastasCriadas.length > 0) {
+      mensagem += `📁 Pastas criadas: ${pastasCriadas.join(', ')}\n`;
+    }
+
+    if (pastasExistentes.length > 0) {
+      mensagem += `✓ Pastas existentes: ${pastasExistentes.join(', ')}\n`;
+    }
+
+    mensagem += `\nPasta principal: ${pastaPrincipal.getName()}\n`;
+    mensagem += `ID: ${pastaId}\n\n`;
+    mensagem += 'As imagens dos produtos serão salvas nas subpastas correspondentes.';
+
+    ui.alert('Estrutura de Pastas', mensagem, ui.ButtonSet.OK);
+
+    return {
+      success: true,
+      pastasCriadas: pastasCriadas,
+      pastasExistentes: pastasExistentes
+    };
+
   } catch (error) {
     Logger.log('❌ Erro ao criar pastas: ' + error.message);
-    Logger.log('💡 Configure o ID da pasta em Configurações > PASTA_IMAGENS_ID');
-    return false;
+    SpreadsheetApp.getUi().alert(
+      '❌ Erro',
+      'Erro ao criar estrutura de pastas:\n\n' + error.message,
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
+    return {
+      success: false,
+      error: error.message
+    };
   }
 }
 
@@ -727,6 +846,8 @@ function onOpen() {
     .addSeparator()
     .addItem('📊 Gerar Relatório de Dados', 'gerarRelatorioDados')
     .addItem('💾 Backup de Segurança', 'criarBackup')
+    .addSeparator()
+    .addItem('🔴 Factory Reset (Resetar Tudo)', 'factoryReset')
     .addSeparator()
     .addItem('📖 Ajuda', 'mostrarAjuda')
     .addToUi();
@@ -1276,5 +1397,169 @@ function criarBackup() {
       'Erro ao criar backup: ' + error.message,
       SpreadsheetApp.getUi().ButtonSet.OK
     );
+  }
+}
+
+/**
+ * Factory Reset - Restaura sistema para configuração inicial (v10.1)
+ * ⚠️ ATENÇÃO: Esta função DELETA TODOS OS DADOS!
+ */
+function factoryReset() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const ui = SpreadsheetApp.getUi();
+
+    // AVISO 1: Explicar o que é Factory Reset
+    const aviso1 = ui.alert(
+      '⚠️ FACTORY RESET - AVISO IMPORTANTE',
+      '⚠️ ATENÇÃO: Factory Reset DELETA TODOS OS DADOS!\n\n' +
+      'Esta operação irá:\n' +
+      '• Deletar TODOS os produtos cadastrados\n' +
+      '• Deletar TODOS os pedidos\n' +
+      '• Deletar TODOS os usuários (exceto você)\n' +
+      '• Deletar TODO o histórico de estoque\n' +
+      '• Deletar TODOS os logs\n' +
+      '• Resetar configurações para padrão\n\n' +
+      '🔴 ESTA AÇÃO NÃO PODE SER DESFEITA!\n\n' +
+      '💡 Recomendamos fazer um BACKUP antes de continuar.\n\n' +
+      'Deseja continuar?',
+      ui.ButtonSet.YES_NO
+    );
+
+    if (aviso1 !== ui.Button.YES) {
+      Logger.log('⚠️ Factory Reset cancelado pelo usuário (aviso 1)');
+      return {
+        success: false,
+        message: 'Factory Reset cancelado'
+      };
+    }
+
+    // AVISO 2: Confirmação com digitação
+    const confirmar = ui.prompt(
+      '⚠️ CONFIRMAÇÃO DE FACTORY RESET',
+      '⚠️ ÚLTIMA CHANCE: Esta ação irá APAGAR TODOS OS DADOS!\n\n' +
+      'Para confirmar, digite exatamente:\n' +
+      'CONFIRMO RESET\n\n' +
+      '(Digite abaixo)',
+      ui.ButtonSet.OK_CANCEL
+    );
+
+    if (confirmar.getSelectedButton() !== ui.Button.OK) {
+      Logger.log('⚠️ Factory Reset cancelado pelo usuário (aviso 2)');
+      return {
+        success: false,
+        message: 'Factory Reset cancelado'
+      };
+    }
+
+    const textoDigitado = confirmar.getResponseText().trim();
+
+    if (textoDigitado !== 'CONFIRMO RESET') {
+      ui.alert(
+        '❌ Confirmação Incorreta',
+        `Você digitou: "${textoDigitado}"\n\n` +
+        'Texto esperado: "CONFIRMO RESET"\n\n' +
+        'Factory Reset cancelado por segurança.',
+        ui.ButtonSet.OK
+      );
+      Logger.log('⚠️ Factory Reset cancelado - confirmação incorreta');
+      return {
+        success: false,
+        message: 'Confirmação incorreta'
+      };
+    }
+
+    // EXECUTAR FACTORY RESET
+    Logger.log('🔴 Iniciando Factory Reset...');
+
+    const email = Session.getActiveUser().getEmail();
+
+    // 1. Deletar todas as abas (exceto primeira)
+    const todasAbas = ss.getSheets();
+    Logger.log(`🗑️ Deletando ${todasAbas.length - 1} abas...`);
+
+    for (let i = todasAbas.length - 1; i > 0; i--) {
+      ss.deleteSheet(todasAbas[i]);
+    }
+
+    // Renomear primeira aba para "Temp"
+    todasAbas[0].setName('Temp');
+
+    Logger.log('✅ Todas as abas deletadas');
+
+    // 2. Reconfigurar sistema do zero
+    Logger.log('🔄 Reconfigurando sistema...');
+
+    // Criar abas
+    criarAbaConfiguracoes(ss);
+    criarAbaUsuarios(ss);
+    criarAbaProdutos(ss);
+    criarAbaPedidos(ss);
+    criarAbaEstoque(ss);
+    criarAbaMovimentacoesEstoque(ss);
+    criarAbaRegistros(ss);
+    criarAbaIndicadores(ss);
+
+    // Popular dados de teste
+    popularDadosTeste(ss);
+
+    // Aplicar formatação
+    aplicarFormatacao(ss);
+
+    // Deletar aba temporária
+    const abaTemp = ss.getSheetByName('Temp');
+    if (abaTemp) {
+      ss.deleteSheet(abaTemp);
+    }
+
+    Logger.log('✅ Sistema reconfigurado');
+
+    // 3. Registrar reset
+    registrarLog(
+      email,
+      'Factory Reset',
+      'Sistema resetado para configuração inicial - TODOS OS DADOS FORAM APAGADOS',
+      'sucesso'
+    );
+
+    Logger.log('');
+    Logger.log('🎉 FACTORY RESET CONCLUÍDO COM SUCESSO!');
+    Logger.log('📊 Sistema restaurado para configuração inicial');
+    Logger.log('');
+
+    ui.alert(
+      '✅ Factory Reset Concluído',
+      'O sistema foi resetado para a configuração inicial.\n\n' +
+      '✅ Todas as abas foram recriadas\n' +
+      '✅ Dados de teste foram adicionados\n' +
+      '✅ Você foi cadastrado como Admin\n\n' +
+      'Próximos passos:\n' +
+      '1. Configure o ID da pasta do Drive em Configurações\n' +
+      '2. Menu: Sistema de Pedidos → Criar Estrutura de Pastas\n' +
+      '3. Cadastre usuários e produtos conforme necessário',
+      ui.ButtonSet.OK
+    );
+
+    return {
+      success: true,
+      message: 'Factory Reset concluído com sucesso'
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro no Factory Reset: ' + error.message);
+    Logger.log(error.stack);
+
+    SpreadsheetApp.getUi().alert(
+      '❌ Erro no Factory Reset',
+      'Erro: ' + error.message + '\n\n' +
+      'O sistema pode estar em um estado inconsistente.\n' +
+      'Recomendamos restaurar um backup.',
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
+
+    return {
+      success: false,
+      error: error.message
+    };
   }
 }

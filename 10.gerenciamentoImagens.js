@@ -8,23 +8,25 @@
  * e retorna URLs públicas para exibição no frontend
  */
 
-// Nome da pasta no Drive onde as imagens serão armazenadas
-const PASTA_IMAGENS_PRODUTOS = 'NeoFormula_Produtos_Imagens';
-
 /**
- * Upload de imagem em Base64 para o Google Drive
+ * Upload de imagem em Base64 para o Google Drive (v10.1 - CORRIGIDO)
  *
  * @param {string} base64 - String Base64 da imagem
  * @param {string} fileName - Nome do arquivo original
  * @param {string} mimeType - Tipo MIME (image/jpeg, image/png, etc)
+ * @param {string} tipoProduto - Tipo do produto (Papelaria ou Limpeza)
  * @returns {object} - { success: boolean, imageUrl: string, fileId: string }
  */
-function uploadImagemDrive(base64, fileName, mimeType) {
+function uploadImagemDrive(base64, fileName, mimeType, tipoProduto) {
   try {
-    Logger.log(`📤 Iniciando upload de imagem: ${fileName}`);
+    Logger.log(`📤 Iniciando upload de imagem: ${fileName} (${tipoProduto})`);
 
-    // 1. Verificar se pasta existe, senão criar
-    const pasta = obterOuCriarPastaImagens();
+    // 1. Obter pasta correta (Papelaria ou Limpeza)
+    const pasta = obterPastaImagensPorTipo(tipoProduto);
+
+    if (!pasta) {
+      throw new Error('Pasta de imagens não configurada. Configure PASTA_IMAGENS_ID em Configurações.');
+    }
 
     // 2. Converter Base64 para Blob
     const bytes = Utilities.base64Decode(base64);
@@ -59,31 +61,44 @@ function uploadImagemDrive(base64, fileName, mimeType) {
 }
 
 /**
- * Obter ou criar pasta de imagens de produtos no Drive
+ * Obter pasta de imagens por tipo (Papelaria ou Limpeza)
+ * Usa o PASTA_IMAGENS_ID da aba Configurações
  *
+ * @param {string} tipo - "Papelaria" ou "Limpeza"
  * @returns {Folder} - Objeto Folder do Google Drive
  */
-function obterOuCriarPastaImagens() {
+function obterPastaImagensPorTipo(tipo) {
   try {
-    // Buscar pasta existente
-    const folders = DriveApp.getFoldersByName(PASTA_IMAGENS_PRODUTOS);
+    // 1. Obter ID da pasta principal da configuração
+    const pastaId = obterConfiguracao('PASTA_IMAGENS_ID');
 
-    if (folders.hasNext()) {
-      // Pasta já existe
-      Logger.log(`📁 Pasta encontrada: ${PASTA_IMAGENS_PRODUTOS}`);
-      return folders.next();
-    } else {
-      // Criar nova pasta
-      Logger.log(`📁 Criando pasta: ${PASTA_IMAGENS_PRODUTOS}`);
-      const pasta = DriveApp.createFolder(PASTA_IMAGENS_PRODUTOS);
-
-      // Tornar pasta compartilhada (para que imagens sejam acessíveis)
-      pasta.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-
-      return pasta;
+    if (!pastaId || pastaId === '') {
+      Logger.log('❌ PASTA_IMAGENS_ID não configurada');
+      throw new Error('PASTA_IMAGENS_ID não configurada em Configurações');
     }
+
+    // 2. Obter pasta principal
+    const pastaPrincipal = DriveApp.getFolderById(pastaId);
+    Logger.log(`📁 Pasta principal encontrada: ${pastaPrincipal.getName()}`);
+
+    // 3. Buscar ou criar subpasta por tipo
+    const nomePasta = tipo === 'Papelaria' ? 'Papelaria' : 'Limpeza';
+    const subpastas = pastaPrincipal.getFoldersByName(nomePasta);
+
+    if (subpastas.hasNext()) {
+      const subpasta = subpastas.next();
+      Logger.log(`📁 Subpasta encontrada: ${nomePasta}`);
+      return subpasta;
+    } else {
+      // Criar subpasta se não existir
+      Logger.log(`📁 Criando subpasta: ${nomePasta}`);
+      const novaSubpasta = pastaPrincipal.createFolder(nomePasta);
+      novaSubpasta.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      return novaSubpasta;
+    }
+
   } catch (error) {
-    Logger.log(`❌ Erro ao obter/criar pasta: ${error.message}`);
+    Logger.log(`❌ Erro ao obter pasta de imagens por tipo: ${error.message}`);
     throw error;
   }
 }
@@ -279,9 +294,9 @@ function getInfoImagemDrive(fileIdOrUrl) {
 }
 
 /**
- * Upload de imagem de produto (wrapper com validações)
+ * Upload de imagem de produto (wrapper com validações) v10.1 - MELHORADO
  *
- * @param {object} dados - { base64Data, fileName, mimeType, produtoId, produtoNome, tipo }
+ * @param {object} dados - { base64Data, fileName, mimeType, produtoId, produtoCodigo, produtoNome, tipo }
  * @returns {object} - { success: boolean, imageUrl: string, fileId: string }
  */
 function uploadImagemProduto(dados) {
@@ -296,15 +311,34 @@ function uploadImagemProduto(dados) {
       };
     }
 
-    // Gerar nome de arquivo único
-    const timestamp = new Date().getTime();
-    const nomeArquivo = `${dados.produtoId || 'produto'}_${timestamp}_${dados.fileName || 'imagem.jpg'}`;
+    if (!dados.tipo) {
+      return {
+        success: false,
+        error: 'Tipo do produto não fornecido (Papelaria ou Limpeza)'
+      };
+    }
 
-    // Fazer upload
+    // Gerar nome de arquivo inteligente: CODIGO-DESCRICAO.extensao
+    const codigo = dados.produtoCodigo || 'SEM-CODIGO';
+    const descricao = (dados.produtoNome || 'produto')
+      .replace(/[^a-zA-Z0-9-]/g, '-') // Substituir caracteres especiais por hífen
+      .replace(/-+/g, '-')             // Remover hífens duplicados
+      .replace(/^-|-$/g, '')           // Remover hífens no início/fim
+      .substring(0, 50);               // Limitar a 50 caracteres
+
+    // Detectar extensão do arquivo original
+    const extensao = dados.fileName ? dados.fileName.split('.').pop() : 'jpg';
+
+    const nomeArquivo = `${codigo}-${descricao}.${extensao}`;
+
+    Logger.log(`📝 Nome do arquivo: ${nomeArquivo}`);
+
+    // Fazer upload na pasta correta (Papelaria ou Limpeza)
     const resultado = uploadImagemDrive(
       dados.base64Data,
       nomeArquivo,
-      dados.mimeType || 'image/jpeg'
+      dados.mimeType || 'image/jpeg',
+      dados.tipo  // Novo parâmetro: Papelaria ou Limpeza
     );
 
     if (resultado.success) {
