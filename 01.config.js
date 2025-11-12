@@ -14,7 +14,8 @@ const CONFIG = {
     STOCK_MOVEMENTS: 'Movimentações Estoque',
     USERS: 'Usuários',
     CONFIG: 'Configurações',
-    REPORTS_CONFIG: 'Relatorios_Config' // Opcional
+    LOGS: 'Registros',           // Opcional
+    KPIS: 'Indicadores'           // Opcional
   },
 
   // Mapeamento de colunas - ABA PRODUTOS

@@ -756,49 +756,234 @@ function abrirSistema() {
 }
 
 /**
- * Verifica status do sistema
+ * Verifica status do sistema v10.1 (MELHORADO)
  */
 function verificarStatus() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ui = SpreadsheetApp.getUi();
+
+  let status = '🔍 STATUS DO SISTEMA v10.1\n\n';
+  let problemas = [];
+  let avisos = [];
+
+  // ========================================
+  // 1. VERIFICAR ABAS ESSENCIAIS
+  // ========================================
+  status += '📋 ABAS DO SISTEMA:\n';
+
+  const abasEssenciais = [
+    { nome: CONFIG.ABAS.PRODUCTS, label: 'Produtos' },
+    { nome: CONFIG.ABAS.ORDERS, label: 'Pedidos' },
+    { nome: CONFIG.ABAS.USERS, label: 'Usuários' },
+    { nome: CONFIG.ABAS.STOCK, label: 'Estoque' },
+    { nome: CONFIG.ABAS.STOCK_MOVEMENTS, label: 'Movimentações Estoque' },
+    { nome: CONFIG.ABAS.CONFIG, label: 'Configurações' }
+  ];
+
+  abasEssenciais.forEach(aba => {
+    const abaSheet = ss.getSheetByName(aba.nome);
+    if (abaSheet) {
+      const numLinhas = abaSheet.getLastRow() - 1; // -1 para header
+      status += `   ✅ ${aba.label}: ${numLinhas} registros\n`;
+    } else {
+      status += `   ❌ ${aba.label}: NÃO ENCONTRADA\n`;
+      problemas.push(`Aba "${aba.nome}" não existe`);
+    }
+  });
+
+  // Abas opcionais (LOGS e KPIS)
+  const abaLogs = ss.getSheetByName(CONFIG.ABAS.LOGS);
+  const abaKpis = ss.getSheetByName(CONFIG.ABAS.KPIS);
+
+  if (abaLogs) {
+    const numLogs = abaLogs.getLastRow() - 1;
+    status += `   ✅ Registros (Logs): ${numLogs} registros\n`;
+  } else {
+    status += `   ⚠️ Registros (Logs): opcional, não criada\n`;
+    avisos.push('Aba de Logs não existe (opcional)');
+  }
+
+  if (abaKpis) {
+    const numKpis = abaKpis.getLastRow() - 1;
+    status += `   ✅ Indicadores (KPIs): ${numKpis} registros\n`;
+  } else {
+    status += `   ⚠️ Indicadores (KPIs): opcional, não criada\n`;
+    avisos.push('Aba de KPIs não existe (opcional)');
+  }
+
+  // ========================================
+  // 2. VERIFICAR CONFIGURAÇÕES CRÍTICAS
+  // ========================================
+  status += '\n⚙️ CONFIGURAÇÕES:\n';
+
+  const versao = obterConfiguracao('VERSAO');
+  const nomeSistema = obterConfiguracao('NOME_SISTEMA');
   const pastaId = obterConfiguracao('PASTA_IMAGENS_ID');
   const emailGestor = obterConfiguracao('EMAIL_GESTOR');
-  
-  let status = '🔍 STATUS DO SISTEMA v6.0\n\n';
-  
-  // Verificar abas
-  const abasNecessarias = Object.values(CONFIG.ABAS);
-  const abasExistentes = ss.getSheets().map(s => s.getName());
-  const abasFaltando = abasNecessarias.filter(a => !abasExistentes.includes(a));
-  
-  if (abasFaltando.length === 0) {
-    status += '✅ Todas as abas criadas\n';
+  const aprovarPedidos = obterConfiguracao('APROVAR_PEDIDOS');
+  const tempoEntregaPapelaria = obterConfiguracao('TEMPO_ENTREGA_PAPELARIA');
+  const tempoEntregaLimpeza = obterConfiguracao('TEMPO_ENTREGA_LIMPEZA');
+
+  // Versão
+  if (versao) {
+    status += `   ✅ Versão: ${versao}\n`;
   } else {
-    status += `❌ Abas faltando: ${abasFaltando.join(', ')}\n`;
+    status += `   ⚠️ Versão: não configurada\n`;
+    avisos.push('Versão do sistema não configurada');
   }
-  
-  // Verificar configurações
+
+  // Nome do Sistema
+  if (nomeSistema) {
+    status += `   ✅ Nome: ${nomeSistema}\n`;
+  } else {
+    status += `   ⚠️ Nome: não configurado\n`;
+  }
+
+  // Pasta de Imagens (CRÍTICO)
   if (pastaId && pastaId !== '') {
-    status += '✅ Pasta de imagens configurada\n';
+    try {
+      const pasta = DriveApp.getFolderById(pastaId);
+      status += `   ✅ Pasta de Imagens: configurada (ID válido)\n`;
+    } catch (e) {
+      status += `   ❌ Pasta de Imagens: ID inválido ou sem acesso\n`;
+      problemas.push('ID da pasta de imagens inválido');
+    }
   } else {
-    status += '⚠️ Pasta de imagens NÃO configurada\n';
+    status += `   ❌ Pasta de Imagens: NÃO CONFIGURADA\n`;
+    problemas.push('Pasta de imagens não configurada (upload não funcionará)');
   }
-  
+
+  // Email do Gestor
   if (emailGestor && emailGestor.includes('@')) {
-    status += '✅ Email do gestor configurado\n';
+    status += `   ✅ Email Gestor: ${emailGestor}\n`;
   } else {
-    status += '⚠️ Email do gestor NÃO configurado\n';
+    status += `   ⚠️ Email Gestor: não configurado\n`;
+    avisos.push('Email do gestor não configurado (notificações desabilitadas)');
   }
-  
-  // Verificar implantação
+
+  // Aprovação de Pedidos
+  status += `   ℹ️ Aprovar Pedidos: ${aprovarPedidos || 'Não'}\n`;
+
+  // Tempos de Entrega
+  status += `   ℹ️ Prazo Papelaria: ${tempoEntregaPapelaria || 5} dias úteis\n`;
+  status += `   ℹ️ Prazo Limpeza: ${tempoEntregaLimpeza || 7} dias úteis\n`;
+
+  // ========================================
+  // 3. VERIFICAR IMPLANTAÇÃO WEB APP
+  // ========================================
+  status += '\n🌐 IMPLANTAÇÃO:\n';
+
   const url = ScriptApp.getService().getUrl();
   if (url) {
-    status += '✅ Sistema implantado como Web App\n';
-    status += `\n📎 URL: ${url}`;
+    status += `   ✅ Sistema implantado como Web App\n`;
+    status += `   📎 URL: ${url}\n`;
   } else {
-    status += '⚠️ Sistema NÃO implantado como Web App\n';
+    status += `   ❌ Sistema NÃO implantado como Web App\n`;
+    problemas.push('Sistema não implantado (vá em Apps Script > Implantar > Web App)');
   }
-  
-  SpreadsheetApp.getUi().alert('Status do Sistema', status, SpreadsheetApp.getUi().ButtonSet.OK);
+
+  // ========================================
+  // 4. VERIFICAR USUÁRIOS
+  // ========================================
+  status += '\n👥 USUÁRIOS:\n';
+
+  const abaUsuarios = ss.getSheetByName(CONFIG.ABAS.USERS);
+  if (abaUsuarios) {
+    const dadosUsuarios = abaUsuarios.getDataRange().getValues();
+    const totalUsuarios = dadosUsuarios.length - 1;
+    const usuariosAtivos = dadosUsuarios.filter((u, i) => i > 0 && u[4] === 'Sim').length;
+    const admins = dadosUsuarios.filter((u, i) => i > 0 && u[3] === 'Admin').length;
+    const gestores = dadosUsuarios.filter((u, i) => i > 0 && u[3] === 'Gestor').length;
+    const usuarios = dadosUsuarios.filter((u, i) => i > 0 && u[3] === 'Usuário').length;
+
+    status += `   ℹ️ Total: ${totalUsuarios} (${usuariosAtivos} ativos)\n`;
+    status += `   ℹ️ Admins: ${admins} | Gestores: ${gestores} | Usuários: ${usuarios}\n`;
+
+    if (admins === 0) {
+      problemas.push('Nenhum usuário Admin cadastrado');
+    }
+  } else {
+    status += `   ❌ Aba de usuários não encontrada\n`;
+  }
+
+  // ========================================
+  // 5. VERIFICAR PRODUTOS
+  // ========================================
+  status += '\n📦 PRODUTOS:\n';
+
+  const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+  if (abaProdutos) {
+    const dadosProdutos = abaProdutos.getDataRange().getValues();
+    const totalProdutos = dadosProdutos.length - 1;
+    const produtosAtivos = dadosProdutos.filter((p, i) => i > 0 && p[11] === 'Sim').length;
+    const produtosPapelaria = dadosProdutos.filter((p, i) => i > 0 && p[3] === 'Papelaria').length;
+    const produtosLimpeza = dadosProdutos.filter((p, i) => i > 0 && p[3] === 'Limpeza').length;
+    const produtosComImagem = dadosProdutos.filter((p, i) => i > 0 && p[10] && p[10] !== '').length;
+
+    status += `   ℹ️ Total: ${totalProdutos} (${produtosAtivos} ativos)\n`;
+    status += `   ℹ️ Papelaria: ${produtosPapelaria} | Limpeza: ${produtosLimpeza}\n`;
+    status += `   ℹ️ Com imagem: ${produtosComImagem} de ${totalProdutos}\n`;
+
+    if (totalProdutos === 0) {
+      avisos.push('Nenhum produto cadastrado');
+    }
+
+    if (produtosComImagem < totalProdutos) {
+      avisos.push(`${totalProdutos - produtosComImagem} produto(s) sem imagem`);
+    }
+  } else {
+    status += `   ❌ Aba de produtos não encontrada\n`;
+  }
+
+  // ========================================
+  // 6. VERIFICAR PEDIDOS
+  // ========================================
+  status += '\n📋 PEDIDOS:\n';
+
+  const abaPedidos = ss.getSheetByName(CONFIG.ABAS.ORDERS);
+  if (abaPedidos) {
+    const dadosPedidos = abaPedidos.getDataRange().getValues();
+    const totalPedidos = dadosPedidos.length - 1;
+    const solicitados = dadosPedidos.filter((p, i) => i > 0 && p[9] === 'Solicitado').length;
+    const emCompra = dadosPedidos.filter((p, i) => i > 0 && p[9] === 'Em Compra').length;
+    const finalizados = dadosPedidos.filter((p, i) => i > 0 && p[9] === 'Finalizado').length;
+
+    status += `   ℹ️ Total: ${totalPedidos}\n`;
+    status += `   ℹ️ Solicitados: ${solicitados} | Em Compra: ${emCompra} | Finalizados: ${finalizados}\n`;
+
+    if (solicitados > 10) {
+      avisos.push(`${solicitados} pedidos aguardando processamento`);
+    }
+  } else {
+    status += `   ❌ Aba de pedidos não encontrada\n`;
+  }
+
+  // ========================================
+  // 7. RESUMO FINAL
+  // ========================================
+  status += '\n━━━━━━━━━━━━━━━━━━━━━━\n';
+
+  if (problemas.length === 0 && avisos.length === 0) {
+    status += '✅ SISTEMA OPERACIONAL\n';
+    status += 'Nenhum problema detectado!';
+  } else {
+    if (problemas.length > 0) {
+      status += `❌ ${problemas.length} PROBLEMA(S) CRÍTICO(S):\n`;
+      problemas.forEach(p => {
+        status += `   • ${p}\n`;
+      });
+      status += '\n';
+    }
+
+    if (avisos.length > 0) {
+      status += `⚠️ ${avisos.length} AVISO(S):\n`;
+      avisos.forEach(a => {
+        status += `   • ${a}\n`;
+      });
+    }
+  }
+
+  ui.alert('Status do Sistema v10.1', status, ui.ButtonSet.OK);
 }
 
 /**
