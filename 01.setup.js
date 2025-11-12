@@ -712,17 +712,22 @@ function obterConfiguracao(chave) {
 }
 
 /**
- * Menu customizado v6.0
+ * Menu customizado v10.1
  */
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
-  ui.createMenu('📦 Sistema Neoformula v6.0')
-    .addItem('🚀 Abrir Sistema', 'abrirSistema')
-    .addSeparator()
+  ui.createMenu('📦 Sistema de Pedidos')
     .addItem('⚙️ Configurar Planilha', 'setupPlanilha')
     .addItem('📁 Criar Estrutura de Pastas', 'criarEstruturaPastas')
+    .addItem('🖼️ Corrigir URLs de Imagens', 'corrigirURLsImagensMenu')
     .addSeparator()
     .addItem('🔍 Verificar Status', 'verificarStatus')
+    .addItem('🔄 Recarregar Sistema', 'recarregarSistema')
+    .addItem('🗑️ Limpar Cache', 'limparCache')
+    .addSeparator()
+    .addItem('📊 Gerar Relatório de Dados', 'gerarRelatorioDados')
+    .addItem('💾 Backup de Segurança', 'criarBackup')
+    .addSeparator()
     .addItem('📖 Ajuda', 'mostrarAjuda')
     .addToUi();
 }
@@ -797,23 +802,21 @@ function verificarStatus() {
 }
 
 /**
- * Mostra ajuda v6.0
+ * Mostra ajuda v10.1
  */
 function mostrarAjuda() {
   const ui = SpreadsheetApp.getUi();
-  
-  const mensagem = 
-    '📖 AJUDA - SISTEMA NEOFORMULA v6.0\n\n' +
-    '🆕 NOVIDADES v6.0:\n' +
-    '   ✨ Logo Neoformula integrado\n' +
-    '   ✨ Sem tela de login (acesso direto)\n' +
-    '   ✨ Upload de fotos para produtos\n' +
-    '   ✨ Dashboard avançado com filtros\n' +
-    '   ✨ Gerenciamento completo de estoque\n' +
-    '   ✨ Tempos de entrega configuráveis\n' +
-    '   ✨ Correção de bugs\n\n' +
+
+  const mensagem =
+    '📖 AJUDA - SISTEMA DE PEDIDOS v10.1\n\n' +
+    '🆕 NOVIDADES v10.1:\n' +
+    '   ✨ Kanban board simplificado\n' +
+    '   ✨ Edição completa de pedidos\n' +
+    '   ✨ Controle avançado de permissões\n' +
+    '   ✨ Dashboard profissional\n' +
+    '   ✨ Correção de URLs de imagens\n\n' +
     '1️⃣ CONFIGURAR SISTEMA\n' +
-    '   Menu: Sistema Neoformula v6.0 → Configurar Planilha\n\n' +
+    '   Menu: Sistema de Pedidos → Configurar Planilha\n\n' +
     '2️⃣ CONFIGURAR PASTA DE IMAGENS\n' +
     '   a) Crie uma pasta no Google Drive\n' +
     '   b) Copie o ID da pasta (da URL)\n' +
@@ -823,9 +826,270 @@ function mostrarAjuda() {
     '   Extensões → Apps Script → Implantar → Web App\n' +
     '   Executar como: Eu\n' +
     '   Acesso: Qualquer pessoa\n\n' +
-    '4️⃣ ABRIR SISTEMA\n' +
-    '   Menu: Sistema Neoformula v6.0 → Abrir Sistema\n\n' +
+    '4️⃣ MANUTENÇÃO\n' +
+    '   Use o menu para corrigir imagens, limpar cache e fazer backup\n\n' +
     '❓ Problemas? Use "Verificar Status" no menu.';
-  
-  ui.alert('📖 Ajuda v6.0', mensagem, ui.ButtonSet.OK);
+
+  ui.alert('📖 Ajuda v10.1', mensagem, ui.ButtonSet.OK);
+}
+
+/**
+ * Corrigir URLs de Imagens via menu
+ * Converte URLs antigas de Google Drive para formato thumbnail
+ */
+function corrigirURLsImagensMenu() {
+  try {
+    const ui = SpreadsheetApp.getUi();
+    const resposta = ui.alert(
+      '🖼️ Corrigir URLs de Imagens',
+      'Esta operação irá converter todas as URLs antigas do Google Drive (formato uc?id=) para o novo formato de thumbnail.\n\n' +
+      'Isso corrigirá problemas de exibição de imagens dos produtos.\n\n' +
+      'Deseja continuar?',
+      ui.ButtonSet.YES_NO
+    );
+
+    if (resposta !== ui.Button.YES) {
+      return;
+    }
+
+    const resultado = corrigirURLsImagensAntigas();
+
+    if (resultado.success) {
+      ui.alert(
+        '✅ URLs Corrigidas',
+        `${resultado.corrigidos} URL(s) foi(ram) corrigida(s) com sucesso!\n\n` +
+        'As imagens dos produtos devem aparecer corretamente agora.',
+        ui.ButtonSet.OK
+      );
+    } else {
+      ui.alert(
+        '❌ Erro',
+        'Erro ao corrigir URLs: ' + resultado.error,
+        ui.ButtonSet.OK
+      );
+    }
+
+  } catch (error) {
+    Logger.log('❌ Erro em corrigirURLsImagensMenu: ' + error.message);
+    SpreadsheetApp.getUi().alert(
+      '❌ Erro',
+      'Erro: ' + error.message,
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
+  }
+}
+
+/**
+ * Recarregar sistema
+ * Limpa caches e força atualização dos dados
+ */
+function recarregarSistema() {
+  try {
+    const ui = SpreadsheetApp.getUi();
+
+    // Limpar cache do CacheService
+    CacheService.getScriptCache().removeAll([
+      'produtos',
+      'pedidos',
+      'usuarios',
+      'estoque'
+    ]);
+
+    ui.alert(
+      '✅ Sistema Recarregado',
+      'Os caches foram limpos. O sistema irá recarregar os dados na próxima vez que for acessado.\n\n' +
+      'Recomendamos que os usuários recarreguem a página do navegador (F5).',
+      ui.ButtonSet.OK
+    );
+
+  } catch (error) {
+    Logger.log('❌ Erro em recarregarSistema: ' + error.message);
+    SpreadsheetApp.getUi().alert(
+      '❌ Erro',
+      'Erro ao recarregar sistema: ' + error.message,
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
+  }
+}
+
+/**
+ * Limpar cache
+ * Remove todos os caches armazenados
+ */
+function limparCache() {
+  try {
+    const ui = SpreadsheetApp.getUi();
+
+    const resposta = ui.alert(
+      '🗑️ Limpar Cache',
+      'Esta operação irá remover todos os dados em cache.\n\n' +
+      'Isso pode melhorar o desempenho se houver dados corrompidos no cache.\n\n' +
+      'Deseja continuar?',
+      ui.ButtonSet.YES_NO
+    );
+
+    if (resposta !== ui.Button.YES) {
+      return;
+    }
+
+    // Limpar todos os caches
+    const scriptCache = CacheService.getScriptCache();
+    const userCache = CacheService.getUserCache();
+
+    try {
+      scriptCache.removeAll(scriptCache.getAll());
+    } catch (e) {
+      Logger.log('Cache do script já vazio');
+    }
+
+    try {
+      userCache.removeAll(userCache.getAll());
+    } catch (e) {
+      Logger.log('Cache do usuário já vazio');
+    }
+
+    ui.alert(
+      '✅ Cache Limpo',
+      'Todos os caches foram removidos com sucesso!\n\n' +
+      'O sistema irá reconstruir os caches conforme necessário.',
+      ui.ButtonSet.OK
+    );
+
+  } catch (error) {
+    Logger.log('❌ Erro em limparCache: ' + error.message);
+    SpreadsheetApp.getUi().alert(
+      '❌ Erro',
+      'Erro ao limpar cache: ' + error.message,
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
+  }
+}
+
+/**
+ * Gerar relatório de dados
+ * Cria um resumo estatístico do sistema
+ */
+function gerarRelatorioDados() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const ui = SpreadsheetApp.getUi();
+
+    // Contar registros em cada aba
+    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+    const abaPedidos = ss.getSheetByName(CONFIG.ABAS.ORDERS);
+    const abaUsuarios = ss.getSheetByName(CONFIG.ABAS.USERS);
+    const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
+    const abaMovimentacoes = ss.getSheetByName(CONFIG.ABAS.STOCK_MOVEMENTS);
+    const abaLogs = ss.getSheetByName(CONFIG.ABAS.LOGS);
+
+    const produtos = abaProdutos ? abaProdutos.getLastRow() - 1 : 0;
+    const pedidos = abaPedidos ? abaPedidos.getLastRow() - 1 : 0;
+    const usuarios = abaUsuarios ? abaUsuarios.getLastRow() - 1 : 0;
+    const estoque = abaEstoque ? abaEstoque.getLastRow() - 1 : 0;
+    const movimentacoes = abaMovimentacoes ? abaMovimentacoes.getLastRow() - 1 : 0;
+    const logs = abaLogs ? abaLogs.getLastRow() - 1 : 0;
+
+    // Calcular pedidos por status (se houver pedidos)
+    let pedidosPorStatus = '';
+    if (pedidos > 0) {
+      const dadosPedidos = abaPedidos.getRange(2, 1, pedidos, 15).getValues();
+      const solicitados = dadosPedidos.filter(p => p[9] === 'Solicitado').length;
+      const emCompra = dadosPedidos.filter(p => p[9] === 'Em Compra').length;
+      const finalizado = dadosPedidos.filter(p => p[9] === 'Finalizado').length;
+      const cancelado = dadosPedidos.filter(p => p[9] === 'Cancelado').length;
+
+      pedidosPorStatus = `\n\n📋 PEDIDOS POR STATUS:\n` +
+        `   • Solicitados: ${solicitados}\n` +
+        `   • Em Compra: ${emCompra}\n` +
+        `   • Finalizados: ${finalizado}\n` +
+        `   • Cancelados: ${cancelado}`;
+    }
+
+    const relatorio =
+      `📊 RELATÓRIO DO SISTEMA\n` +
+      `Data: ${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss')}\n\n` +
+      `📦 DADOS PRINCIPAIS:\n` +
+      `   • Produtos cadastrados: ${produtos}\n` +
+      `   • Pedidos registrados: ${pedidos}\n` +
+      `   • Usuários ativos: ${usuarios}\n` +
+      `   • Itens em estoque: ${estoque}\n` +
+      `   • Movimentações de estoque: ${movimentacoes}\n` +
+      `   • Registros de log: ${logs}` +
+      pedidosPorStatus +
+      `\n\n✅ Sistema operacional na versão ${CONFIG.VERSAO}`;
+
+    ui.alert('📊 Relatório de Dados', relatorio, ui.ButtonSet.OK);
+
+    // Registrar no log
+    registrarLog(
+      Session.getActiveUser().getEmail(),
+      'Relatório Gerado',
+      `Relatório de dados do sistema gerado via menu`,
+      'sucesso'
+    );
+
+  } catch (error) {
+    Logger.log('❌ Erro em gerarRelatorioDados: ' + error.message);
+    SpreadsheetApp.getUi().alert(
+      '❌ Erro',
+      'Erro ao gerar relatório: ' + error.message,
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
+  }
+}
+
+/**
+ * Criar backup de segurança
+ * Cria uma cópia da planilha com timestamp
+ */
+function criarBackup() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const ui = SpreadsheetApp.getUi();
+
+    const resposta = ui.alert(
+      '💾 Backup de Segurança',
+      'Esta operação irá criar uma cópia completa da planilha no Google Drive.\n\n' +
+      'O backup incluirá todos os dados: produtos, pedidos, usuários, estoque, etc.\n\n' +
+      'Deseja continuar?',
+      ui.ButtonSet.YES_NO
+    );
+
+    if (resposta !== ui.Button.YES) {
+      return;
+    }
+
+    // Criar nome do backup com timestamp
+    const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd_HHmmss');
+    const nomeBackup = `[BACKUP] Sistema de Pedidos - ${timestamp}`;
+
+    // Criar cópia
+    const backup = ss.copy(nomeBackup);
+    const backupUrl = backup.getUrl();
+
+    // Registrar no log
+    registrarLog(
+      Session.getActiveUser().getEmail(),
+      'Backup Criado',
+      `Backup de segurança criado: ${nomeBackup}`,
+      'sucesso'
+    );
+
+    ui.alert(
+      '✅ Backup Criado',
+      `Backup criado com sucesso!\n\n` +
+      `Nome: ${nomeBackup}\n\n` +
+      `O backup foi salvo no seu Google Drive.\n\n` +
+      `URL: ${backupUrl}`,
+      ui.ButtonSet.OK
+    );
+
+  } catch (error) {
+    Logger.log('❌ Erro em criarBackup: ' + error.message);
+    SpreadsheetApp.getUi().alert(
+      '❌ Erro',
+      'Erro ao criar backup: ' + error.message,
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
+  }
 }
