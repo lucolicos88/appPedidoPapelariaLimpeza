@@ -5743,31 +5743,58 @@ function renderMovimentacoesTable(movimentacoes) {
       const reader = new FileReader();
 
       reader.onload = function(e) {
-        const xmlContent = e.target.result;
-        const xmlBase64 = btoa(unescape(encodeURIComponent(xmlContent)));
+        try {
+          const xmlBase64 = arrayBufferToBase64(e.target.result);
 
-        // Enviar para backend para parse
-        google.script.run
-          .withSuccessHandler(function(response) {
-            hideLoading();
+          google.script.run
+            .withSuccessHandler(function(response) {
+              hideLoading();
 
-            if (response && response.success) {
-              // Mapear produtos
-              mapearProdutosNFFromXML(response.dadosNF, tipoProdutos);
-            } else {
-              showError('Erro ao processar XML: ' + (response ? response.error : 'Erro desconhecido'));
+              if (response && response.success) {
+                mapearProdutosNFFromXML(response.dadosNF, tipoProdutos);
+              } else {
+                console.error('[NF XML] uploadEProcessarXMLNF falhou', response);
+                showError('Erro ao processar XML: ' + (response ? response.error : 'Erro desconhecido'));
+                document.getElementById('nfArquivoXML').value = '';
+              }
+            })
+            .withFailureHandler(function(error) {
+              hideLoading();
+              showError('Erro: ' + error.message);
               document.getElementById('nfArquivoXML').value = '';
-            }
-          })
-          .withFailureHandler(function(error) {
-            hideLoading();
-            showError('Erro: ' + error.message);
-            document.getElementById('nfArquivoXML').value = '';
-          })
-          .uploadEProcessarXMLNF(xmlBase64, file.name);
+            })
+            .uploadEProcessarXMLNF(xmlBase64, file.name);
+        } catch (conversionError) {
+          hideLoading();
+          console.error('[NF XML] Erro ao converter arquivo para base64', conversionError);
+          showError('Erro ao ler o arquivo XML: ' + conversionError.message);
+          document.getElementById('nfArquivoXML').value = '';
+        }
       };
 
-      reader.readAsText(file);
+      reader.onerror = function() {
+        hideLoading();
+        showError('Não foi possível ler o arquivo XML. Tente novamente.');
+        document.getElementById('nfArquivoXML').value = '';
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+
+    /**
+     * Converte ArrayBuffer em Base64 em blocos para evitar limite de memória
+     */
+    function arrayBufferToBase64(buffer) {
+      const bytes = new Uint8Array(buffer);
+      const chunkSize = 0x8000;
+      let binary = '';
+
+      for (let i = 0; i < bytes.byteLength; i += chunkSize) {
+        const chunk = bytes.subarray(i, i + chunkSize);
+        binary += String.fromCharCode.apply(null, chunk);
+      }
+
+      return btoa(binary);
     }
 
     /**
