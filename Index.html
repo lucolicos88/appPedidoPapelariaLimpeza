@@ -5743,60 +5743,28 @@ function renderMovimentacoesTable(movimentacoes) {
       const reader = new FileReader();
 
       reader.onload = function(e) {
-        try {
-          const xmlContent = e.target.result;
+        const xmlContent = e.target.result;
+        const xmlBase64 = btoa(unescape(encodeURIComponent(xmlContent)));
 
-          console.log('📄 Arquivo lido:', file.name);
-          console.log('📊 Tamanho:', xmlContent.length, 'caracteres');
-
-          // Validar se é XML
-          if (!xmlContent.includes('<?xml') && !xmlContent.includes('<NFe')) {
+        // Enviar para backend para parse
+        google.script.run
+          .withSuccessHandler(function(response) {
             hideLoading();
-            showError('Arquivo inválido: não é um XML de NF-e');
-            document.getElementById('nfArquivoXML').value = '';
-            return;
-          }
 
-          const xmlBase64 = btoa(unescape(encodeURIComponent(xmlContent)));
-          console.log('✅ XML convertido para Base64');
-
-          // Enviar para backend para parse
-          google.script.run
-            .withSuccessHandler(function(response) {
-              console.log('📥 Resposta do backend:', response);
-              hideLoading();
-
-              if (response && response.success) {
-                console.log('✅ XML processado com sucesso');
-                // Mapear produtos
-                mapearProdutosNFFromXML(response.dadosNF, tipoProdutos);
-              } else {
-                const erro = response ? response.error : 'Resposta vazia do servidor';
-                console.error('❌ Erro no processamento:', erro);
-                showError('Erro ao processar XML: ' + erro);
-                document.getElementById('nfArquivoXML').value = '';
-              }
-            })
-            .withFailureHandler(function(error) {
-              console.error('❌ Erro na chamada:', error);
-              hideLoading();
-              showError('Erro ao processar XML: ' + error.message);
+            if (response && response.success) {
+              // Mapear produtos
+              mapearProdutosNFFromXML(response.dadosNF, tipoProdutos);
+            } else {
+              showError('Erro ao processar XML: ' + (response ? response.error : 'Erro desconhecido'));
               document.getElementById('nfArquivoXML').value = '';
-            })
-            .uploadEProcessarXMLNF(xmlBase64, file.name);
-        } catch (error) {
-          console.error('❌ Erro ao ler arquivo:', error);
-          hideLoading();
-          showError('Erro ao ler arquivo: ' + error.message);
-          document.getElementById('nfArquivoXML').value = '';
-        }
-      };
-
-      reader.onerror = function(error) {
-        console.error('❌ Erro no FileReader:', error);
-        hideLoading();
-        showError('Erro ao ler arquivo XML');
-        document.getElementById('nfArquivoXML').value = '';
+            }
+          })
+          .withFailureHandler(function(error) {
+            hideLoading();
+            showError('Erro: ' + error.message);
+            document.getElementById('nfArquivoXML').value = '';
+          })
+          .uploadEProcessarXMLNF(xmlBase64, file.name);
       };
 
       reader.readAsText(file);
