@@ -670,21 +670,39 @@ function getNotaFiscal(nfId) {
  */
 function uploadEProcessarXMLNF(xmlBase64, fileName) {
   try {
-    Logger.log(`📄 Processando XML da NF: ${fileName}`);
+    Logger.log(`📄 INÍCIO: Processando XML da NF: ${fileName}`);
+    Logger.log(`📊 Base64 recebido: ${xmlBase64 ? xmlBase64.length + ' caracteres' : 'VAZIO'}`);
+
+    if (!xmlBase64 || xmlBase64.trim() === '') {
+      Logger.log('❌ ERRO: Base64 vazio ou inválido');
+      return {
+        success: false,
+        error: 'Arquivo XML vazio ou inválido'
+      };
+    }
 
     // 1. Decodificar Base64
+    Logger.log('🔄 Decodificando Base64...');
     const xmlContent = Utilities.newBlob(
       Utilities.base64Decode(xmlBase64)
     ).getDataAsString();
 
     Logger.log(`✅ XML decodificado: ${xmlContent.length} caracteres`);
+    Logger.log(`📝 Primeiros 200 caracteres: ${xmlContent.substring(0, 200)}`);
 
     // 2. Parse do XML
+    Logger.log('🔄 Iniciando parse do XML...');
     const dadosNF = parseXMLNotaFiscal(xmlContent);
 
+    Logger.log(`📊 Resultado do parse:`, dadosNF);
+
     if (!dadosNF.success) {
+      Logger.log(`❌ Parse falhou: ${dadosNF.error}`);
       return dadosNF;
     }
+
+    Logger.log(`✅ Parse concluído com sucesso`);
+    Logger.log(`📦 Dados extraídos: NF ${dadosNF.dados.numeroNF} com ${dadosNF.dados.produtos.length} produtos`);
 
     return {
       success: true,
@@ -693,10 +711,11 @@ function uploadEProcessarXMLNF(xmlBase64, fileName) {
     };
 
   } catch (error) {
-    Logger.log(`❌ Erro ao processar XML: ${error.message}`);
+    Logger.log(`❌ ERRO CRÍTICO ao processar XML: ${error.message}`);
+    Logger.log(`❌ Stack: ${error.stack}`);
     return {
       success: false,
-      error: error.message
+      error: `Erro ao processar XML: ${error.message}`
     };
   }
 }
