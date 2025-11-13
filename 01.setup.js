@@ -108,7 +108,11 @@ function setupPlanilha() {
     criarAbaIndicadores(ss);
     Logger.log('✅ Aba Indicadores criada');
 
-    // 9. Popular com dados de teste (APENAS se for primeira configuração)
+    // 9. Criar aba de Notas Fiscais (v10.3)
+    criarAbaNotasFiscais(ss);
+    Logger.log('✅ Aba Notas Fiscais criada');
+
+    // 10. Popular com dados de teste (APENAS se for primeira configuração)
     if (!jaConfigurado) {
       popularDadosTeste(ss);
       Logger.log('✅ Dados de teste adicionados');
@@ -1499,6 +1503,7 @@ function factoryReset() {
     criarAbaMovimentacoesEstoque(ss);
     criarAbaRegistros(ss);
     criarAbaIndicadores(ss);
+    criarAbaNotasFiscais(ss); // v10.3
 
     // Popular dados de teste
     popularDadosTeste(ss);

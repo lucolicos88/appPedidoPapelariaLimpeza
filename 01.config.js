@@ -15,7 +15,8 @@ const CONFIG = {
     USERS: 'Usuários',
     CONFIG: 'Configurações',
     LOGS: 'Registros',           // Opcional
-    KPIS: 'Indicadores'           // Opcional
+    KPIS: 'Indicadores',          // Opcional
+    NOTAS_FISCAIS: 'Notas Fiscais' // v10.3
   },
 
   // Mapeamento de colunas - ABA PRODUTOS
@@ -81,6 +82,25 @@ const CONFIG = {
     PEDIDO_ID: 11             // K - Pedido ID (v8.0)
   },
 
+  // Mapeamento de colunas - ABA NOTAS FISCAIS (v10.3)
+  COLUNAS_NOTAS_FISCAIS: {
+    ID: 1,                    // A - ID
+    NUMERO_NF: 2,             // B - Número da NF
+    DATA_EMISSAO: 3,          // C - Data de Emissão
+    DATA_ENTRADA: 4,          // D - Data de Entrada
+    FORNECEDOR: 5,            // E - Fornecedor
+    CNPJ_FORNECEDOR: 6,       // F - CNPJ Fornecedor
+    VALOR_TOTAL: 7,           // G - Valor Total da NF
+    PRODUTOS: 8,              // H - Produtos (JSON array)
+    QUANTIDADE: 9,            // I - Quantidades (JSON array)
+    VALORES_UNITARIOS: 10,    // J - Valores Unitários (JSON array)
+    TIPO_PRODUTOS: 11,        // K - Tipo dos Produtos (Papelaria/Limpeza)
+    STATUS: 12,               // L - Status (Pendente, Processada, Cancelada)
+    RESPONSAVEL: 13,          // M - Responsável pela entrada
+    OBSERVACOES: 14,          // N - Observações
+    DATA_CADASTRO: 15         // O - Data de Cadastro no sistema
+  },
+
   // Status de pedidos permitidos
   STATUS_PEDIDOS: {
     SOLICITADO: 'Solicitado',
@@ -109,6 +129,13 @@ const CONFIG = {
     SAIDA: 'SAIDA',
     AJUSTE: 'AJUSTE',
     BAIXA_PEDIDO: 'SAIDA' // Baixa de pedido usa SAIDA
+  },
+
+  // Status de Notas Fiscais (v10.3)
+  STATUS_NOTAS_FISCAIS: {
+    PENDENTE: 'Pendente',       // NF registrada, aguardando processamento
+    PROCESSADA: 'Processada',   // NF processada e estoque atualizado
+    CANCELADA: 'Cancelada'      // NF cancelada
   },
 
   // Tipos de produtos

@@ -993,6 +993,7 @@
         <li class="nav-item" data-page="produtos">📦 Produtos</li>
         <li class="nav-item" data-page="estoque">📊 Estoque</li>
         <li class="nav-item" data-page="movimentacoes">📦 Movimentações</li>
+        <li class="nav-item" data-page="notas-fiscais" id="nav-notas-fiscais" style="display: none;">📄 Notas Fiscais</li>
         <li class="nav-item" data-page="relatorios">📄 Relatórios</li>
         <li class="nav-item" data-page="configuracoes">⚙️ Configurações</li>
       </ul>
@@ -1516,6 +1517,78 @@
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Notas Fiscais Page (v10.3) -->
+    <section class="page-section" id="page-notas-fiscais">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">📄 Notas Fiscais de Entrada</h2>
+          <p style="margin: 8px 0 0 0; color: #666; font-size: 0.9rem;">
+            Controle de notas fiscais de fornecedores e entrada de produtos no estoque
+          </p>
+          <button class="btn btn-primary" onclick="abrirModalNovaNF()" style="margin-top: 10px;">
+            ➕ Nova Nota Fiscal
+          </button>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters" style="margin-bottom: 24px;">
+          <div class="filter-grid">
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              <select class="form-control" id="nfFilterStatus">
+                <option value="">Todos</option>
+                <option value="Pendente">⏳ Pendente</option>
+                <option value="Processada">✅ Processada</option>
+                <option value="Cancelada">❌ Cancelada</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Fornecedor</label>
+              <input type="text" class="form-control" id="nfFilterFornecedor" placeholder="Nome do fornecedor">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Data Início</label>
+              <input type="date" class="form-control" id="nfFilterDataInicio">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Data Fim</label>
+              <input type="date" class="form-control" id="nfFilterDataFim">
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: flex-end;">
+              <button class="btn btn-primary" onclick="loadNotasFiscais()" style="width: 100%;">
+                🔍 Filtrar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabela de Notas Fiscais -->
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Número NF</th>
+                <th>Data Emissão</th>
+                <th>Fornecedor</th>
+                <th>Valor Total</th>
+                <th>Tipo</th>
+                <th>Status</th>
+                <th>Responsável</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="notasFiscaisTableBody">
+              <!-- Notas Fiscais serão inseridas aqui -->
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -2071,6 +2144,80 @@
     </div>
   </div>
 
+  <!-- Modal: Nova Nota Fiscal (v10.3) -->
+  <div class="modal" id="modalNovaNF">
+    <div class="modal-content" style="max-width: 900px;">
+      <div class="modal-header">
+        <h3 class="modal-title">📄 Nova Nota Fiscal de Entrada</h3>
+        <button class="modal-close" onclick="closeModal('modalNovaNF')">&times;</button>
+      </div>
+
+      <form id="formNovaNF" onsubmit="submitNovaNF(event)">
+        <!-- Informações da NF -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+          <div class="form-group">
+            <label class="form-label">Número da NF *</label>
+            <input type="text" class="form-control" id="nfNumero" required placeholder="Ex: 12345">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Data de Emissão *</label>
+            <input type="date" class="form-control" id="nfDataEmissao" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Data de Entrada</label>
+            <input type="date" class="form-control" id="nfDataEntrada">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tipo de Produtos *</label>
+            <select class="form-control" id="nfTipoProdutos" required>
+              <option value="">Selecione...</option>
+              <option value="Papelaria">📝 Papelaria</option>
+              <option value="Limpeza">🧹 Limpeza</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-bottom: 20px;">
+          <div class="form-group">
+            <label class="form-label">Fornecedor *</label>
+            <input type="text" class="form-control" id="nfFornecedor" required placeholder="Nome do fornecedor">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">CNPJ</label>
+            <input type="text" class="form-control" id="nfCNPJ" placeholder="00.000.000/0000-00">
+          </div>
+        </div>
+
+        <!-- Produtos da NF -->
+        <div class="form-group">
+          <label class="form-label">Produtos da NF *</label>
+          <div id="nfProdutosContainer" style="margin-bottom: 10px;">
+            <!-- Produtos serão adicionados dinamicamente aqui -->
+          </div>
+          <button type="button" class="btn btn-outline" onclick="adicionarProdutoNF()" style="width: 100%;">
+            ➕ Adicionar Produto
+          </button>
+        </div>
+
+        <!-- Observações -->
+        <div class="form-group">
+          <label class="form-label">Observações</label>
+          <textarea class="form-control" id="nfObservacoes" rows="3" placeholder="Observações sobre a nota fiscal..."></textarea>
+        </div>
+
+        <!-- Botões -->
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="submit" class="btn btn-success" style="flex: 1;">✅ Cadastrar NF</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modalNovaNF')" style="flex: 1;">❌ Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- JavaScript -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
@@ -2282,13 +2429,44 @@ function initializeSystem() {
           case 'movimentacoes':
             loadMovimentacoes();
             break;
+          case 'notas-fiscais':
+            loadNotasFiscais();
+            break;
           case 'configuracoes':
             loadConfiguracoes();
             break;
         }
       }, 300);
     }
-    
+
+    /**
+     * Navega para aba Movimentações e filtra por produto (v10.3)
+     */
+    function navigateToMovimentacoes(produtoId, produtoNome) {
+      console.log(`📊 Navegando para Movimentações: ${produtoNome} (${produtoId})`);
+
+      // 1. Navegar para a aba Movimentações
+      navigateTo('movimentacoes');
+
+      // 2. Aguardar 500ms para garantir que a aba carregou
+      setTimeout(() => {
+        // 3. Selecionar o produto no filtro
+        const filtroProduto = document.getElementById('movimentacaoFilterProduto');
+        if (filtroProduto) {
+          filtroProduto.value = produtoId;
+        }
+
+        // 4. Aplicar filtro automaticamente
+        loadHistoricoMovimentacoes();
+
+        // 5. Scroll suave para o topo da tabela
+        const tabelaMovimentacoes = document.querySelector('#page-movimentacoes .table-container');
+        if (tabelaMovimentacoes) {
+          tabelaMovimentacoes.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 500);
+    }
+
     /**
      * Verifica permissões do usuário
      */
@@ -2331,6 +2509,13 @@ function initializeSystem() {
         }
       } else {
         console.log('❌ [v9.2 DEBUG] Usuário NÃO é Gestor/Admin - aba não será exibida');
+      }
+
+      // v10.3: Mostrar aba "Notas Fiscais" apenas para Admin/Gestor
+      const navNF = document.getElementById('nav-notas-fiscais');
+      if (isGestor && navNF) {
+        console.log('✅ [v10.3] Mostrando aba Notas Fiscais para Gestor/Admin');
+        navNF.style.display = 'block';
       }
 
       // v10.0: Controle de visibilidade de abas por perfil
@@ -4227,8 +4412,11 @@ function loadProdutos() {
               <button class="btn btn-outline" onclick="verDetalhesProduto('${produto.id}')" style="padding: 5px 10px; font-size: 0.85rem; margin-right: 5px;">
                 👁️ Ver
               </button>
-              <button class="btn btn-primary" onclick="abrirModalEditarProduto('${produto.id}')" style="padding: 5px 10px; font-size: 0.85rem;">
+              <button class="btn btn-primary" onclick="abrirModalEditarProduto('${produto.id}')" style="padding: 5px 10px; font-size: 0.85rem; margin-right: 5px;">
                 ✏️ Editar
+              </button>
+              <button class="btn btn-outline" onclick="navigateToMovimentacoes('${produto.id}', '${produto.nome}')" style="padding: 5px 10px; font-size: 0.85rem; background: #e3f2fd; color: #1976d2;">
+                📊 Movimentações
               </button>
             </td>
           </tr>
@@ -4858,15 +5046,19 @@ function loadEstoque() {
                   <td>${statusBadge}</td>
                   <td>
                     ${currentUser && ((currentUser.permissao || '').toUpperCase() === 'GESTOR' || (currentUser.permissao || '').toUpperCase() === 'ADMIN' || currentUser.permissao === 'Admin' || currentUser.permissao === 'Gestor') ? `
-                      <button class="btn btn-success" onclick="abrirModalEntrada('${item.produtoId}', '${item.produtoNome}')" 
+                      <button class="btn btn-success" onclick="abrirModalEntrada('${item.produtoId}', '${item.produtoNome}')"
                               style="padding: 5px 10px; font-size: 0.85rem; margin-right: 5px;">
                         ⬆️
                       </button>
-                      <button class="btn btn-danger" onclick="abrirModalSaida('${item.produtoId}', '${item.produtoNome}')" 
-                              style="padding: 5px 10px; font-size: 0.85rem;">
+                      <button class="btn btn-danger" onclick="abrirModalSaida('${item.produtoId}', '${item.produtoNome}')"
+                              style="padding: 5px 10px; font-size: 0.85rem; margin-right: 5px;">
                         ⬇️
                       </button>
-                    ` : '—'}
+                    ` : ''}
+                    <button class="btn btn-outline" onclick="navigateToMovimentacoes('${item.produtoId}', '${item.produtoNome}')"
+                            style="padding: 5px 10px; font-size: 0.85rem; background: #e3f2fd; color: #1976d2;">
+                      📊 Movimentações
+                    </button>
                   </td>
                 </tr>
               `;
@@ -5136,7 +5328,388 @@ function renderMovimentacoesTable(movimentacoes) {
 
   tbody.innerHTML = html;
 }
-    
+
+    /**
+     * ========================================
+     * NOTAS FISCAIS (v10.3)
+     * ========================================
+     */
+
+    let nfProdutosCount = 0;
+
+    /**
+     * Carrega lista de Notas Fiscais
+     */
+    function loadNotasFiscais() {
+      showLoading();
+
+      const filtros = {
+        status: document.getElementById('nfFilterStatus')?.value || null,
+        fornecedor: document.getElementById('nfFilterFornecedor')?.value || null,
+        dataInicio: document.getElementById('nfFilterDataInicio')?.value || null,
+        dataFim: document.getElementById('nfFilterDataFim')?.value || null
+      };
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response && response.success) {
+            renderNotasFiscaisTable(response.notasFiscais || []);
+          } else {
+            showError('Erro ao carregar notas fiscais: ' + (response ? response.error : 'Resposta vazia'));
+          }
+          hideLoading();
+        })
+        .withFailureHandler(function(error) {
+          showError('Erro: ' + error.message);
+          hideLoading();
+        })
+        .listarNotasFiscais(filtros);
+    }
+
+    /**
+     * Renderiza tabela de Notas Fiscais
+     */
+    function renderNotasFiscaisTable(notasFiscais) {
+      const tbody = document.getElementById('notasFiscaisTableBody');
+
+      if (!notasFiscais || notasFiscais.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="empty-state">
+              <div class="empty-state-icon">📄</div>
+              <div class="empty-state-title">Nenhuma nota fiscal encontrada</div>
+              <div class="empty-state-message">Clique em "Nova Nota Fiscal" para cadastrar</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      let html = '';
+      notasFiscais.forEach(nf => {
+        const statusBadge = nf.status === 'Processada'
+          ? '<span class="badge badge-success">✅ Processada</span>'
+          : nf.status === 'Cancelada'
+          ? '<span class="badge badge-danger">❌ Cancelada</span>'
+          : '<span class="badge badge-warning">⏳ Pendente</span>';
+
+        const tipoBadge = nf.tipoProdutos === 'Papelaria'
+          ? '<span class="badge" style="background: #2196f3; color: white;">📝 Papelaria</span>'
+          : '<span class="badge" style="background: #4caf50; color: white;">🧹 Limpeza</span>';
+
+        html += `
+          <tr>
+            <td><strong>${nf.numeroNF}</strong></td>
+            <td>${formatDate(nf.dataEmissao)}</td>
+            <td>${nf.fornecedor}</td>
+            <td><strong>R$ ${formatMoney(nf.valorTotal)}</strong></td>
+            <td>${tipoBadge}</td>
+            <td>${statusBadge}</td>
+            <td>${nf.responsavel || '-'}</td>
+            <td>
+              ${nf.status === 'Pendente' ? `
+                <button class="btn btn-success" onclick="processarNF('${nf.id}')" style="padding: 5px 10px; font-size: 0.85rem; margin-right: 5px;">
+                  ⚙️ Processar
+                </button>
+                <button class="btn btn-danger" onclick="cancelarNF('${nf.id}')" style="padding: 5px 10px; font-size: 0.85rem;">
+                  ❌ Cancelar
+                </button>
+              ` : `
+                <button class="btn btn-outline" onclick="verDetalhesNF('${nf.id}')" style="padding: 5px 10px; font-size: 0.85rem;">
+                  👁️ Ver Detalhes
+                </button>
+              `}
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    /**
+     * Abre modal para nova Nota Fiscal
+     */
+    function abrirModalNovaNF() {
+      nfProdutosCount = 0;
+      document.getElementById('formNovaNF').reset();
+      document.getElementById('nfProdutosContainer').innerHTML = '';
+
+      // Adicionar primeiro produto automaticamente
+      adicionarProdutoNF();
+
+      // Definir data padrão como hoje
+      document.getElementById('nfDataEmissao').valueAsDate = new Date();
+      document.getElementById('nfDataEntrada').valueAsDate = new Date();
+
+      document.getElementById('modalNovaNF').classList.add('active');
+    }
+
+    /**
+     * Adiciona linha de produto na NF
+     */
+    function adicionarProdutoNF() {
+      nfProdutosCount++;
+      const container = document.getElementById('nfProdutosContainer');
+
+      const tipoProdutos = document.getElementById('nfTipoProdutos').value;
+
+      if (!tipoProdutos) {
+        showError('Selecione o tipo de produto antes de adicionar');
+        return;
+      }
+
+      const div = document.createElement('div');
+      div.id = `nfProduto${nfProdutosCount}`;
+      div.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; margin-bottom: 10px; align-items: end;';
+
+      div.innerHTML = `
+        <div class="form-group" style="margin: 0;">
+          <label class="form-label">Produto</label>
+          <select class="form-control nf-produto-select" data-index="${nfProdutosCount}" required>
+            <option value="">Carregando produtos...</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin: 0;">
+          <label class="form-label">Quantidade</label>
+          <input type="number" class="form-control nf-produto-qtd" min="1" required>
+        </div>
+        <div class="form-group" style="margin: 0;">
+          <label class="form-label">Valor Unit. (R$)</label>
+          <input type="number" class="form-control nf-produto-valor" min="0" step="0.01" required>
+        </div>
+        <button type="button" class="btn btn-danger" onclick="removerProdutoNF(${nfProdutosCount})" style="padding: 8px 12px;">
+          🗑️
+        </button>
+      `;
+
+      container.appendChild(div);
+
+      // Carregar produtos do tipo selecionado
+      carregarProdutosParaNF(nfProdutosCount, tipoProdutos);
+    }
+
+    /**
+     * Carrega produtos para o select da NF
+     */
+    function carregarProdutosParaNF(index, tipoProdutos) {
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response && response.success && response.produtos) {
+            const select = document.querySelector(`[data-index="${index}"]`);
+            if (!select) return;
+
+            const produtosFiltrados = response.produtos.filter(p => p.tipo === tipoProdutos);
+
+            let options = '<option value="">Selecione um produto...</option>';
+            produtosFiltrados.forEach(produto => {
+              options += `<option value="${produto.id}">${produto.nome} (${produto.codigo})</option>`;
+            });
+            select.innerHTML = options;
+          }
+        })
+        .withFailureHandler(function(error) {
+          console.error('❌ Erro ao carregar produtos:', error);
+        })
+        .__listarProdutos({});
+    }
+
+    /**
+     * Remove linha de produto
+     */
+    function removerProdutoNF(index) {
+      const div = document.getElementById(`nfProduto${index}`);
+      if (div) {
+        div.remove();
+      }
+    }
+
+    /**
+     * Submete nova Nota Fiscal
+     */
+    function submitNovaNF(event) {
+      event.preventDefault();
+
+      // Coletar dados do formulário
+      const numeroNF = document.getElementById('nfNumero').value;
+      const dataEmissao = document.getElementById('nfDataEmissao').value;
+      const dataEntrada = document.getElementById('nfDataEntrada').value;
+      const fornecedor = document.getElementById('nfFornecedor').value;
+      const cnpjFornecedor = document.getElementById('nfCNPJ').value;
+      const tipoProdutos = document.getElementById('nfTipoProdutos').value;
+      const observacoes = document.getElementById('nfObservacoes').value;
+
+      // Coletar produtos
+      const produtosSelects = document.querySelectorAll('.nf-produto-select');
+      const quantidadesInputs = document.querySelectorAll('.nf-produto-qtd');
+      const valoresInputs = document.querySelectorAll('.nf-produto-valor');
+
+      const produtos = [];
+      const quantidades = [];
+      const valoresUnitarios = [];
+
+      for (let i = 0; i < produtosSelects.length; i++) {
+        const produtoId = produtosSelects[i].value;
+        const quantidade = parseInt(quantidadesInputs[i].value);
+        const valorUnitario = parseFloat(valoresInputs[i].value);
+
+        if (!produtoId) {
+          showError('Selecione todos os produtos');
+          return;
+        }
+
+        produtos.push(produtoId);
+        quantidades.push(quantidade);
+        valoresUnitarios.push(valorUnitario);
+      }
+
+      if (produtos.length === 0) {
+        showError('Adicione pelo menos um produto');
+        return;
+      }
+
+      const dados = {
+        numeroNF,
+        dataEmissao,
+        dataEntrada,
+        fornecedor,
+        cnpjFornecedor,
+        tipoProdutos,
+        produtos,
+        quantidades,
+        valoresUnitarios,
+        observacoes
+      };
+
+      showLoading();
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+          if (response && response.success) {
+            showSuccess('Nota Fiscal cadastrada com sucesso!');
+            closeModal('modalNovaNF');
+            loadNotasFiscais();
+          } else {
+            showError('Erro ao cadastrar NF: ' + (response ? response.error : 'Erro desconhecido'));
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .cadastrarNotaFiscal(dados);
+    }
+
+    /**
+     * Processa uma Nota Fiscal (atualiza estoque)
+     */
+    function processarNF(nfId) {
+      if (!confirm('Deseja processar esta Nota Fiscal?\n\nIsso irá atualizar o estoque de todos os produtos da NF.')) {
+        return;
+      }
+
+      showLoading();
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+          if (response && response.success) {
+            showSuccess(response.message);
+            loadNotasFiscais();
+          } else {
+            showError('Erro ao processar NF: ' + (response ? response.error : 'Erro desconhecido'));
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .processarNotaFiscal(nfId);
+    }
+
+    /**
+     * Cancela uma Nota Fiscal
+     */
+    function cancelarNF(nfId) {
+      const motivo = prompt('Informe o motivo do cancelamento:');
+
+      if (!motivo) {
+        return;
+      }
+
+      showLoading();
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+          if (response && response.success) {
+            showSuccess('Nota Fiscal cancelada');
+            loadNotasFiscais();
+          } else {
+            showError('Erro ao cancelar NF: ' + (response ? response.error : 'Erro desconhecido'));
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .cancelarNotaFiscal(nfId, motivo);
+    }
+
+    /**
+     * Ver detalhes da Nota Fiscal
+     */
+    function verDetalhesNF(nfId) {
+      showLoading();
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+          if (response && response.success) {
+            const nf = response.notaFiscal;
+
+            let detalhes = `
+              <div style="max-width: 600px;">
+                <h3>📄 Nota Fiscal ${nf.numeroNF}</h3>
+
+                <div style="margin: 20px 0;">
+                  <p><strong>Fornecedor:</strong> ${nf.fornecedor}</p>
+                  <p><strong>CNPJ:</strong> ${nf.cnpjFornecedor || '-'}</p>
+                  <p><strong>Data Emissão:</strong> ${formatDate(nf.dataEmissao)}</p>
+                  <p><strong>Data Entrada:</strong> ${formatDate(nf.dataEntrada)}</p>
+                  <p><strong>Tipo:</strong> ${nf.tipoProdutos}</p>
+                  <p><strong>Status:</strong> ${nf.status}</p>
+                  <p><strong>Valor Total:</strong> R$ ${formatMoney(nf.valorTotal)}</p>
+                </div>
+
+                <h4>Produtos:</h4>
+                <ul>
+                  ${nf.produtos.map((prodId, i) => `
+                    <li>${prodId} - Qtd: ${nf.quantidades[i]} - Valor Unit.: R$ ${formatMoney(nf.valoresUnitarios[i])}</li>
+                  `).join('')}
+                </ul>
+
+                ${nf.observacoes ? `<p><strong>Observações:</strong> ${nf.observacoes}</p>` : ''}
+
+                <button class="btn btn-primary" onclick="closeAllModals()" style="width: 100%; margin-top: 20px;">
+                  Fechar
+                </button>
+              </div>
+            `;
+
+            showCustomModal('Detalhes da NF', detalhes);
+          } else {
+            showError('Erro ao carregar detalhes: ' + (response ? response.error : 'Erro desconhecido'));
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .getNotaFiscal(nfId);
+    }
+
     /**
      * Carrega configurações
      */
