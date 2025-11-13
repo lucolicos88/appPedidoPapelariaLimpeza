@@ -22,12 +22,29 @@
 // Não precisa redeclarar aqui
 
 /**
- * Configuração inicial da planilha v10.1 (MELHORADO)
+ * FUNÇÃO PARA EXECUTAR DO EDITOR DO APPS SCRIPT
+ * Use esta função se o sistema já estiver configurado e você quiser reconfigurar
  */
-function setupPlanilha() {
+function setupPlanilhaManual() {
+  Logger.log('🔧 Executando setup manual (forçado)...');
+  return setupPlanilha(true);
+}
+
+/**
+ * Configuração inicial da planilha v10.1 (MELHORADO)
+ * VERSÃO SEGURA: Funciona tanto no menu quanto no editor
+ */
+function setupPlanilha(forcarReconfiguracao = false) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const ui = SpreadsheetApp.getUi();
+
+    // Tentar obter UI (funciona no menu, falha no editor)
+    let ui = null;
+    try {
+      ui = SpreadsheetApp.getUi();
+    } catch (e) {
+      Logger.log('⚠️ Executando sem UI (modo editor)');
+    }
 
     // Verificar se já está configurado
     const abaConfig = ss.getSheetByName(CONFIG.ABAS.CONFIG);
@@ -36,40 +53,49 @@ function setupPlanilha() {
 
     const jaConfigurado = (abaConfig && abaUsuarios && abaProdutos);
 
-    if (jaConfigurado) {
-      // Sistema já configurado - perguntar o que fazer
-      const resposta = ui.alert(
-        '⚠️ Sistema Já Configurado',
-        'O sistema já foi configurado anteriormente.\n\n' +
-        'O que você deseja fazer?\n\n' +
-        '• OK: Reconfigurar (sobrescrever abas existentes)\n' +
-        '• Cancelar: Manter configuração atual',
-        ui.ButtonSet.OK_CANCEL
-      );
+    if (jaConfigurado && !forcarReconfiguracao) {
+      // Sistema já configurado - perguntar o que fazer (se tiver UI)
+      if (ui) {
+        const resposta = ui.alert(
+          '⚠️ Sistema Já Configurado',
+          'O sistema já foi configurado anteriormente.\n\n' +
+          'O que você deseja fazer?\n\n' +
+          '• OK: Reconfigurar (sobrescrever abas existentes)\n' +
+          '• Cancelar: Manter configuração atual',
+          ui.ButtonSet.OK_CANCEL
+        );
 
-      if (resposta === ui.Button.CANCEL) {
-        Logger.log('⚠️ Configuração cancelada pelo usuário');
+        if (resposta === ui.Button.CANCEL) {
+          Logger.log('⚠️ Setup cancelado pelo usuário');
+          return {
+            success: false,
+            message: 'Configuração cancelada pelo usuário'
+          };
+        }
+
+        // Usuário escolheu reconfigurar - pedir confirmação
+        const confirmar = ui.alert(
+          '⚠️ Confirmação de Reconfiguração',
+          'ATENÇÃO: Esta operação irá SOBRESCREVER as abas de configuração.\n\n' +
+          '⚠️ DADOS EXISTENTES PODEM SER PERDIDOS!\n\n' +
+          'Recomendamos fazer um backup antes de continuar.\n\n' +
+          'Deseja realmente continuar?',
+          ui.ButtonSet.YES_NO
+        );
+
+        if (confirmar !== ui.Button.YES) {
+          Logger.log('⚠️ Reconfiguração cancelada pelo usuário');
+          return {
+            success: false,
+            message: 'Reconfiguração cancelada'
+          };
+        }
+      } else {
+        // Modo editor - avisar que vai reconfigurar
+        Logger.log('⚠️ Sistema já configurado. Use setupPlanilhaManual() para forçar reconfiguração.');
         return {
           success: false,
-          message: 'Configuração cancelada'
-        };
-      }
-
-      // Usuário escolheu reconfigurar
-      const confirmar = ui.alert(
-        '⚠️ Confirmação de Reconfiguração',
-        'ATENÇÃO: Esta operação irá SOBRESCREVER as abas de configuração.\n\n' +
-        '⚠️ DADOS EXISTENTES PODEM SER PERDIDOS!\n\n' +
-        'Recomendamos fazer um backup antes de continuar.\n\n' +
-        'Deseja realmente continuar?',
-        ui.ButtonSet.YES_NO
-      );
-
-      if (confirmar !== ui.Button.YES) {
-        Logger.log('⚠️ Reconfiguração cancelada pelo usuário');
-        return {
-          success: false,
-          message: 'Reconfiguração cancelada'
+          message: 'Sistema já configurado. Use setupPlanilhaManual() para forçar.'
         };
       }
     }
@@ -139,16 +165,19 @@ function setupPlanilha() {
 
     const tipoConfig = jaConfigurado ? 'Reconfigurada' : 'Configurada';
 
-    ui.alert(
-      `✅ Sistema v10.1 ${tipoConfig}!`,
-      `A planilha foi ${tipoConfig.toLowerCase()} com sucesso.\n\n` +
-      'Próximos passos:\n' +
-      '1. Configure o ID da pasta do Drive em Configurações\n' +
-      '2. Menu: Sistema de Pedidos → Criar Estrutura de Pastas\n' +
-      '3. Configure o email do gestor\n' +
-      '4. Implante como Web App (Extensões > Apps Script > Implantar)',
-      ui.ButtonSet.OK
-    );
+    // Exibir alerta apenas se tiver UI disponível
+    if (ui) {
+      ui.alert(
+        `✅ Sistema v10.1 ${tipoConfig}!`,
+        `A planilha foi ${tipoConfig.toLowerCase()} com sucesso.\n\n` +
+        'Próximos passos:\n' +
+        '1. Configure o ID da pasta do Drive em Configurações\n' +
+        '2. Menu: Sistema de Pedidos → Criar Estrutura de Pastas\n' +
+        '3. Configure o email do gestor\n' +
+        '4. Implante como Web App (Extensões > Apps Script > Implantar)',
+        ui.ButtonSet.OK
+      );
+    }
 
     return {
       success: true,
@@ -159,11 +188,17 @@ function setupPlanilha() {
     Logger.log('❌ Erro na configuração: ' + error.message);
     Logger.log(error.stack);
 
-    SpreadsheetApp.getUi().alert(
-      '❌ Erro na Configuração',
-      'Erro: ' + error.message,
-      SpreadsheetApp.getUi().ButtonSet.OK
-    );
+    // Exibir alerta apenas se tiver UI disponível
+    try {
+      const errorUi = SpreadsheetApp.getUi();
+      errorUi.alert(
+        '❌ Erro na Configuração',
+        'Erro: ' + error.message,
+        errorUi.ButtonSet.OK
+      );
+    } catch (uiError) {
+      // Ignorar erro de UI em modo editor
+    }
 
     return {
       success: false,
