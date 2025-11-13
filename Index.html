@@ -1530,7 +1530,7 @@
             Controle de notas fiscais de fornecedores e entrada de produtos no estoque
           </p>
           <button class="btn btn-primary" onclick="abrirModalNovaNF()" style="margin-top: 10px;">
-            ➕ Nova Nota Fiscal
+            📤 Carregar XML
           </button>
         </div>
 
@@ -5426,20 +5426,29 @@ function renderMovimentacoesTable(movimentacoes) {
     }
 
     /**
-     * Abre modal para nova Nota Fiscal
+     * Abre modal para nova Nota Fiscal com Upload XML (v10.4)
      */
     function abrirModalNovaNF() {
-      nfProdutosCount = 0;
+      // Reset do formulário
       document.getElementById('formNovaNF').reset();
-      document.getElementById('nfProdutosContainer').innerHTML = '';
 
-      // Adicionar primeiro produto automaticamente
-      adicionarProdutoNF();
+      // Limpar dados anteriores
+      document.getElementById('nfDadosParsed').value = '';
+      document.getElementById('nfArquivoXML').value = '';
 
-      // Definir data padrão como hoje
-      document.getElementById('nfDataEmissao').valueAsDate = new Date();
-      document.getElementById('nfDataEntrada').valueAsDate = new Date();
+      // Esconder área de preview
+      document.getElementById('nfPreviewArea').style.display = 'none';
+      document.getElementById('nfDadosBasicos').innerHTML = '';
+      document.getElementById('nfProdutosMapeados').innerHTML = '';
+      document.getElementById('nfProdutosNaoMapeados').innerHTML = '';
 
+      // Desabilitar botão de cadastro até que XML seja carregado
+      document.getElementById('btnCadastrarNF').disabled = true;
+
+      // Desmarcar checkbox de cadastro automático
+      document.getElementById('nfCadastrarNovos').checked = false;
+
+      // Abrir modal
       document.getElementById('modalNovaNF').classList.add('active');
     }
 
