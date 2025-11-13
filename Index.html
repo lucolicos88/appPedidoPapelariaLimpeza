@@ -5255,7 +5255,7 @@ function loadProdutosParaFiltro() {
     .withFailureHandler(function(error) {
       console.error('❌ Erro ao carregar produtos para filtro:', error);
     })
-    .getProdutos();
+    .__listarProdutos({});
 }
 
 /**

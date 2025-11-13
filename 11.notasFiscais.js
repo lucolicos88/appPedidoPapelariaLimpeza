@@ -1,14 +1,16 @@
 /**
  * ========================================
- * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v10.3
- * Módulo: 11. NOTAS FISCAIS DE ENTRADA
+ * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v10.4
+ * Módulo: 11. NOTAS FISCAIS DE ENTRADA COM UPLOAD XML
  * ========================================
  *
  * Este módulo gerencia notas fiscais de entrada de produtos no estoque
- * - Registro de NF de fornecedores
+ * - Upload e parse de arquivo XML (NF-e)
+ * - Mapeamento automático de produtos
+ * - Cálculo de custo médio ponderado
+ * - Atualização de preços por lote
  * - Integração com estoque (atualização automática)
- * - Histórico de entradas
- * - Controle de valores e quantidades
+ * - Histórico de entradas e custos
  */
 
 /**
@@ -488,6 +490,475 @@ function getNotaFiscal(nfId) {
 
   } catch (error) {
     Logger.log('❌ Erro ao obter NF: ' + error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * ========================================
+ * UPLOAD E PROCESSAMENTO DE XML (v10.4)
+ * ========================================
+ */
+
+/**
+ * Upload e parse de arquivo XML da NF-e (v10.4)
+ *
+ * @param {string} xmlBase64 - Arquivo XML em Base64
+ * @param {string} fileName - Nome do arquivo
+ * @returns {object} - { success: boolean, dadosNF: {} }
+ */
+function uploadEProcessarXMLNF(xmlBase64, fileName) {
+  try {
+    Logger.log(`📄 Processando XML da NF: ${fileName}`);
+
+    // 1. Decodificar Base64
+    const xmlContent = Utilities.newBlob(
+      Utilities.base64Decode(xmlBase64)
+    ).getDataAsString();
+
+    Logger.log(`✅ XML decodificado: ${xmlContent.length} caracteres`);
+
+    // 2. Parse do XML
+    const dadosNF = parseXMLNotaFiscal(xmlContent);
+
+    if (!dadosNF.success) {
+      return dadosNF;
+    }
+
+    return {
+      success: true,
+      dadosNF: dadosNF.dados,
+      message: 'XML processado com sucesso'
+    };
+
+  } catch (error) {
+    Logger.log(`❌ Erro ao processar XML: ${error.message}`);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Parse do XML da NF-e (v10.4)
+ * Extrai dados da nota fiscal eletrônica
+ *
+ * @param {string} xmlContent - Conteúdo do XML
+ * @returns {object} - { success: boolean, dados: {} }
+ */
+function parseXMLNotaFiscal(xmlContent) {
+  try {
+    Logger.log('🔍 Iniciando parse do XML da NF-e...');
+
+    // Parse do XML usando XmlService
+    const document = XmlService.parse(xmlContent);
+    const root = document.getRootElement();
+
+    // Namespace da NF-e
+    const nfeNamespace = XmlService.getNamespace('http://www.portalfiscal.inf.br/nfe');
+
+    // Navegar até <infNFe>
+    let infNFe = root.getChild('NFe', nfeNamespace);
+    if (infNFe) {
+      infNFe = infNFe.getChild('infNFe', nfeNamespace);
+    } else {
+      // Tentar sem namespace (alguns XMLs não têm)
+      infNFe = root.getChild('NFe');
+      if (infNFe) {
+        infNFe = infNFe.getChild('infNFe');
+      }
+    }
+
+    if (!infNFe) {
+      throw new Error('Estrutura XML inválida - tag infNFe não encontrada');
+    }
+
+    // Extrair dados da NF
+    const ide = infNFe.getChild('ide', nfeNamespace) || infNFe.getChild('ide');
+    const emit = infNFe.getChild('emit', nfeNamespace) || infNFe.getChild('emit');
+    const total = infNFe.getChild('total', nfeNamespace) || infNFe.getChild('total');
+
+    // Número da NF
+    const numeroNF = ide ? ide.getChildText('nNF', nfeNamespace) || ide.getChildText('nNF') : '';
+
+    // Data de emissão
+    const dhEmi = ide ? ide.getChildText('dhEmi', nfeNamespace) || ide.getChildText('dhEmi') : '';
+    const dataEmissao = dhEmi ? new Date(dhEmi) : new Date();
+
+    // Dados do fornecedor
+    const fornecedorNome = emit ? (emit.getChildText('xNome', nfeNamespace) || emit.getChildText('xNome')) : '';
+    const fornecedorCNPJ = emit ? (emit.getChildText('CNPJ', nfeNamespace) || emit.getChildText('CNPJ')) : '';
+
+    // Valor total
+    const icmsTot = total ? (total.getChild('ICMSTot', nfeNamespace) || total.getChild('ICMSTot')) : null;
+    const valorTotal = icmsTot ? parseFloat(icmsTot.getChildText('vNF', nfeNamespace) || icmsTot.getChildText('vNF') || '0') : 0;
+
+    // Extrair produtos
+    const produtos = [];
+    const det = infNFe.getChildren('det', nfeNamespace).length > 0
+      ? infNFe.getChildren('det', nfeNamespace)
+      : infNFe.getChildren('det');
+
+    Logger.log(`📦 Encontrados ${det.length} produtos na NF`);
+
+    det.forEach(function(item) {
+      const prod = item.getChild('prod', nfeNamespace) || item.getChild('prod');
+      if (!prod) return;
+
+      const codigo = prod.getChildText('cProd', nfeNamespace) || prod.getChildText('cProd') || '';
+      const descricao = prod.getChildText('xProd', nfeNamespace) || prod.getChildText('xProd') || '';
+      const ncm = prod.getChildText('NCM', nfeNamespace) || prod.getChildText('NCM') || '';
+      const unidade = prod.getChildText('uCom', nfeNamespace) || prod.getChildText('uCom') || '';
+      const quantidade = parseFloat(prod.getChildText('qCom', nfeNamespace) || prod.getChildText('qCom') || '0');
+      const valorUnitario = parseFloat(prod.getChildText('vUnCom', nfeNamespace) || prod.getChildText('vUnCom') || '0');
+      const valorTotal = parseFloat(prod.getChildText('vProd', nfeNamespace) || prod.getChildText('vProd') || '0');
+
+      produtos.push({
+        codigoNF: codigo,
+        descricao: descricao,
+        ncm: ncm,
+        unidade: unidade,
+        quantidade: quantidade,
+        valorUnitario: valorUnitario,
+        valorTotal: valorTotal
+      });
+    });
+
+    const dadosNF = {
+      numeroNF: numeroNF,
+      dataEmissao: dataEmissao,
+      fornecedor: fornecedorNome,
+      cnpjFornecedor: fornecedorCNPJ,
+      valorTotal: valorTotal,
+      produtos: produtos
+    };
+
+    Logger.log(`✅ Parse concluído: NF ${numeroNF} com ${produtos.length} produtos`);
+
+    return {
+      success: true,
+      dados: dadosNF
+    };
+
+  } catch (error) {
+    Logger.log(`❌ Erro no parse do XML: ${error.message}`);
+    return {
+      success: false,
+      error: `Erro ao processar XML: ${error.message}`
+    };
+  }
+}
+
+/**
+ * Mapeia produtos da NF com produtos cadastrados (v10.4)
+ * Usa matching inteligente por código, descrição e NCM
+ *
+ * @param {array} produtosNF - Produtos extraídos da NF
+ * @param {string} tipoProdutos - Tipo (Papelaria ou Limpeza)
+ * @returns {object} - { success: boolean, mapeamento: [], naoMapeados: [] }
+ */
+function mapearProdutosNF(produtosNF, tipoProdutos) {
+  try {
+    Logger.log(`🔗 Mapeando ${produtosNF.length} produtos da NF...`);
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+
+    if (!abaProdutos) {
+      return { success: false, error: 'Aba de produtos não encontrada' };
+    }
+
+    // Carregar todos os produtos cadastrados
+    const dados = abaProdutos.getDataRange().getValues();
+    const produtosCadastrados = [];
+
+    for (let i = 1; i < dados.length; i++) {
+      if (!dados[i][CONFIG.COLUNAS_PRODUTOS.ID - 1]) continue;
+
+      const tipo = dados[i][CONFIG.COLUNAS_PRODUTOS.TIPO - 1];
+      if (tipo !== tipoProdutos) continue; // Filtrar por tipo
+
+      produtosCadastrados.push({
+        id: dados[i][CONFIG.COLUNAS_PRODUTOS.ID - 1],
+        codigo: String(dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO - 1] || '').toUpperCase(),
+        nome: String(dados[i][CONFIG.COLUNAS_PRODUTOS.NOME - 1] || '').toUpperCase(),
+        tipo: dados[i][CONFIG.COLUNAS_PRODUTOS.TIPO - 1]
+      });
+    }
+
+    Logger.log(`📦 ${produtosCadastrados.length} produtos cadastrados do tipo ${tipoProdutos}`);
+
+    const mapeamento = [];
+    const naoMapeados = [];
+
+    // Mapear cada produto da NF
+    produtosNF.forEach(function(prodNF) {
+      const codigoNF = String(prodNF.codigoNF || '').toUpperCase().trim();
+      const descricaoNF = String(prodNF.descricao || '').toUpperCase().trim();
+
+      let produtoEncontrado = null;
+
+      // Estratégia 1: Match exato por código
+      if (codigoNF) {
+        produtoEncontrado = produtosCadastrados.find(p => p.codigo === codigoNF);
+      }
+
+      // Estratégia 2: Match parcial por descrição (se não encontrou por código)
+      if (!produtoEncontrado && descricaoNF) {
+        produtoEncontrado = produtosCadastrados.find(p => {
+          const similarity = calcularSimilaridade(p.nome, descricaoNF);
+          return similarity > 0.7; // 70% de similaridade
+        });
+      }
+
+      if (produtoEncontrado) {
+        mapeamento.push({
+          produtoId: produtoEncontrado.id,
+          produtoNome: produtoEncontrado.nome,
+          codigoNF: prodNF.codigoNF,
+          descricaoNF: prodNF.descricao,
+          quantidade: prodNF.quantidade,
+          valorUnitario: prodNF.valorUnitario,
+          valorTotal: prodNF.valorTotal
+        });
+        Logger.log(`✅ Mapeado: ${prodNF.descricao} → ${produtoEncontrado.nome}`);
+      } else {
+        naoMapeados.push({
+          codigoNF: prodNF.codigoNF,
+          descricao: prodNF.descricao,
+          quantidade: prodNF.quantidade,
+          valorUnitario: prodNF.valorUnitario
+        });
+        Logger.log(`⚠️ Não mapeado: ${prodNF.descricao}`);
+      }
+    });
+
+    Logger.log(`✅ Mapeamento concluído: ${mapeamento.length} mapeados, ${naoMapeados.length} não mapeados`);
+
+    return {
+      success: true,
+      mapeamento: mapeamento,
+      naoMapeados: naoMapeados
+    };
+
+  } catch (error) {
+    Logger.log(`❌ Erro ao mapear produtos: ${error.message}`);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Calcula similaridade entre duas strings (v10.4)
+ * Usa algoritmo de Levenshtein Distance simplificado
+ *
+ * @param {string} str1 - Primeira string
+ * @param {string} str2 - Segunda string
+ * @returns {number} - Similaridade de 0 a 1
+ */
+function calcularSimilaridade(str1, str2) {
+  str1 = str1.toUpperCase().trim();
+  str2 = str2.toUpperCase().trim();
+
+  if (str1 === str2) return 1.0;
+  if (str1.length === 0 || str2.length === 0) return 0.0;
+
+  // Verificar se uma string contém a outra
+  if (str1.includes(str2) || str2.includes(str1)) {
+    return 0.8;
+  }
+
+  // Contar palavras em comum
+  const words1 = str1.split(/\s+/);
+  const words2 = str2.split(/\s+/);
+  let commonWords = 0;
+
+  words1.forEach(function(word) {
+    if (words2.includes(word) && word.length > 2) {
+      commonWords++;
+    }
+  });
+
+  const maxWords = Math.max(words1.length, words2.length);
+  return commonWords / maxWords;
+}
+
+/**
+ * Processa NF com XML e atualiza estoque com custo médio (v10.4)
+ *
+ * @param {string} nfId - ID da NF
+ * @returns {object} - { success: boolean }
+ */
+function processarNFComCustoMedio(nfId) {
+  try {
+    Logger.log(`⚙️ Processando NF com custo médio: ${nfId}`);
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaNF = ss.getSheetByName(CONFIG.ABAS.NOTAS_FISCAIS);
+    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+
+    if (!abaNF || !abaProdutos) {
+      return { success: false, error: 'Abas não encontradas' };
+    }
+
+    // Buscar NF
+    const dadosNF = abaNF.getDataRange().getValues();
+    let nfRow = -1;
+    let nfData = null;
+
+    for (let i = 1; i < dadosNF.length; i++) {
+      if (dadosNF[i][CONFIG.COLUNAS_NOTAS_FISCAIS.ID - 1] === nfId) {
+        nfRow = i + 1;
+        nfData = dadosNF[i];
+        break;
+      }
+    }
+
+    if (!nfData) {
+      return { success: false, error: 'Nota Fiscal não encontrada' };
+    }
+
+    // Verificar status
+    const status = nfData[CONFIG.COLUNAS_NOTAS_FISCAIS.STATUS - 1];
+    if (status === CONFIG.STATUS_NOTAS_FISCAIS.PROCESSADA) {
+      return { success: false, error: 'NF já foi processada anteriormente' };
+    }
+
+    // Extrair dados da NF
+    const produtos = JSON.parse(nfData[CONFIG.COLUNAS_NOTAS_FISCAIS.PRODUTOS - 1]);
+    const quantidades = JSON.parse(nfData[CONFIG.COLUNAS_NOTAS_FISCAIS.QUANTIDADE - 1]);
+    const valoresUnitarios = JSON.parse(nfData[CONFIG.COLUNAS_NOTAS_FISCAIS.VALORES_UNITARIOS - 1]);
+    const numeroNF = nfData[CONFIG.COLUNAS_NOTAS_FISCAIS.NUMERO_NF - 1];
+
+    const email = Session.getActiveUser().getEmail();
+    let erros = [];
+
+    // Processar cada produto
+    for (let i = 0; i < produtos.length; i++) {
+      const produtoId = produtos[i];
+      const quantidade = quantidades[i];
+      const valorUnitarioNF = valoresUnitarios[i];
+
+      // Atualizar preço do produto com custo médio ponderado
+      const resultadoCusto = atualizarCustoMedioProduto(produtoId, quantidade, valorUnitarioNF);
+
+      if (!resultadoCusto.success) {
+        erros.push(`Produto ${produtoId}: ${resultadoCusto.error}`);
+        continue;
+      }
+
+      // Registrar movimentação de entrada
+      const resultadoMov = registrarMovimentacao({
+        tipo: CONFIG.TIPOS_MOVIMENTACAO.ENTRADA,
+        produtoId: produtoId,
+        quantidade: quantidade,
+        observacoes: `Entrada NF ${numeroNF} - Custo: R$ ${valorUnitarioNF.toFixed(2)} - Novo custo médio: R$ ${resultadoCusto.novoCustoMedio.toFixed(2)}`,
+        responsavel: email
+      });
+
+      if (!resultadoMov.success) {
+        erros.push(`Movimentação ${produtoId}: ${resultadoMov.error}`);
+      }
+    }
+
+    if (erros.length > 0) {
+      Logger.log(`⚠️ Erros ao processar NF: ${erros.join('; ')}`);
+      return {
+        success: false,
+        error: 'Alguns produtos não puderam ser processados: ' + erros.join('; ')
+      };
+    }
+
+    // Atualizar status da NF
+    abaNF.getRange(nfRow, CONFIG.COLUNAS_NOTAS_FISCAIS.STATUS).setValue(CONFIG.STATUS_NOTAS_FISCAIS.PROCESSADA);
+
+    // Registrar log
+    registrarLog(email, 'Processar NF', `NF ${numeroNF} processada com custo médio - ${produtos.length} produto(s)`, 'sucesso');
+
+    Logger.log(`✅ NF processada com custo médio: ${nfId}`);
+
+    return {
+      success: true,
+      message: `Nota Fiscal processada com sucesso. ${produtos.length} produto(s) atualizados.`
+    };
+
+  } catch (error) {
+    Logger.log(`❌ Erro ao processar NF com custo médio: ${error.message}`);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Atualiza custo médio ponderado de um produto (v10.4)
+ *
+ * @param {string} produtoId - ID do produto
+ * @param {number} quantidadeNova - Quantidade da NF
+ * @param {number} custoNovo - Custo unitário da NF
+ * @returns {object} - { success: boolean, novoCustoMedio: number }
+ */
+function atualizarCustoMedioProduto(produtoId, quantidadeNova, custoNovo) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+    const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
+
+    // Buscar produto
+    const dadosProdutos = abaProdutos.getDataRange().getValues();
+    let produtoRow = -1;
+    let produtoData = null;
+
+    for (let i = 1; i < dadosProdutos.length; i++) {
+      if (dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ID - 1] === produtoId) {
+        produtoRow = i + 1;
+        produtoData = dadosProdutos[i];
+        break;
+      }
+    }
+
+    if (!produtoData) {
+      return { success: false, error: 'Produto não encontrado' };
+    }
+
+    // Buscar estoque atual
+    const dadosEstoque = abaEstoque.getDataRange().getValues();
+    let quantidadeAtual = 0;
+
+    for (let i = 1; i < dadosEstoque.length; i++) {
+      if (dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.PRODUTO_ID - 1] === produtoId) {
+        quantidadeAtual = dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL - 1] || 0;
+        break;
+      }
+    }
+
+    // Obter custo atual
+    const custoAtual = produtoData[CONFIG.COLUNAS_PRODUTOS.PRECO_UNITARIO - 1] || 0;
+
+    // Calcular custo médio ponderado
+    // Fórmula: (Qtd Atual * Custo Atual + Qtd Nova * Custo Novo) / (Qtd Atual + Qtd Nova)
+    const novoCustoMedio = ((quantidadeAtual * custoAtual) + (quantidadeNova * custoNovo)) / (quantidadeAtual + quantidadeNova);
+
+    Logger.log(`💰 Custo médio calculado para ${produtoId}: R$ ${custoAtual.toFixed(2)} → R$ ${novoCustoMedio.toFixed(2)}`);
+
+    // Atualizar preço do produto
+    abaProdutos.getRange(produtoRow, CONFIG.COLUNAS_PRODUTOS.PRECO_UNITARIO).setValue(novoCustoMedio);
+
+    return {
+      success: true,
+      novoCustoMedio: novoCustoMedio,
+      custoAnterior: custoAtual
+    };
+
+  } catch (error) {
+    Logger.log(`❌ Erro ao atualizar custo médio: ${error.message}`);
     return {
       success: false,
       error: error.message
