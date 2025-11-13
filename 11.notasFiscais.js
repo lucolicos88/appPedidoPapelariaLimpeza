@@ -95,6 +95,164 @@ function criarAbaNotasFiscais(ss) {
 }
 
 /**
+ * Cria aba de Histórico de Custos (v10.4)
+ * Executada durante setup ou manualmente
+ */
+function criarAbaHistoricoCustos(ss) {
+  try {
+    ss = ss || SpreadsheetApp.getActiveSpreadsheet();
+
+    // Verificar se aba já existe
+    let abaHistCusto = ss.getSheetByName(CONFIG.ABAS.HISTORICO_CUSTOS);
+
+    if (abaHistCusto) {
+      Logger.log('⚠️ Aba Histórico Custos já existe');
+      return { success: true, message: 'Aba já existe' };
+    }
+
+    // Criar nova aba
+    abaHistCusto = ss.insertSheet(CONFIG.ABAS.HISTORICO_CUSTOS);
+
+    // Cabeçalhos
+    const headers = [
+      'ID',
+      'Produto ID',
+      'Produto Nome',
+      'Data',
+      'Custo Unitário',
+      'Quantidade Comprada',
+      'Fornecedor',
+      'Número NF',
+      'NF ID',
+      'Custo Anterior',
+      'Variação %',
+      'Tipo Movimentação',
+      'Responsável',
+      'Observações'
+    ];
+
+    // Aplicar cabeçalhos
+    const headerRange = abaHistCusto.getRange(1, 1, 1, headers.length);
+    headerRange.setValues([headers]);
+    headerRange.setFontWeight('bold');
+    headerRange.setBackground('#00A651');
+    headerRange.setFontColor('#FFFFFF');
+
+    // Formatar colunas
+    abaHistCusto.setColumnWidth(1, 120);   // ID
+    abaHistCusto.setColumnWidth(2, 100);   // Produto ID
+    abaHistCusto.setColumnWidth(3, 200);   // Produto Nome
+    abaHistCusto.setColumnWidth(4, 120);   // Data
+    abaHistCusto.setColumnWidth(5, 120);   // Custo Unitário
+    abaHistCusto.setColumnWidth(6, 120);   // Quantidade Comprada
+    abaHistCusto.setColumnWidth(7, 200);   // Fornecedor
+    abaHistCusto.setColumnWidth(8, 120);   // Número NF
+    abaHistCusto.setColumnWidth(9, 120);   // NF ID
+    abaHistCusto.setColumnWidth(10, 120);  // Custo Anterior
+    abaHistCusto.setColumnWidth(11, 100);  // Variação %
+    abaHistCusto.setColumnWidth(12, 100);  // Tipo Movimentação
+    abaHistCusto.setColumnWidth(13, 150);  // Responsável
+    abaHistCusto.setColumnWidth(14, 250);  // Observações
+
+    // Congelar primeira linha
+    abaHistCusto.setFrozenRows(1);
+
+    Logger.log('✅ Aba Histórico Custos criada com sucesso');
+
+    return {
+      success: true,
+      message: 'Aba Histórico Custos criada com sucesso'
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao criar aba Histórico Custos: ' + error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Cria aba de Itens de Notas Fiscais (v10.4)
+ * Executada durante setup ou manualmente
+ */
+function criarAbaItensNotasFiscais(ss) {
+  try {
+    ss = ss || SpreadsheetApp.getActiveSpreadsheet();
+
+    // Verificar se aba já existe
+    let abaItensNF = ss.getSheetByName(CONFIG.ABAS.ITENS_NOTAS_FISCAIS);
+
+    if (abaItensNF) {
+      Logger.log('⚠️ Aba Itens NF já existe');
+      return { success: true, message: 'Aba já existe' };
+    }
+
+    // Criar nova aba
+    abaItensNF = ss.insertSheet(CONFIG.ABAS.ITENS_NOTAS_FISCAIS);
+
+    // Cabeçalhos
+    const headers = [
+      'ID',
+      'NF ID',
+      'Produto ID',
+      'Produto Nome',
+      'Código na NF',
+      'Descrição na NF',
+      'NCM',
+      'Quantidade',
+      'Unidade',
+      'Valor Unitário',
+      'Valor Total',
+      'Mapeado',
+      'Match Score',
+      'Data Entrada'
+    ];
+
+    // Aplicar cabeçalhos
+    const headerRange = abaItensNF.getRange(1, 1, 1, headers.length);
+    headerRange.setValues([headers]);
+    headerRange.setFontWeight('bold');
+    headerRange.setBackground('#00A651');
+    headerRange.setFontColor('#FFFFFF');
+
+    // Formatar colunas
+    abaItensNF.setColumnWidth(1, 120);   // ID
+    abaItensNF.setColumnWidth(2, 120);   // NF ID
+    abaItensNF.setColumnWidth(3, 100);   // Produto ID
+    abaItensNF.setColumnWidth(4, 200);   // Produto Nome
+    abaItensNF.setColumnWidth(5, 120);   // Código na NF
+    abaItensNF.setColumnWidth(6, 250);   // Descrição na NF
+    abaItensNF.setColumnWidth(7, 100);   // NCM
+    abaItensNF.setColumnWidth(8, 100);   // Quantidade
+    abaItensNF.setColumnWidth(9, 80);    // Unidade
+    abaItensNF.setColumnWidth(10, 120);  // Valor Unitário
+    abaItensNF.setColumnWidth(11, 120);  // Valor Total
+    abaItensNF.setColumnWidth(12, 80);   // Mapeado
+    abaItensNF.setColumnWidth(13, 100);  // Match Score
+    abaItensNF.setColumnWidth(14, 150);  // Data Entrada
+
+    // Congelar primeira linha
+    abaItensNF.setFrozenRows(1);
+
+    Logger.log('✅ Aba Itens NF criada com sucesso');
+
+    return {
+      success: true,
+      message: 'Aba Itens NF criada com sucesso'
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao criar aba Itens NF: ' + error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
  * Cadastra nova Nota Fiscal de entrada (v10.3)
  *
  * @param {object} dados - Dados da NF
@@ -661,9 +819,11 @@ function parseXMLNotaFiscal(xmlContent) {
  * @param {string} tipoProdutos - Tipo (Papelaria ou Limpeza)
  * @returns {object} - { success: boolean, mapeamento: [], naoMapeados: [] }
  */
-function mapearProdutosNF(produtosNF, tipoProdutos) {
+function mapearProdutosNF(produtosNF, tipoProdutos, fornecedor) {
   try {
     Logger.log(`🔗 Mapeando ${produtosNF.length} produtos da NF...`);
+    Logger.log(`   Tipo: ${tipoProdutos}`);
+    Logger.log(`   Fornecedor: ${fornecedor || 'não informado'}`);
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
@@ -682,11 +842,22 @@ function mapearProdutosNF(produtosNF, tipoProdutos) {
       const tipo = dados[i][CONFIG.COLUNAS_PRODUTOS.TIPO - 1];
       if (tipo !== tipoProdutos) continue; // Filtrar por tipo
 
+      // Parse do mapeamento de códigos (JSON)
+      let mapeamento = [];
+      try {
+        const mapeamentoStr = dados[i][CONFIG.COLUNAS_PRODUTOS.MAPEAMENTO_CODIGOS - 1] || '[]';
+        mapeamento = JSON.parse(mapeamentoStr);
+      } catch (e) {
+        mapeamento = [];
+      }
+
       produtosCadastrados.push({
         id: dados[i][CONFIG.COLUNAS_PRODUTOS.ID - 1],
         codigo: String(dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO - 1] || '').toUpperCase(),
         nome: String(dados[i][CONFIG.COLUNAS_PRODUTOS.NOME - 1] || '').toUpperCase(),
-        tipo: dados[i][CONFIG.COLUNAS_PRODUTOS.TIPO - 1]
+        tipo: dados[i][CONFIG.COLUNAS_PRODUTOS.TIPO - 1],
+        codigoFornecedor: String(dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_FORNECEDOR - 1] || '').toUpperCase(),
+        mapeamento: mapeamento
       });
     }
 
@@ -701,17 +872,60 @@ function mapearProdutosNF(produtosNF, tipoProdutos) {
       const descricaoNF = String(prodNF.descricao || '').toUpperCase().trim();
 
       let produtoEncontrado = null;
+      let matchScore = 0;
+      let estrategiaUsada = '';
 
-      // Estratégia 1: Match exato por código
-      if (codigoNF) {
+      // ========================================
+      // ESTRATÉGIA 1: Match exato por código interno
+      // ========================================
+      if (!produtoEncontrado && codigoNF) {
         produtoEncontrado = produtosCadastrados.find(p => p.codigo === codigoNF);
+        if (produtoEncontrado) {
+          matchScore = 1.0;
+          estrategiaUsada = 'Código Interno';
+        }
       }
 
-      // Estratégia 2: Match parcial por descrição (se não encontrou por código)
-      if (!produtoEncontrado && descricaoNF) {
+      // ========================================
+      // ESTRATÉGIA 2: Match por código fornecedor principal
+      // ========================================
+      if (!produtoEncontrado && codigoNF) {
+        produtoEncontrado = produtosCadastrados.find(p => p.codigoFornecedor === codigoNF);
+        if (produtoEncontrado) {
+          matchScore = 1.0;
+          estrategiaUsada = 'Código Fornecedor';
+        }
+      }
+
+      // ========================================
+      // ESTRATÉGIA 3: Match por mapeamento de códigos (JSON)
+      // ========================================
+      if (!produtoEncontrado && codigoNF && fornecedor) {
         produtoEncontrado = produtosCadastrados.find(p => {
+          return p.mapeamento.some(m =>
+            String(m.fornecedor).toUpperCase() === fornecedor.toUpperCase() &&
+            String(m.codigo).toUpperCase() === codigoNF
+          );
+        });
+        if (produtoEncontrado) {
+          matchScore = 1.0;
+          estrategiaUsada = 'Mapeamento JSON';
+        }
+      }
+
+      // ========================================
+      // ESTRATÉGIA 4: Match por similaridade de descrição
+      // ========================================
+      if (!produtoEncontrado && descricaoNF) {
+        let melhorSimilaridade = 0;
+        produtosCadastrados.forEach(p => {
           const similarity = calcularSimilaridade(p.nome, descricaoNF);
-          return similarity > 0.7; // 70% de similaridade
+          if (similarity > melhorSimilaridade && similarity >= 0.7) {
+            melhorSimilaridade = similarity;
+            produtoEncontrado = p;
+            matchScore = similarity;
+            estrategiaUsada = 'Similaridade';
+          }
         });
       }
 
@@ -723,17 +937,22 @@ function mapearProdutosNF(produtosNF, tipoProdutos) {
           descricaoNF: prodNF.descricao,
           quantidade: prodNF.quantidade,
           valorUnitario: prodNF.valorUnitario,
-          valorTotal: prodNF.valorTotal
+          valorTotal: prodNF.valorTotal,
+          matchScore: matchScore,
+          estrategia: estrategiaUsada
         });
-        Logger.log(`✅ Mapeado: ${prodNF.descricao} → ${produtoEncontrado.nome}`);
+        Logger.log(`✅ [${estrategiaUsada}] ${prodNF.descricao} → ${produtoEncontrado.nome} (${(matchScore * 100).toFixed(0)}%)`);
       } else {
         naoMapeados.push({
           codigoNF: prodNF.codigoNF,
           descricao: prodNF.descricao,
           quantidade: prodNF.quantidade,
-          valorUnitario: prodNF.valorUnitario
+          valorUnitario: prodNF.valorUnitario,
+          valorTotal: prodNF.valorTotal,
+          ncm: prodNF.ncm,
+          unidade: prodNF.unidade
         });
-        Logger.log(`⚠️ Não mapeado: ${prodNF.descricao}`);
+        Logger.log(`⚠️ Não mapeado: ${prodNF.descricao} (Código: ${prodNF.codigoNF})`);
       }
     });
 
@@ -839,11 +1058,23 @@ function processarNFComCustoMedio(nfId) {
     const email = Session.getActiveUser().getEmail();
     let erros = [];
 
+    const fornecedor = nfData[CONFIG.COLUNAS_NOTAS_FISCAIS.FORNECEDOR - 1];
+
     // Processar cada produto
     for (let i = 0; i < produtos.length; i++) {
       const produtoId = produtos[i];
       const quantidade = quantidades[i];
       const valorUnitarioNF = valoresUnitarios[i];
+
+      // Buscar nome do produto
+      const dadosProdutos = abaProdutos.getDataRange().getValues();
+      let produtoNome = '';
+      for (let j = 1; j < dadosProdutos.length; j++) {
+        if (dadosProdutos[j][CONFIG.COLUNAS_PRODUTOS.ID - 1] === produtoId) {
+          produtoNome = dadosProdutos[j][CONFIG.COLUNAS_PRODUTOS.NOME - 1];
+          break;
+        }
+      }
 
       // Atualizar preço do produto com custo médio ponderado
       const resultadoCusto = atualizarCustoMedioProduto(produtoId, quantidade, valorUnitarioNF);
@@ -853,13 +1084,31 @@ function processarNFComCustoMedio(nfId) {
         continue;
       }
 
+      // ========================================
+      // REGISTRAR HISTÓRICO DE CUSTO (v10.4)
+      // ========================================
+      registrarHistoricoCusto({
+        produtoId: produtoId,
+        produtoNome: produtoNome,
+        custoUnitario: resultadoCusto.novoCustoMedio,
+        quantidade: quantidade,
+        fornecedor: fornecedor,
+        numeroNF: numeroNF,
+        nfId: nfId,
+        custoAnterior: resultadoCusto.custoAnterior,
+        responsavel: email,
+        observacoes: `Entrada NF ${numeroNF} - Custo NF: R$ ${valorUnitarioNF.toFixed(2)}`
+      });
+
       // Registrar movimentação de entrada
       const resultadoMov = registrarMovimentacao({
         tipo: CONFIG.TIPOS_MOVIMENTACAO.ENTRADA,
         produtoId: produtoId,
         quantidade: quantidade,
         observacoes: `Entrada NF ${numeroNF} - Custo: R$ ${valorUnitarioNF.toFixed(2)} - Novo custo médio: R$ ${resultadoCusto.novoCustoMedio.toFixed(2)}`,
-        responsavel: email
+        responsavel: email,
+        nfId: nfId,                        // v10.4 - Referência à NF
+        custoUnitario: valorUnitarioNF     // v10.4 - Custo da NF
       });
 
       if (!resultadoMov.success) {
@@ -959,6 +1208,160 @@ function atualizarCustoMedioProduto(produtoId, quantidadeNova, custoNovo) {
 
   } catch (error) {
     Logger.log(`❌ Erro ao atualizar custo médio: ${error.message}`);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * ========================================
+ * FUNÇÕES DE HISTÓRICO E RASTREAMENTO (v10.4)
+ * ========================================
+ */
+
+/**
+ * Registra histórico de custo de produto (v10.4)
+ *
+ * @param {object} dados - Dados do histórico
+ * @param {string} dados.produtoId - ID do produto
+ * @param {string} dados.produtoNome - Nome do produto
+ * @param {number} dados.custoUnitario - Custo unitário novo
+ * @param {number} dados.quantidade - Quantidade comprada
+ * @param {string} dados.fornecedor - Fornecedor
+ * @param {string} dados.numeroNF - Número da NF
+ * @param {string} dados.nfId - ID da NF
+ * @param {number} dados.custoAnterior - Custo anterior
+ * @param {string} dados.responsavel - Responsável
+ * @param {string} dados.observacoes - Observações
+ * @returns {object} - { success, historicoId }
+ */
+function registrarHistoricoCusto(dados) {
+  try {
+    Logger.log('📊 Registrando histórico de custo...');
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let abaHistorico = ss.getSheetByName(CONFIG.ABAS.HISTORICO_CUSTOS);
+
+    // Criar aba se não existir
+    if (!abaHistorico) {
+      Logger.log('⚠️ Aba Histórico Custos não existe, criando...');
+      criarAbaHistoricoCustos(ss);
+      abaHistorico = ss.getSheetByName(CONFIG.ABAS.HISTORICO_CUSTOS);
+    }
+
+    // Gerar ID
+    const historicoId = 'HIST-' + Date.now();
+
+    // Calcular variação percentual
+    let variacaoPercentual = 0;
+    if (dados.custoAnterior && dados.custoAnterior > 0) {
+      variacaoPercentual = ((dados.custoUnitario - dados.custoAnterior) / dados.custoAnterior) * 100;
+    }
+
+    // Preparar linha
+    const novaLinha = [
+      historicoId,                                              // A - ID
+      dados.produtoId,                                          // B - Produto ID
+      dados.produtoNome,                                        // C - Produto Nome
+      new Date(),                                               // D - Data
+      dados.custoUnitario,                                      // E - Custo Unitário
+      dados.quantidade || 0,                                    // F - Quantidade Comprada
+      dados.fornecedor || '',                                   // G - Fornecedor
+      dados.numeroNF || '',                                     // H - Número NF
+      dados.nfId || '',                                         // I - NF ID
+      dados.custoAnterior || 0,                                 // J - Custo Anterior
+      variacaoPercentual,                                       // K - Variação %
+      'ENTRADA',                                                // L - Tipo Movimentação
+      dados.responsavel || Session.getActiveUser().getEmail(), // M - Responsável
+      dados.observacoes || ''                                   // N - Observações
+    ];
+
+    abaHistorico.appendRow(novaLinha);
+
+    Logger.log(`✅ Histórico de custo registrado: ${historicoId}`);
+    Logger.log(`   Variação: ${variacaoPercentual.toFixed(2)}%`);
+
+    return {
+      success: true,
+      historicoId: historicoId,
+      variacaoPercentual: variacaoPercentual
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao registrar histórico de custo: ' + error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Registra item de Nota Fiscal na aba Itens NF (v10.4)
+ *
+ * @param {object} dados - Dados do item
+ * @param {string} dados.nfId - ID da NF
+ * @param {string} dados.produtoId - ID do produto (ou vazio se não mapeado)
+ * @param {string} dados.produtoNome - Nome do produto
+ * @param {string} dados.codigoNF - Código do produto na NF
+ * @param {string} dados.descricaoNF - Descrição do produto na NF
+ * @param {string} dados.ncm - NCM
+ * @param {number} dados.quantidade - Quantidade
+ * @param {string} dados.unidade - Unidade
+ * @param {number} dados.valorUnitario - Valor unitário
+ * @param {number} dados.valorTotal - Valor total
+ * @param {boolean} dados.mapeado - Se foi mapeado
+ * @param {number} dados.matchScore - Score do matching (0-1)
+ * @returns {object} - { success, itemId }
+ */
+function registrarItemNF(dados) {
+  try {
+    Logger.log('📝 Registrando item de NF...');
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let abaItensNF = ss.getSheetByName(CONFIG.ABAS.ITENS_NOTAS_FISCAIS);
+
+    // Criar aba se não existir
+    if (!abaItensNF) {
+      Logger.log('⚠️ Aba Itens NF não existe, criando...');
+      criarAbaItensNotasFiscais(ss);
+      abaItensNF = ss.getSheetByName(CONFIG.ABAS.ITENS_NOTAS_FISCAIS);
+    }
+
+    // Gerar ID
+    const itemId = 'ITNF-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+
+    // Preparar linha
+    const novaLinha = [
+      itemId,                          // A - ID
+      dados.nfId,                      // B - NF ID
+      dados.produtoId || '',           // C - Produto ID
+      dados.produtoNome || '',         // D - Produto Nome
+      dados.codigoNF || '',            // E - Código na NF
+      dados.descricaoNF || '',         // F - Descrição na NF
+      dados.ncm || '',                 // G - NCM
+      dados.quantidade || 0,           // H - Quantidade
+      dados.unidade || '',             // I - Unidade
+      dados.valorUnitario || 0,        // J - Valor Unitário
+      dados.valorTotal || 0,           // K - Valor Total
+      dados.mapeado ? 'SIM' : 'NÃO',   // L - Mapeado
+      dados.matchScore || 0,           // M - Match Score
+      new Date()                       // N - Data Entrada
+    ];
+
+    abaItensNF.appendRow(novaLinha);
+
+    Logger.log(`✅ Item de NF registrado: ${itemId}`);
+
+    return {
+      success: true,
+      itemId: itemId
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao registrar item de NF: ' + error.message);
     return {
       success: false,
       error: error.message

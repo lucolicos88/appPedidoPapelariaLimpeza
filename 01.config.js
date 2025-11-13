@@ -16,7 +16,9 @@ const CONFIG = {
     CONFIG: 'Configurações',
     LOGS: 'Registros',           // Opcional
     KPIS: 'Indicadores',          // Opcional
-    NOTAS_FISCAIS: 'Notas Fiscais' // v10.3
+    NOTAS_FISCAIS: 'Notas Fiscais',    // v10.3
+    HISTORICO_CUSTOS: 'Histórico Custos',   // v10.4
+    ITENS_NOTAS_FISCAIS: 'Itens NF'    // v10.4
   },
 
   // Mapeamento de colunas - ABA PRODUTOS
@@ -33,7 +35,9 @@ const CONFIG = {
     FORNECEDOR: 10,           // J - Fornecedor
     IMAGEM_URL: 11,           // K - ImagemURL (v8.0)
     ATIVO: 12,                // L - Ativo
-    DATA_CADASTRO: 13         // M - Data Cadastro
+    DATA_CADASTRO: 13,        // M - Data Cadastro
+    CODIGO_FORNECEDOR: 14,    // N - Código Fornecedor (v10.4)
+    MAPEAMENTO_CODIGOS: 15    // O - Mapeamento Códigos JSON (v10.4)
   },
 
   // Mapeamento de colunas - ABA PEDIDOS
@@ -79,7 +83,9 @@ const CONFIG = {
     ESTOQUE_ATUAL: 8,         // H - Estoque Atual
     RESPONSAVEL: 9,           // I - Responsável
     OBSERVACOES: 10,          // J - Observações
-    PEDIDO_ID: 11             // K - Pedido ID (v8.0)
+    PEDIDO_ID: 11,            // K - Pedido ID (v8.0)
+    NF_ID: 12,                // L - NF ID (v10.4)
+    CUSTO_UNITARIO: 13        // M - Custo Unitário (v10.4)
   },
 
   // Mapeamento de colunas - ABA NOTAS FISCAIS (v10.3)
@@ -99,6 +105,42 @@ const CONFIG = {
     RESPONSAVEL: 13,          // M - Responsável pela entrada
     OBSERVACOES: 14,          // N - Observações
     DATA_CADASTRO: 15         // O - Data de Cadastro no sistema
+  },
+
+  // Mapeamento de colunas - ABA HISTÓRICO CUSTOS (v10.4)
+  COLUNAS_HISTORICO_CUSTOS: {
+    ID: 1,                       // A - ID
+    PRODUTO_ID: 2,               // B - Produto ID
+    PRODUTO_NOME: 3,             // C - Produto Nome
+    DATA: 4,                     // D - Data
+    CUSTO_UNITARIO: 5,           // E - Custo Unitário
+    QUANTIDADE_COMPRADA: 6,      // F - Quantidade Comprada
+    FORNECEDOR: 7,               // G - Fornecedor
+    NUMERO_NF: 8,                // H - Número NF
+    NF_ID: 9,                    // I - NF ID
+    CUSTO_ANTERIOR: 10,          // J - Custo Anterior
+    VARIACAO_PERCENTUAL: 11,     // K - Variação %
+    TIPO_MOVIMENTACAO: 12,       // L - Tipo Movimentação
+    RESPONSAVEL: 13,             // M - Responsável
+    OBSERVACOES: 14              // N - Observações
+  },
+
+  // Mapeamento de colunas - ABA ITENS NOTAS FISCAIS (v10.4)
+  COLUNAS_ITENS_NF: {
+    ID: 1,                    // A - ID
+    NF_ID: 2,                 // B - NF ID
+    PRODUTO_ID: 3,            // C - Produto ID
+    PRODUTO_NOME: 4,          // D - Produto Nome
+    CODIGO_NF: 5,             // E - Código na NF
+    DESCRICAO_NF: 6,          // F - Descrição na NF
+    NCM: 7,                   // G - NCM
+    QUANTIDADE: 8,            // H - Quantidade
+    UNIDADE: 9,               // I - Unidade
+    VALOR_UNITARIO: 10,       // J - Valor Unitário
+    VALOR_TOTAL: 11,          // K - Valor Total
+    MAPEADO: 12,              // L - Mapeado (SIM/NÃO)
+    MATCH_SCORE: 13,          // M - Match Score
+    DATA_ENTRADA: 14          // N - Data Entrada
   },
 
   // Status de pedidos permitidos

@@ -112,7 +112,15 @@ function setupPlanilha() {
     criarAbaNotasFiscais(ss);
     Logger.log('✅ Aba Notas Fiscais criada');
 
-    // 10. Popular com dados de teste (APENAS se for primeira configuração)
+    // 10. Criar aba de Histórico de Custos (v10.4)
+    criarAbaHistoricoCustos(ss);
+    Logger.log('✅ Aba Histórico Custos criada');
+
+    // 11. Criar aba de Itens de NF (v10.4)
+    criarAbaItensNotasFiscais(ss);
+    Logger.log('✅ Aba Itens NF criada');
+
+    // 12. Popular com dados de teste (APENAS se for primeira configuração)
     if (!jaConfigurado) {
       popularDadosTeste(ss);
       Logger.log('✅ Dados de teste adicionados');
@@ -276,8 +284,8 @@ function criarAbaProdutos(ss) {
   // Cabeçalhos
   const headers = [
     'ID', 'Código', 'Nome', 'Tipo', 'Categoria', 'Unidade',
-    'Preço Unitário', 'Estoque Mínimo', 'Ponto de Pedido', 'Fornecedor', 
-    'ImagemURL', 'Ativo', 'Data Cadastro'
+    'Preço Unitário', 'Estoque Mínimo', 'Ponto de Pedido', 'Fornecedor',
+    'ImagemURL', 'Ativo', 'Data Cadastro', 'Código Fornecedor', 'Mapeamento Códigos'
   ];
   aba.getRange(1, 1, 1, headers.length).setValues([headers]);
   
@@ -371,7 +379,8 @@ function criarAbaMovimentacoesEstoque(ss) {
   // Cabeçalhos
   const headers = [
     'ID', 'Data/Hora', 'Tipo Movimentação', 'Produto ID', 'Produto Nome',
-    'Quantidade', 'Estoque Anterior', 'Estoque Atual', 'Responsável', 'Observações'
+    'Quantidade', 'Estoque Anterior', 'Estoque Atual', 'Responsável', 'Observações',
+    'Pedido ID', 'NF ID', 'Custo Unitário'
   ];
   aba.getRange(1, 1, 1, headers.length).setValues([headers]);
   

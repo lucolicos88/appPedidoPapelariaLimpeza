@@ -2144,75 +2144,73 @@
     </div>
   </div>
 
-  <!-- Modal: Nova Nota Fiscal (v10.3) -->
+  <!-- Modal: Nova Nota Fiscal com Upload XML (v10.4) -->
   <div class="modal" id="modalNovaNF">
-    <div class="modal-content" style="max-width: 900px;">
+    <div class="modal-content" style="max-width: 1000px;">
       <div class="modal-header">
-        <h3 class="modal-title">📄 Nova Nota Fiscal de Entrada</h3>
+        <h3 class="modal-title">📄 Nova Nota Fiscal - Upload XML</h3>
         <button class="modal-close" onclick="closeModal('modalNovaNF')">&times;</button>
       </div>
 
-      <form id="formNovaNF" onsubmit="submitNovaNF(event)">
-        <!-- Informações da NF -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-          <div class="form-group">
-            <label class="form-label">Número da NF *</label>
-            <input type="text" class="form-control" id="nfNumero" required placeholder="Ex: 12345">
-          </div>
+      <form id="formNovaNF" onsubmit="submitNovaNFXML(event)">
 
-          <div class="form-group">
-            <label class="form-label">Data de Emissão *</label>
-            <input type="date" class="form-control" id="nfDataEmissao" required>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Data de Entrada</label>
-            <input type="date" class="form-control" id="nfDataEntrada">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Tipo de Produtos *</label>
-            <select class="form-control" id="nfTipoProdutos" required>
-              <option value="">Selecione...</option>
-              <option value="Papelaria">📝 Papelaria</option>
-              <option value="Limpeza">🧹 Limpeza</option>
-            </select>
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-bottom: 20px;">
-          <div class="form-group">
-            <label class="form-label">Fornecedor *</label>
-            <input type="text" class="form-control" id="nfFornecedor" required placeholder="Nome do fornecedor">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">CNPJ</label>
-            <input type="text" class="form-control" id="nfCNPJ" placeholder="00.000.000/0000-00">
-          </div>
-        </div>
-
-        <!-- Produtos da NF -->
+        <!-- Tipo de Produto (OBRIGATÓRIO ANTES DO UPLOAD) -->
         <div class="form-group">
-          <label class="form-label">Produtos da NF *</label>
-          <div id="nfProdutosContainer" style="margin-bottom: 10px;">
-            <!-- Produtos serão adicionados dinamicamente aqui -->
-          </div>
-          <button type="button" class="btn btn-outline" onclick="adicionarProdutoNF()" style="width: 100%;">
-            ➕ Adicionar Produto
-          </button>
+          <label class="form-label">Tipo de Produtos da NF *</label>
+          <select class="form-control" id="nfTipoProdutos" required>
+            <option value="">Selecione...</option>
+            <option value="Papelaria">📝 Papelaria</option>
+            <option value="Limpeza">🧹 Limpeza</option>
+          </select>
+          <small style="color: #666;">⚠️ Selecione o tipo ANTES de fazer upload do XML</small>
         </div>
+
+        <!-- Upload de Arquivo XML -->
+        <div class="form-group">
+          <label class="form-label">Arquivo XML da NF-e *</label>
+          <input type="file" class="form-control" id="nfArquivoXML" accept=".xml" required onchange="processarArquivoXML(event)">
+          <small style="color: #666;">Faça upload do arquivo XML da nota fiscal eletrônica</small>
+        </div>
+
+        <!-- Área de Preview dos Dados da NF -->
+        <div id="nfPreviewArea" style="display: none; margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 5px;">
+          <h4 style="margin-top: 0;">📋 Dados da NF carregados:</h4>
+          <div id="nfDadosBasicos" style="background: white; padding: 10px; border-radius: 5px; margin-bottom: 15px;"></div>
+
+          <h4>📦 Produtos identificados:</h4>
+          <div id="nfProdutosMapeados"></div>
+
+          <div id="nfProdutosNaoMapeados" style="margin-top: 15px;"></div>
+
+          <!-- Checkbox para cadastro automático -->
+          <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ff9800;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" id="nfCadastrarNovos" style="margin-right: 10px; width: 18px; height: 18px;">
+              <span><strong>🤖 Cadastrar automaticamente produtos não identificados</strong></span>
+            </label>
+            <small style="color: #856404; margin-left: 28px; display: block; margin-top: 5px;">
+              Os produtos não identificados serão criados automaticamente no sistema com os dados da NF
+            </small>
+          </div>
+        </div>
+
+        <!-- Hidden fields para armazenar dados -->
+        <input type="hidden" id="nfDadosParsed">
 
         <!-- Observações -->
         <div class="form-group">
           <label class="form-label">Observações</label>
-          <textarea class="form-control" id="nfObservacoes" rows="3" placeholder="Observações sobre a nota fiscal..."></textarea>
+          <textarea class="form-control" id="nfObservacoes" rows="3"></textarea>
         </div>
 
         <!-- Botões -->
         <div style="display: flex; gap: 10px; margin-top: 20px;">
-          <button type="submit" class="btn btn-success" style="flex: 1;">✅ Cadastrar NF</button>
-          <button type="button" class="btn btn-secondary" onclick="closeModal('modalNovaNF')" style="flex: 1;">❌ Cancelar</button>
+          <button type="submit" class="btn btn-success" style="flex: 1;" id="btnCadastrarNF" disabled>
+            ✅ Cadastrar e Processar NF
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modalNovaNF')" style="flex: 1;">
+            ❌ Cancelar
+          </button>
         </div>
       </form>
     </div>
@@ -5708,6 +5706,367 @@ function renderMovimentacoesTable(movimentacoes) {
           showError('Erro: ' + error.message);
         })
         .getNotaFiscal(nfId);
+    }
+
+    /**
+     * ========================================
+     * UPLOAD E PROCESSAMENTO DE XML (v10.4)
+     * ========================================
+     */
+
+    /**
+     * Processa arquivo XML selecionado
+     */
+    function processarArquivoXML(event) {
+      const file = event.target.files[0];
+
+      if (!file) return;
+
+      const tipoProdutos = document.getElementById('nfTipoProdutos').value;
+      if (!tipoProdutos) {
+        showError('Selecione o tipo de produtos antes de fazer upload do XML');
+        document.getElementById('nfArquivoXML').value = '';
+        return;
+      }
+
+      showLoading();
+
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        const xmlContent = e.target.result;
+        const xmlBase64 = btoa(unescape(encodeURIComponent(xmlContent)));
+
+        // Enviar para backend para parse
+        google.script.run
+          .withSuccessHandler(function(response) {
+            hideLoading();
+
+            if (response && response.success) {
+              // Mapear produtos
+              mapearProdutosNFFromXML(response.dadosNF, tipoProdutos);
+            } else {
+              showError('Erro ao processar XML: ' + (response ? response.error : 'Erro desconhecido'));
+              document.getElementById('nfArquivoXML').value = '';
+            }
+          })
+          .withFailureHandler(function(error) {
+            hideLoading();
+            showError('Erro: ' + error.message);
+            document.getElementById('nfArquivoXML').value = '';
+          })
+          .uploadEProcessarXMLNF(xmlBase64, file.name);
+      };
+
+      reader.readAsText(file);
+    }
+
+    /**
+     * Mapeia produtos da NF com o backend
+     */
+    function mapearProdutosNFFromXML(dadosNF, tipoProdutos) {
+      console.log('📋 Dados da NF:', dadosNF);
+
+      showLoading();
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+
+          if (response && response.success) {
+            exibirPreviewCompleto(dadosNF, response.mapeamento, response.naoMapeados, tipoProdutos);
+
+            // Armazenar dados para submit
+            document.getElementById('nfDadosParsed').value = JSON.stringify({
+              dadosNF: dadosNF,
+              mapeamento: response.mapeamento,
+              naoMapeados: response.naoMapeados,
+              tipoProdutos: tipoProdutos
+            });
+
+            // Habilitar botão de cadastro
+            document.getElementById('btnCadastrarNF').disabled = false;
+          } else {
+            showError('Erro ao mapear produtos: ' + (response ? response.error : 'Erro desconhecido'));
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .mapearProdutosNF(dadosNF.produtos, tipoProdutos, dadosNF.fornecedor);
+    }
+
+    /**
+     * Exibe preview completo da NF
+     */
+    function exibirPreviewCompleto(dadosNF, mapeamento, naoMapeados, tipoProdutos) {
+      // Dados básicos
+      document.getElementById('nfDadosBasicos').innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+          <div>
+            <strong>Número NF:</strong><br>
+            <span style="font-size: 1.2em;">${dadosNF.numeroNF}</span>
+          </div>
+          <div>
+            <strong>Fornecedor:</strong><br>
+            ${dadosNF.fornecedor}
+          </div>
+          <div>
+            <strong>CNPJ:</strong><br>
+            ${dadosNF.cnpjFornecedor || 'N/A'}
+          </div>
+          <div>
+            <strong>Data Emissão:</strong><br>
+            ${new Date(dadosNF.dataEmissao).toLocaleDateString('pt-BR')}
+          </div>
+          <div>
+            <strong>Valor Total:</strong><br>
+            <span style="font-size: 1.2em; color: #00A651;">R$ ${formatMoney(dadosNF.valorTotal)}</span>
+          </div>
+        </div>
+      `;
+
+      // Produtos mapeados
+      let htmlMapeados = '';
+      if (mapeamento.length > 0) {
+        htmlMapeados = `
+          <div style="background: #d4edda; padding: 15px; border-radius: 5px; margin-bottom: 10px; border-left: 4px solid #28a745;">
+            <strong style="color: #155724;">✅ ${mapeamento.length} produto(s) identificado(s) no sistema:</strong>
+            <table style="width: 100%; margin-top: 10px; background: white; border-radius: 5px; overflow: hidden;">
+              <thead style="background: #28a745; color: white;">
+                <tr>
+                  <th style="padding: 8px; text-align: left;">Produto</th>
+                  <th style="padding: 8px; text-align: center;">Estratégia</th>
+                  <th style="padding: 8px; text-align: center;">Match</th>
+                  <th style="padding: 8px; text-align: center;">Qtd</th>
+                  <th style="padding: 8px; text-align: right;">Valor Unit.</th>
+                  <th style="padding: 8px; text-align: right;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${mapeamento.map(p => {
+                  const matchColor = p.matchScore >= 0.9 ? '#28a745' : p.matchScore >= 0.7 ? '#ff9800' : '#dc3545';
+                  return `
+                    <tr style="border-bottom: 1px solid #eee;">
+                      <td style="padding: 8px;">${p.produtoNome}</td>
+                      <td style="padding: 8px; text-align: center; font-size: 0.85em;">${p.estrategia || 'N/A'}</td>
+                      <td style="padding: 8px; text-align: center;">
+                        <span style="background: ${matchColor}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.85em;">
+                          ${(p.matchScore * 100).toFixed(0)}%
+                        </span>
+                      </td>
+                      <td style="padding: 8px; text-align: center;">${p.quantidade}</td>
+                      <td style="padding: 8px; text-align: right;">R$ ${formatMoney(p.valorUnitario)}</td>
+                      <td style="padding: 8px; text-align: right; font-weight: bold;">R$ ${formatMoney(p.valorTotal)}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      document.getElementById('nfProdutosMapeados').innerHTML = htmlMapeados;
+
+      // Produtos não mapeados
+      let htmlNaoMapeados = '';
+      if (naoMapeados.length > 0) {
+        htmlNaoMapeados = `
+          <div style="background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ff9800;">
+            <strong style="color: #856404;">⚠️ ${naoMapeados.length} produto(s) NÃO identificado(s):</strong>
+            <table style="width: 100%; margin-top: 10px; background: white; border-radius: 5px; overflow: hidden;">
+              <thead style="background: #ff9800; color: white;">
+                <tr>
+                  <th style="padding: 8px; text-align: left;">Descrição na NF</th>
+                  <th style="padding: 8px; text-align: center;">Código NF</th>
+                  <th style="padding: 8px; text-align: center;">Qtd</th>
+                  <th style="padding: 8px; text-align: right;">Valor Unit.</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${naoMapeados.map(p => `
+                  <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 8px;">${p.descricao}</td>
+                    <td style="padding: 8px; text-align: center; font-family: monospace;">${p.codigoNF || 'N/A'}</td>
+                    <td style="padding: 8px; text-align: center;">${p.quantidade}</td>
+                    <td style="padding: 8px; text-align: right;">R$ ${formatMoney(p.valorUnitario)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            <small style="color: #856404; display: block; margin-top: 10px;">
+              💡 Você pode cadastrar estes produtos automaticamente marcando a opção abaixo
+            </small>
+          </div>
+        `;
+      }
+
+      document.getElementById('nfProdutosNaoMapeados').innerHTML = htmlNaoMapeados;
+
+      // Mostrar área de preview
+      document.getElementById('nfPreviewArea').style.display = 'block';
+    }
+
+    /**
+     * Submete NF com XML processado
+     */
+    function submitNovaNFXML(event) {
+      event.preventDefault();
+
+      const dadosParsedStr = document.getElementById('nfDadosParsed').value;
+      if (!dadosParsedStr) {
+        showError('Faça upload do XML primeiro');
+        return;
+      }
+
+      const dadosParsed = JSON.parse(dadosParsedStr);
+
+      // Verificar se tem produtos não mapeados
+      if (dadosParsed.naoMapeados.length > 0) {
+        const cadastrarNovos = document.getElementById('nfCadastrarNovos').checked;
+
+        if (!cadastrarNovos) {
+          if (!confirm(`Atenção: ${dadosParsed.naoMapeados.length} produto(s) não foram identificados e NÃO serão processados.\\n\\nDeseja continuar mesmo assim?`)) {
+            return;
+          }
+        }
+      }
+
+      const observacoes = document.getElementById('nfObservacoes').value;
+
+      showLoading();
+
+      // Se precisa cadastrar novos produtos
+      const cadastrarNovos = document.getElementById('nfCadastrarNovos').checked;
+
+      if (cadastrarNovos && dadosParsed.naoMapeados.length > 0) {
+        cadastrarProdutosNaoMapeados(dadosParsed.naoMapeados, dadosParsed.tipoProdutos, dadosParsed.dadosNF.fornecedor, function(novoMapeamento) {
+          // Merge com mapeamento existente
+          const mapeamentoCompleto = [...dadosParsed.mapeamento, ...novoMapeamento];
+          cadastrarEProcessarNF(dadosParsed.dadosNF, mapeamentoCompleto, observacoes);
+        });
+      } else {
+        cadastrarEProcessarNF(dadosParsed.dadosNF, dadosParsed.mapeamento, observacoes);
+      }
+    }
+
+    /**
+     * Cadastra produtos não mapeados
+     */
+    function cadastrarProdutosNaoMapeados(naoMapeados, tipoProdutos, fornecedor, callback) {
+      let produtosCadastrados = [];
+      let index = 0;
+
+      function cadastrarProximo() {
+        if (index >= naoMapeados.length) {
+          hideLoading();
+          callback(produtosCadastrados);
+          return;
+        }
+
+        const prod = naoMapeados[index];
+
+        google.script.run
+          .withSuccessHandler(function(response) {
+            if (response && response.success) {
+              produtosCadastrados.push({
+                produtoId: response.produtoId,
+                produtoNome: prod.descricao,
+                codigoNF: prod.codigoNF,
+                descricaoNF: prod.descricao,
+                quantidade: prod.quantidade,
+                valorUnitario: prod.valorUnitario,
+                valorTotal: prod.valorTotal,
+                matchScore: 1.0,
+                estrategia: 'Cadastro Automático'
+              });
+            }
+            index++;
+            cadastrarProximo();
+          })
+          .withFailureHandler(function(error) {
+            console.error('Erro ao cadastrar produto:', error);
+            index++;
+            cadastrarProximo();
+          })
+          .cadastrarProdutoAutomatico({
+            tipo: tipoProdutos,
+            descricao: prod.descricao,
+            codigoNF: prod.codigoNF,
+            fornecedor: fornecedor,
+            unidade: prod.unidade || 'UN',
+            preco: prod.valorUnitario,
+            categoria: 'Geral'
+          });
+      }
+
+      cadastrarProximo();
+    }
+
+    /**
+     * Cadastra e processa NF
+     */
+    function cadastrarEProcessarNF(dadosNF, mapeamento, observacoes) {
+      // Preparar dados para cadastro
+      const dadosCadastro = {
+        numeroNF: dadosNF.numeroNF,
+        dataEmissao: dadosNF.dataEmissao,
+        dataEntrada: new Date(),
+        fornecedor: dadosNF.fornecedor,
+        cnpjFornecedor: dadosNF.cnpjFornecedor,
+        tipoProdutos: document.getElementById('nfTipoProdutos').value,
+        produtos: mapeamento.map(m => m.produtoId),
+        quantidades: mapeamento.map(m => m.quantidade),
+        valoresUnitarios: mapeamento.map(m => m.valorUnitario),
+        observacoes: observacoes
+      };
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response && response.success) {
+            // NF cadastrada, agora processar com custo médio
+            processarNFComCustoMedioFrontend(response.nfId);
+          } else {
+            hideLoading();
+            showError('Erro ao cadastrar NF: ' + (response ? response.error : 'Erro desconhecido'));
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .cadastrarNotaFiscal(dadosCadastro);
+    }
+
+    /**
+     * Processa NF recém cadastrada
+     */
+    function processarNFComCustoMedioFrontend(nfId) {
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+
+          if (response && response.success) {
+            showSuccess('✅ NF processada com sucesso! Estoque e preços atualizados.');
+            closeModal('modalNovaNF');
+
+            // Resetar form
+            document.getElementById('formNovaNF').reset();
+            document.getElementById('nfPreviewArea').style.display = 'none';
+            document.getElementById('btnCadastrarNF').disabled = true;
+
+            loadNotasFiscais();
+          } else {
+            showError('Erro ao processar NF: ' + (response ? response.error : 'Erro desconhecido'));
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .processarNFComCustoMedio(nfId);
     }
 
     /**

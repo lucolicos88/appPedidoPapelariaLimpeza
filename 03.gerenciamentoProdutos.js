@@ -634,3 +634,129 @@ function getProdutosEmAlerta() {
     };
   }
 }
+
+/**
+ * ========================================
+ * CADASTRO AUTOMÁTICO DE PRODUTOS (v10.4)
+ * ========================================
+ */
+
+/**
+ * Cadastra produto automaticamente a partir de dados da NF (v10.4)
+ *
+ * @param {object} dadosProduto - Dados do produto da NF
+ * @param {string} dadosProduto.tipo - Tipo: 'Papelaria' ou 'Limpeza'
+ * @param {string} dadosProduto.descricao - Descrição do produto na NF
+ * @param {string} dadosProduto.codigoNF - Código do produto na NF
+ * @param {string} dadosProduto.fornecedor - Fornecedor
+ * @param {string} dadosProduto.unidade - Unidade
+ * @param {number} dadosProduto.preco - Preço unitário
+ * @param {string} dadosProduto.categoria - Categoria (opcional)
+ * @returns {object} - { success, produtoId }
+ */
+function cadastrarProdutoAutomatico(dadosProduto) {
+  try {
+    Logger.log('🤖 Cadastrando produto automaticamente...');
+    Logger.log(`   Descrição: ${dadosProduto.descricao}`);
+    Logger.log(`   Código NF: ${dadosProduto.codigoNF}`);
+
+    // Validações
+    if (!dadosProduto.descricao || !dadosProduto.tipo) {
+      return {
+        success: false,
+        error: 'Descrição e Tipo são obrigatórios'
+      };
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+
+    if (!abaProdutos) {
+      return {
+        success: false,
+        error: 'Aba de produtos não encontrada'
+      };
+    }
+
+    // Gerar código interno único baseado no tipo
+    const timestamp = Date.now();
+    let codigoInterno;
+
+    if (dadosProduto.tipo === 'Papelaria') {
+      codigoInterno = `PAP-${timestamp}`;
+    } else if (dadosProduto.tipo === 'Limpeza') {
+      codigoInterno = `LMP-${timestamp}`;
+    } else {
+      codigoInterno = `PRD-${timestamp}`;
+    }
+
+    // Gerar ID único
+    const produtoId = 'PROD-' + timestamp;
+
+    // Criar mapeamento de códigos (JSON)
+    const mapeamentoCodigos = JSON.stringify([{
+      fornecedor: dadosProduto.fornecedor || '',
+      codigo: dadosProduto.codigoNF || '',
+      principal: true
+    }]);
+
+    // Preparar nova linha
+    const novaLinha = [
+      produtoId,                                  // A - ID
+      codigoInterno,                              // B - Código
+      dadosProduto.descricao,                     // C - Nome
+      dadosProduto.tipo,                          // D - Tipo
+      dadosProduto.categoria || 'Geral',          // E - Categoria
+      dadosProduto.unidade || 'UN',               // F - Unidade
+      dadosProduto.preco || 0,                    // G - Preço Unitário
+      10,                                         // H - Estoque Mínimo (padrão)
+      20,                                         // I - Ponto de Pedido (padrão)
+      dadosProduto.fornecedor || '',              // J - Fornecedor
+      '',                                         // K - ImagemURL
+      'Sim',                                      // L - Ativo
+      new Date(),                                 // M - Data Cadastro
+      dadosProduto.codigoNF || '',                // N - Código Fornecedor
+      mapeamentoCodigos                           // O - Mapeamento Códigos (JSON)
+    ];
+
+    // Adicionar produto
+    abaProdutos.appendRow(novaLinha);
+
+    // Criar registro de estoque zerado
+    const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
+    if (abaEstoque) {
+      const estoqueId = 'EST-' + timestamp;
+      const novaLinhaEstoque = [
+        estoqueId,                                // A - ID
+        produtoId,                                // B - Produto ID
+        dadosProduto.descricao,                   // C - Produto Nome
+        0,                                        // D - Quantidade Atual
+        0,                                        // E - Quantidade Reservada
+        0,                                        // F - Estoque Disponível
+        new Date(),                               // G - Última Atualização
+        Session.getActiveUser().getEmail()       // H - Responsável
+      ];
+
+      abaEstoque.appendRow(novaLinhaEstoque);
+      Logger.log(`✅ Estoque zerado criado para produto ${produtoId}`);
+    }
+
+    Logger.log(`✅ Produto cadastrado automaticamente: ${produtoId}`);
+    Logger.log(`   Código Interno: ${codigoInterno}`);
+    Logger.log(`   Código Fornecedor: ${dadosProduto.codigoNF}`);
+
+    return {
+      success: true,
+      produtoId: produtoId,
+      codigoInterno: codigoInterno
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao cadastrar produto automaticamente: ' + error.message);
+    Logger.log('Stack: ' + error.stack);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}

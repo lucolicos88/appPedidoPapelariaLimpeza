@@ -547,8 +547,192 @@ function enviarAlertaEstoqueBaixo(destinatario, produto, estoqueAtual) {
     });
     
     Logger.log(`✅ Alerta de estoque baixo enviado para ${destinatario}`);
-    
+
   } catch (error) {
     Logger.log(`⚠️ Erro ao enviar alerta: ${error.message}`);
+  }
+}
+
+/**
+ * ========================================
+ * FUNÇÃO GENÉRICA DE MOVIMENTAÇÃO (v10.4)
+ * ========================================
+ * Unifica ENTRADA, SAÍDA e AJUSTE de estoque
+ * Suporta referências a Pedidos e Notas Fiscais
+ */
+
+/**
+ * Registra movimentação de estoque genérica (v10.4)
+ *
+ * @param {object} dados - Dados da movimentação
+ * @param {string} dados.tipo - Tipo: 'ENTRADA', 'SAIDA', 'AJUSTE'
+ * @param {string} dados.produtoId - ID do produto
+ * @param {number} dados.quantidade - Quantidade (positiva ou negativa)
+ * @param {string} dados.observacoes - Observações
+ * @param {string} dados.responsavel - Email do responsável (opcional)
+ * @param {string} dados.pedidoId - ID do pedido (opcional)
+ * @param {string} dados.nfId - ID da NF (opcional)
+ * @param {number} dados.custoUnitario - Custo unitário (opcional)
+ * @returns {object} - { success, estoqueAnterior, estoqueAtual, movimentacaoId }
+ */
+function registrarMovimentacao(dados) {
+  try {
+    Logger.log('📦 Registrando movimentação de estoque...');
+    Logger.log(`   Tipo: ${dados.tipo}`);
+    Logger.log(`   Produto ID: ${dados.produtoId}`);
+    Logger.log(`   Quantidade: ${dados.quantidade}`);
+
+    // Validações
+    if (!dados.tipo || !dados.produtoId || dados.quantidade === undefined) {
+      return {
+        success: false,
+        error: 'Tipo, produtoId e quantidade são obrigatórios'
+      };
+    }
+
+    const tiposValidos = ['ENTRADA', 'SAIDA', 'AJUSTE'];
+    if (!tiposValidos.includes(dados.tipo)) {
+      return {
+        success: false,
+        error: 'Tipo inválido. Use: ENTRADA, SAIDA ou AJUSTE'
+      };
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
+    const abaMovimentacoes = ss.getSheetByName(CONFIG.ABAS.STOCK_MOVEMENTS);
+
+    if (!abaEstoque || !abaMovimentacoes) {
+      return {
+        success: false,
+        error: 'Abas de estoque ou movimentações não encontradas'
+      };
+    }
+
+    // 1. Buscar produto
+    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+    const dadosProdutos = abaProdutos.getDataRange().getValues();
+
+    let produto = null;
+    for (let i = 1; i < dadosProdutos.length; i++) {
+      if (dadosProdutos[i][0] === dados.produtoId) {
+        produto = {
+          id: dadosProdutos[i][0],
+          nome: dadosProdutos[i][2]
+        };
+        break;
+      }
+    }
+
+    if (!produto) {
+      return {
+        success: false,
+        error: `Produto ${dados.produtoId} não encontrado`
+      };
+    }
+
+    // 2. Buscar ou criar registro de estoque
+    const dadosEstoque = abaEstoque.getDataRange().getValues();
+    let linhaEstoque = -1;
+    let estoqueAtualAntes = 0;
+    let estoqueId = null;
+
+    for (let i = 1; i < dadosEstoque.length; i++) {
+      if (dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.PRODUTO_ID - 1] === dados.produtoId) {
+        linhaEstoque = i + 1;
+        estoqueId = dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.ID - 1];
+        estoqueAtualAntes = Number(dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL - 1]) || 0;
+        break;
+      }
+    }
+
+    // Se não existe, criar novo registro de estoque
+    if (linhaEstoque === -1) {
+      Logger.log(`⚠️ Estoque não existe para produto ${dados.produtoId}, criando...`);
+
+      estoqueId = 'EST-' + Date.now();
+      const novaLinhaEstoque = [
+        estoqueId,                    // ID
+        dados.produtoId,              // Produto ID
+        produto.nome,                 // Produto Nome
+        0,                            // Quantidade Atual
+        0,                            // Quantidade Reservada
+        0,                            // Estoque Disponível
+        new Date(),                   // Última Atualização
+        dados.responsavel || Session.getActiveUser().getEmail()  // Responsável
+      ];
+
+      abaEstoque.appendRow(novaLinhaEstoque);
+      linhaEstoque = abaEstoque.getLastRow();
+      estoqueAtualAntes = 0;
+    }
+
+    // 3. Calcular novo estoque
+    let novoEstoque = estoqueAtualAntes;
+
+    if (dados.tipo === 'ENTRADA') {
+      novoEstoque += Math.abs(dados.quantidade);
+    } else if (dados.tipo === 'SAIDA') {
+      novoEstoque -= Math.abs(dados.quantidade);
+    } else if (dados.tipo === 'AJUSTE') {
+      // Para ajuste, a quantidade pode ser positiva ou negativa
+      novoEstoque += dados.quantidade;
+    }
+
+    // Não permitir estoque negativo
+    if (novoEstoque < 0) {
+      Logger.log(`⚠️ Estoque ficaria negativo: ${novoEstoque}`);
+      return {
+        success: false,
+        error: `Estoque insuficiente. Disponível: ${estoqueAtualAntes}, Solicitado: ${Math.abs(dados.quantidade)}`
+      };
+    }
+
+    // 4. Atualizar estoque
+    abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL).setValue(novoEstoque);
+    abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ESTOQUE_DISPONIVEL).setValue(novoEstoque); // Simplificado
+    abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ULTIMA_ATUALIZACAO).setValue(new Date());
+    abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.RESPONSAVEL).setValue(dados.responsavel || Session.getActiveUser().getEmail());
+
+    // 5. Registrar movimentação
+    const movimentacaoId = 'MOV-' + Date.now();
+
+    const novaMovimentacao = [
+      movimentacaoId,                                           // A - ID
+      new Date(),                                               // B - Data/Hora
+      dados.tipo,                                               // C - Tipo Movimentação
+      dados.produtoId,                                          // D - Produto ID
+      produto.nome,                                             // E - Produto Nome
+      Math.abs(dados.quantidade),                               // F - Quantidade
+      estoqueAtualAntes,                                        // G - Estoque Anterior
+      novoEstoque,                                              // H - Estoque Atual
+      dados.responsavel || Session.getActiveUser().getEmail(), // I - Responsável
+      dados.observacoes || '',                                  // J - Observações
+      dados.pedidoId || '',                                     // K - Pedido ID
+      dados.nfId || '',                                         // L - NF ID (v10.4)
+      dados.custoUnitario || ''                                 // M - Custo Unitário (v10.4)
+    ];
+
+    abaMovimentacoes.appendRow(novaMovimentacao);
+
+    Logger.log(`✅ Movimentação registrada com sucesso!`);
+    Logger.log(`   Estoque Anterior: ${estoqueAtualAntes}`);
+    Logger.log(`   Estoque Atual: ${novoEstoque}`);
+    Logger.log(`   Movimentação ID: ${movimentacaoId}`);
+
+    return {
+      success: true,
+      estoqueAnterior: estoqueAtualAntes,
+      estoqueAtual: novoEstoque,
+      movimentacaoId: movimentacaoId
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao registrar movimentação: ' + error.message);
+    Logger.log('Stack: ' + error.stack);
+    return {
+      success: false,
+      error: error.message
+    };
   }
 }
