@@ -1,0 +1,403 @@
+/**
+ * ========================================
+ * PROCESSAR NF V13 - FLUXO AUTOMÁTICO
+ * ========================================
+ *
+ * NOVO FLUXO:
+ * 1. Upload XML → Extração dados NF
+ * 2. Buscar/Criar fornecedor automaticamente
+ * 3. Cruzar produtos da NF com produtos cadastrados
+ * 4. Produtos encontrados → Apenas entrada no estoque
+ * 5. Produtos novos → Cadastro automático com dados básicos
+ * 6. Gestor completa dados Neoformula posteriormente
+ */
+
+/**
+ * Processa NF v13 - Importação automática completa
+ * @param {object} params - { xmlBase64, tipoProdutos, observacoes }
+ * @returns {object} - { success, nfId, fornecedorCriado, produtosCriados, produtosAtualizados }
+ */
+function processarNFv13Automatico(params) {
+  try {
+    Logger.log('📋 ========== PROCESSAR NF V13 - INÍCIO ==========');
+    const email = Session.getActiveUser().getEmail();
+
+    // Verificar permissão
+    if (!verificarPermissao(email, CONFIG.PERMISSOES.GESTOR)) {
+      return {
+        success: false,
+        error: 'Permissão negada. Somente gestores podem processar NFs.'
+      };
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    // 1. PARSE DO XML
+    Logger.log('1️⃣ Fazendo parse do XML...');
+    const resultadoXML = uploadEProcessarXMLNF(params.xmlBase64, 'nf.xml');
+
+    if (!resultadoXML.success) {
+      return {
+        success: false,
+        error: 'Erro ao processar XML: ' + resultadoXML.error
+      };
+    }
+
+    const dadosNF = resultadoXML.dadosNF;
+    Logger.log(`✅ XML processado: NF ${dadosNF.numeroNF} com ${dadosNF.produtos.length} produtos`);
+
+    // 2. BUSCAR OU CRIAR FORNECEDOR
+    Logger.log('2️⃣ Buscando/criando fornecedor...');
+    const fornecedorResult = buscarOuCriarFornecedor({
+      nome: dadosNF.fornecedor,
+      cnpj: dadosNF.cnpjFornecedor,
+      tipoProdutos: params.tipoProdutos
+    });
+
+    if (!fornecedorResult.success) {
+      return {
+        success: false,
+        error: 'Erro ao processar fornecedor: ' + fornecedorResult.error
+      };
+    }
+
+    const fornecedorId = fornecedorResult.fornecedorId;
+    const fornecedorCriado = fornecedorResult.criado;
+    Logger.log(`✅ Fornecedor: ${fornecedorCriado ? 'CRIADO' : 'ENCONTRADO'} - ID: ${fornecedorId}`);
+
+    // 3. PROCESSAR PRODUTOS (CRUZAMENTO + CADASTRO)
+    Logger.log('3️⃣ Processando produtos da NF...');
+    const resultadoProdutos = processarProdutosNF({
+      produtos: dadosNF.produtos,
+      fornecedorId: fornecedorId,
+      tipoProdutos: params.tipoProdutos,
+      email: email
+    });
+
+    if (!resultadoProdutos.success) {
+      return {
+        success: false,
+        error: 'Erro ao processar produtos: ' + resultadoProdutos.error
+      };
+    }
+
+    Logger.log(`✅ Produtos processados: ${resultadoProdutos.produtosCriados} novos, ${resultadoProdutos.produtosEncontrados} existentes`);
+
+    // 4. REGISTRAR NOTA FISCAL
+    Logger.log('4️⃣ Registrando Nota Fiscal...');
+    const nfId = Utilities.getUuid();
+
+    const abaNF = ss.getSheetByName(CONFIG.ABAS.NOTAS_FISCAIS);
+    if (!abaNF) {
+      return { success: false, error: 'Aba Notas Fiscais não encontrada' };
+    }
+
+    const novaNF = [];
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.ID - 1] = nfId;
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.NUMERO_NF - 1] = dadosNF.numeroNF;
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.DATA_EMISSAO - 1] = new Date(dadosNF.dataEmissao);
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.DATA_ENTRADA - 1] = new Date();
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.FORNECEDOR - 1] = dadosNF.fornecedor;
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.CNPJ_FORNECEDOR - 1] = dadosNF.cnpjFornecedor || '';
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.VALOR_TOTAL - 1] = dadosNF.valorTotal;
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.PRODUTOS - 1] = JSON.stringify(resultadoProdutos.produtosIds.map(p => p.produtoId));
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.QUANTIDADE - 1] = JSON.stringify(resultadoProdutos.produtosIds.map(p => p.quantidade));
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.VALORES_UNITARIOS - 1] = JSON.stringify(resultadoProdutos.produtosIds.map(p => p.valorUnitario));
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.TIPO_PRODUTOS - 1] = params.tipoProdutos;
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.STATUS - 1] = 'Processada';
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.RESPONSAVEL - 1] = email;
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.OBSERVACOES - 1] = params.observacoes || '';
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.DATA_CADASTRO - 1] = new Date();
+
+    abaNF.appendRow(novaNF);
+    Logger.log(`✅ NF registrada: ${nfId}`);
+
+    // 5. ATUALIZAR ESTOQUE E CUSTOS
+    Logger.log('5️⃣ Atualizando estoque e custos...');
+    for (const item of resultadoProdutos.produtosIds) {
+      // Registrar movimentação de entrada
+      registrarMovimentacao({
+        tipo: CONFIG.TIPOS_MOVIMENTACAO.ENTRADA,
+        produtoId: item.produtoId,
+        quantidade: item.quantidade,
+        observacoes: `Entrada NF ${dadosNF.numeroNF}`,
+        responsavel: email,
+        nfId: nfId,
+        custoUnitario: item.valorUnitario
+      });
+
+      // Atualizar custo médio
+      atualizarCustoMedioProduto(item.produtoId, item.quantidade, item.valorUnitario);
+    }
+
+    Logger.log('✅ Estoque e custos atualizados');
+
+    // 6. MENSAGEM DE SUCESSO
+    let mensagem = `NF ${dadosNF.numeroNF} processada com sucesso!\n\n`;
+    mensagem += `📦 ${dadosNF.produtos.length} produtos processados:\n`;
+    mensagem += `   • ${resultadoProdutos.produtosCriados} produtos novos cadastrados\n`;
+    mensagem += `   • ${resultadoProdutos.produtosEncontrados} produtos já existentes\n\n`;
+
+    if (fornecedorCriado) {
+      mensagem += `🏢 Fornecedor "${dadosNF.fornecedor}" cadastrado automaticamente\n\n`;
+    }
+
+    if (resultadoProdutos.produtosCriados > 0) {
+      mensagem += `⚠️ ATENÇÃO: Os ${resultadoProdutos.produtosCriados} produtos novos foram cadastrados com dados básicos da NF.\n`;
+      mensagem += `Você pode editá-los depois para adicionar:\n`;
+      mensagem += `   • Código Neoformula\n`;
+      mensagem += `   • Descrição Neoformula\n`;
+      mensagem += `   • Categoria\n`;
+      mensagem += `   • Imagem\n`;
+      mensagem += `   • Estoque mínimo / Ponto de pedido\n`;
+    }
+
+    Logger.log('========== PROCESSAR NF V13 - CONCLUÍDO ==========');
+
+    return {
+      success: true,
+      nfId: nfId,
+      fornecedorCriado: fornecedorCriado,
+      produtosCriados: resultadoProdutos.produtosCriados,
+      produtosEncontrados: resultadoProdutos.produtosEncontrados,
+      mensagem: mensagem
+    };
+
+  } catch (error) {
+    Logger.log(`❌ ERRO CRÍTICO ao processar NF v13: ${error.message}`);
+    Logger.log(`❌ Stack: ${error.stack}`);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Busca fornecedor por CNPJ ou cria novo
+ */
+function buscarOuCriarFornecedor(dados) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaFornecedores = ss.getSheetByName(CONFIG.ABAS.FORNECEDORES);
+
+    if (!abaFornecedores) {
+      return { success: false, error: 'Aba Fornecedores não encontrada. Execute setupPlanilha().' };
+    }
+
+    const dadosFornecedores = abaFornecedores.getDataRange().getValues();
+
+    // Buscar por CNPJ
+    let fornecedorId = null;
+    for (let i = 1; i < dadosFornecedores.length; i++) {
+      const cnpjExistente = dadosFornecedores[i][CONFIG.COLUNAS_FORNECEDORES.CNPJ - 1];
+      if (cnpjExistente === dados.cnpj) {
+        fornecedorId = dadosFornecedores[i][CONFIG.COLUNAS_FORNECEDORES.ID - 1];
+        Logger.log(`✅ Fornecedor encontrado: ${fornecedorId}`);
+        return {
+          success: true,
+          fornecedorId: fornecedorId,
+          criado: false
+        };
+      }
+    }
+
+    // Não encontrado - criar novo
+    fornecedorId = Utilities.getUuid();
+
+    const novoFornecedor = [];
+    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.ID - 1] = fornecedorId;
+    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.NOME - 1] = dados.nome;
+    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.NOME_FANTASIA - 1] = '';
+    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.CNPJ - 1] = dados.cnpj || '';
+    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.TELEFONE - 1] = '';
+    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.EMAIL - 1] = '';
+    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.ENDERECO - 1] = '';
+    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.CIDADE - 1] = '';
+    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.ESTADO - 1] = '';
+    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.CEP - 1] = '';
+    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.TIPO_PRODUTOS - 1] = dados.tipoProdutos;
+    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.ATIVO - 1] = 'Sim';
+    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.DATA_CADASTRO - 1] = new Date();
+    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.OBSERVACOES - 1] = 'Cadastrado automaticamente via NF';
+
+    abaFornecedores.appendRow(novoFornecedor);
+    Logger.log(`✅ Fornecedor criado: ${fornecedorId}`);
+
+    return {
+      success: true,
+      fornecedorId: fornecedorId,
+      criado: true
+    };
+
+  } catch (error) {
+    Logger.log(`❌ Erro ao buscar/criar fornecedor: ${error.message}`);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Processa produtos da NF: cruza com cadastrados e cadastra novos
+ */
+function processarProdutosNF(params) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+
+    if (!abaProdutos) {
+      return { success: false, error: 'Aba Produtos não encontrada' };
+    }
+
+    const dadosProdutos = abaProdutos.getDataRange().getValues();
+    const produtosIds = [];
+    let produtosCriados = 0;
+    let produtosEncontrados = 0;
+
+    for (const produtoNF of params.produtos) {
+      // CRUZAMENTO: Tentar encontrar produto cadastrado
+      let produtoId = null;
+      let produtoEncontrado = false;
+
+      // Estratégia 1: Buscar por código fornecedor + fornecedor ID
+      for (let i = 1; i < dadosProdutos.length; i++) {
+        const codigoFornecedor = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_FORNECEDOR - 1];
+        const fornecedorIdProduto = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.FORNECEDOR_ID - 1];
+
+        if (codigoFornecedor === produtoNF.codigoNF && fornecedorIdProduto === params.fornecedorId) {
+          produtoId = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ID - 1];
+          produtoEncontrado = true;
+          produtosEncontrados++;
+          Logger.log(`✅ Produto encontrado por código: ${produtoNF.codigoNF}`);
+          break;
+        }
+      }
+
+      // Estratégia 2: Se não encontrou, buscar por descrição similar (match fuzzy)
+      if (!produtoEncontrado) {
+        for (let i = 1; i < dadosProdutos.length; i++) {
+          const descricaoFornecedor = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1];
+          const fornecedorIdProduto = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.FORNECEDOR_ID - 1];
+
+          if (fornecedorIdProduto === params.fornecedorId) {
+            const similaridade = calcularSimilaridade(produtoNF.descricao, descricaoFornecedor);
+            if (similaridade >= 0.85) { // 85% de similaridade
+              produtoId = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ID - 1];
+              produtoEncontrado = true;
+              produtosEncontrados++;
+              Logger.log(`✅ Produto encontrado por descrição (${(similaridade * 100).toFixed(0)}%): ${produtoNF.descricao}`);
+              break;
+            }
+          }
+        }
+      }
+
+      // Se não encontrou, CADASTRAR NOVO
+      if (!produtoEncontrado) {
+        produtoId = Utilities.getUuid();
+
+        const novoProduto = [];
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.ID - 1] = produtoId;
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.CODIGO_FORNECEDOR - 1] = produtoNF.codigoNF || '';
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1] = produtoNF.descricao;
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.FORNECEDOR_ID - 1] = params.fornecedorId;
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] = ''; // VAZIO - preencher depois
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] = ''; // VAZIO - preencher depois
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.TIPO - 1] = params.tipoProdutos;
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.CATEGORIA - 1] = ''; // VAZIO
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.UNIDADE - 1] = produtoNF.unidade || 'UN';
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.PRECO_UNITARIO - 1] = produtoNF.valorUnitario;
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.ESTOQUE_MINIMO - 1] = ''; // VAZIO
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.PONTO_PEDIDO - 1] = ''; // VAZIO
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.IMAGEM_URL - 1] = ''; // VAZIO
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.NCM - 1] = produtoNF.ncm || '';
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] = 'Sim';
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO - 1] = new Date();
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.ORIGEM - 1] = 'NF'; // Origem: NF
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.DADOS_COMPLETOS - 1] = 'NÃO'; // Dados incompletos
+
+        abaProdutos.appendRow(novoProduto);
+
+        // Criar estoque inicial
+        const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
+        if (abaEstoque) {
+          const novoEstoque = [];
+          novoEstoque[CONFIG.COLUNAS_ESTOQUE.ID - 1] = Utilities.getUuid();
+          novoEstoque[CONFIG.COLUNAS_ESTOQUE.PRODUTO_ID - 1] = produtoId;
+          novoEstoque[CONFIG.COLUNAS_ESTOQUE.PRODUTO_NOME - 1] = produtoNF.descricao;
+          novoEstoque[CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL - 1] = 0;
+          novoEstoque[CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_RESERVADA - 1] = 0;
+          novoEstoque[CONFIG.COLUNAS_ESTOQUE.ESTOQUE_DISPONIVEL - 1] = 0;
+          novoEstoque[CONFIG.COLUNAS_ESTOQUE.ULTIMA_ATUALIZACAO - 1] = new Date();
+          novoEstoque[CONFIG.COLUNAS_ESTOQUE.RESPONSAVEL - 1] = params.email;
+          abaEstoque.appendRow(novoEstoque);
+        }
+
+        produtosCriados++;
+        Logger.log(`✅ Produto CADASTRADO: ${produtoNF.descricao}`);
+      }
+
+      // Adicionar à lista de produtos da NF
+      produtosIds.push({
+        produtoId: produtoId,
+        quantidade: produtoNF.quantidade,
+        valorUnitario: produtoNF.valorUnitario
+      });
+    }
+
+    return {
+      success: true,
+      produtosIds: produtosIds,
+      produtosCriados: produtosCriados,
+      produtosEncontrados: produtosEncontrados
+    };
+
+  } catch (error) {
+    Logger.log(`❌ Erro ao processar produtos: ${error.message}`);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Calcula similaridade entre duas strings (algoritmo simples)
+ */
+function calcularSimilaridade(str1, str2) {
+  if (!str1 || !str2) return 0;
+
+  // Normalizar
+  const s1 = str1.toLowerCase().trim();
+  const s2 = str2.toLowerCase().trim();
+
+  if (s1 === s2) return 1;
+
+  // Calcular distância de Levenshtein simplificada
+  const longer = s1.length > s2.length ? s1 : s2;
+  const shorter = s1.length > s2.length ? s2 : s1;
+
+  if (longer.length === 0) return 1;
+
+  const costs = [];
+  for (let i = 0; i <= shorter.length; i++) {
+    let lastValue = i;
+    for (let j = 0; j <= longer.length; j++) {
+      if (i === 0) {
+        costs[j] = j;
+      } else if (j > 0) {
+        let newValue = costs[j - 1];
+        if (shorter.charAt(i - 1) !== longer.charAt(j - 1)) {
+          newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+        }
+        costs[j - 1] = lastValue;
+        lastValue = newValue;
+      }
+    }
+    if (i > 0) costs[longer.length] = lastValue;
+  }
+
+  return (longer.length - costs[longer.length]) / longer.length;
+}

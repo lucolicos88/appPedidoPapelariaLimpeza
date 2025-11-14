@@ -1403,16 +1403,16 @@ function registrarItemNF(dados) {
 
 /**
  * ========================================
- * PROCESSAR NF V12 - CADASTRO DE PRODUTOS COM DUPLO CÓDIGO
+ * PROCESSAR NF V13 - FLUXO AUTOMÁTICO COM CRUZAMENTO
  * ========================================
  */
 
 /**
- * Processa NF v12 - Cadastra produtos e registra NF
- * @param {object} dadosSubmit - Dados submetidos do frontend
- * @returns {object} - { success, nfId, produtosCriados }
+ * Processa NF v13 - Importação automática com cruzamento de produtos
+ * @param {object} dadosNF - { dadosNF, fornecedorId, tipoProdutos, observacoes }
+ * @returns {object} - { success, nfId, produtosCriados, produtosAtualizados, mensagem }
  */
-function processarNFv12(dadosSubmit) {
+function processarNFv13(dadosNF) {
   try {
     Logger.log('📋 PROCESSAR NF V12 - INÍCIO');
     const email = Session.getActiveUser().getEmail();

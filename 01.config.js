@@ -18,28 +18,30 @@ const CONFIG = {
     KPIS: 'Indicadores',          // Opcional
     NOTAS_FISCAIS: 'Notas Fiscais',    // v10.3
     HISTORICO_CUSTOS: 'Histórico Custos',   // v10.4
-    ITENS_NOTAS_FISCAIS: 'Itens NF'    // v10.4
+    ITENS_NOTAS_FISCAIS: 'Itens NF',    // v10.4
+    FORNECEDORES: 'Fornecedores'   // v13.0
   },
 
-  // Mapeamento de colunas - ABA PRODUTOS (v12 - Estrutura atualizada)
+  // Mapeamento de colunas - ABA PRODUTOS (v13 - SIMPLIFICADO)
   COLUNAS_PRODUTOS: {
     ID: 1,                       // A - ID
-    CODIGO_FORNECEDOR: 2,        // B - Código Fornecedor (do XML da NF)
-    DESCRICAO_FORNECEDOR: 3,     // C - Descrição Fornecedor (do XML da NF)
-    CODIGO_NEOFORMULA: 4,        // D - Código Neoformula (interno)
-    DESCRICAO_NEOFORMULA: 5,     // E - Descrição Neoformula (interno)
-    TIPO: 6,                     // F - Tipo (Papelaria/Limpeza)
-    CATEGORIA: 7,                // G - Categoria
-    UNIDADE: 8,                  // H - Unidade
-    PRECO_UNITARIO: 9,           // I - Preço Unitário (custo médio)
-    ESTOQUE_MINIMO: 10,          // J - Estoque Mínimo
-    PONTO_PEDIDO: 11,            // K - Ponto de Pedido
-    FORNECEDOR: 12,              // L - Fornecedor Principal
-    IMAGEM_URL: 13,              // M - ImagemURL
-    ATIVO: 14,                   // N - Ativo
-    DATA_CADASTRO: 15,           // O - Data Cadastro
-    NCM: 16,                     // P - NCM (do XML)
-    MAPEAMENTO_CODIGOS: 17       // Q - Mapeamento Códigos JSON (histórico)
+    CODIGO_FORNECEDOR: 2,        // B - Código do Fornecedor (do XML da NF)
+    DESCRICAO_FORNECEDOR: 3,     // C - Descrição do Fornecedor (do XML da NF)
+    FORNECEDOR_ID: 4,            // D - ID do Fornecedor (FK)
+    CODIGO_NEOFORMULA: 5,        // E - Código Neoformula (interno) - OPCIONAL
+    DESCRICAO_NEOFORMULA: 6,     // F - Descrição Neoformula (interno) - OPCIONAL
+    TIPO: 7,                     // G - Tipo (Papelaria/Limpeza)
+    CATEGORIA: 8,                // H - Categoria - OPCIONAL
+    UNIDADE: 9,                  // I - Unidade
+    PRECO_UNITARIO: 10,          // J - Preço Unitário (custo médio)
+    ESTOQUE_MINIMO: 11,          // K - Estoque Mínimo - OPCIONAL
+    PONTO_PEDIDO: 12,            // L - Ponto de Pedido - OPCIONAL
+    IMAGEM_URL: 13,              // M - ImagemURL - OPCIONAL
+    NCM: 14,                     // N - NCM (do XML)
+    ATIVO: 15,                   // O - Ativo
+    DATA_CADASTRO: 16,           // P - Data Cadastro
+    ORIGEM: 17,                  // Q - Origem (MANUAL ou NF)
+    DADOS_COMPLETOS: 18          // R - Dados Completos (SIM/NÃO) - indica se tem dados Neoformula
   },
 
   // Mapeamento de colunas - ABA PEDIDOS
@@ -145,6 +147,24 @@ const CONFIG = {
     DATA_ENTRADA: 14          // N - Data Entrada
   },
 
+  // Mapeamento de colunas - ABA FORNECEDORES (v13.0)
+  COLUNAS_FORNECEDORES: {
+    ID: 1,                    // A - ID
+    NOME: 2,                  // B - Nome/Razão Social
+    NOME_FANTASIA: 3,         // C - Nome Fantasia
+    CNPJ: 4,                  // D - CNPJ
+    TELEFONE: 5,              // E - Telefone
+    EMAIL: 6,                 // F - Email
+    ENDERECO: 7,              // G - Endereço
+    CIDADE: 8,                // H - Cidade
+    ESTADO: 9,                // I - Estado
+    CEP: 10,                  // J - CEP
+    TIPO_PRODUTOS: 11,        // K - Tipo Produtos (Papelaria/Limpeza/Ambos)
+    ATIVO: 12,                // L - Ativo
+    DATA_CADASTRO: 13,        // M - Data Cadastro
+    OBSERVACOES: 14           // N - Observações
+  },
+
   // Status de pedidos permitidos
   STATUS_PEDIDOS: {
     SOLICITADO: 'Solicitado',
@@ -247,9 +267,16 @@ const CONFIG = {
   LOGO_URL: 'https://neoformula.com.br/cdn/shop/files/Logotipo-NeoFormula-Manipulacao-Homeopatia_76b2fa98-5ffa-4cc3-ac0a-6d41e1bc8810.png?height=100&v=1677088468',
 
   // Versão do sistema
-  VERSAO: '12.0',
+  VERSAO: '13.0',
   DATA_VERSAO: '2025-11-14',
   CHANGELOG: [
+    'v13.0 - NOVO FLUXO AUTOMÁTICO: Importar XML → Cadastro automático + Entrada NF',
+    'v13.0 - ABA FORNECEDORES: Nova aba para cadastro de fornecedores',
+    'v13.0 - CRUZAMENTO INTELIGENTE: Sistema cruza produtos NF com cadastrados automaticamente',
+    'v13.0 - CADASTRO SIMPLIFICADO: Produtos via NF cadastrados com dados básicos',
+    'v13.0 - EDIÇÃO POSTERIOR: Gestor completa dados Neoformula depois',
+    'v13.0 - CAMPO ORIGEM: Identifica se produto foi cadastrado manualmente ou via NF',
+    'v13.0 - CAMPO DADOS_COMPLETOS: Indica se produto tem dados Neoformula preenchidos',
     'v12.0 - REESTRUTURAÇÃO COMPLETA: Sistema de NF com duplo código (Fornecedor + Neoformula)',
     'v12.0 - NOVA ESTRUTURA: Produtos agora têm código/descrição do fornecedor E da Neoformula',
     'v12.0 - NOVA FUNCIONALIDADE: Tela de mapeamento pós-upload XML',

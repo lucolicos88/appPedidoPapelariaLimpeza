@@ -2180,15 +2180,15 @@
     </div>
   </div>
 
-  <!-- Modal: Nova Nota Fiscal com Upload XML (v12.0 - Com mapeamento manual) -->
+  <!-- Modal: Nova Nota Fiscal com Upload XML (v13.0 - Processamento AUTOMÁTICO) -->
   <div class="modal" id="modalNovaNF">
-    <div class="modal-content" style="max-width: 1200px;">
+    <div class="modal-content" style="max-width: 800px;">
       <div class="modal-header">
-        <h3 class="modal-title">📄 Nova Nota Fiscal - Carregar XML (v12)</h3>
+        <h3 class="modal-title">📄 Nova Nota Fiscal - Importar XML (v13)</h3>
         <button class="modal-close" onclick="closeModalNF()">&times;</button>
       </div>
 
-      <form id="formNovaNF" onsubmit="submitNovaNFXML(event)">
+      <form id="formNovaNF" onsubmit="return false;">
 
         <!-- Tipo de Produto (OBRIGATÓRIO ANTES DO UPLOAD) -->
         <div class="form-group">
@@ -2204,38 +2204,37 @@
         <!-- Upload de Arquivo XML -->
         <div class="form-group">
           <label class="form-label">Arquivo XML da NF-e *</label>
-          <input type="file" class="form-control" id="nfArquivoXML" accept=".xml" required onchange="processarArquivoXMLv12(event)">
+          <input type="file" class="form-control" id="nfArquivoXML" accept=".xml" required onchange="processarArquivoXMLv13(event)">
           <small style="color: #666;">Faça upload do arquivo XML da nota fiscal eletrônica</small>
         </div>
-
-        <!-- Área de Preview dos Dados da NF -->
-        <div id="nfPreviewArea" style="display: none; margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 5px;">
-          <h4 style="margin-top: 0;">📋 Dados da NF carregados:</h4>
-          <div id="nfDadosBasicos" style="background: white; padding: 10px; border-radius: 5px; margin-bottom: 15px;"></div>
-
-          <h4>📦 Produtos do XML - Preencha os dados Neoformula:</h4>
-          <div id="nfProdutosTable" style="overflow-x: auto;"></div>
-
-          <p style="margin-top: 15px; color: #666;">
-            <strong>ℹ️ Instruções:</strong> Para cada produto, preencha o <strong>Código Neoformula</strong> e a <strong>Descrição Neoformula</strong> (campos internos da empresa).
-            Você também pode adicionar a imagem do produto.
-          </p>
-        </div>
-
-        <!-- Hidden fields para armazenar dados -->
-        <input type="hidden" id="nfDadosParsed">
 
         <!-- Observações -->
         <div class="form-group">
           <label class="form-label">Observações</label>
-          <textarea class="form-control" id="nfObservacoes" rows="3"></textarea>
+          <textarea class="form-control" id="nfObservacoes" rows="3" placeholder="Observações adicionais sobre esta NF (opcional)"></textarea>
         </div>
 
-        <!-- Botões -->
+        <!-- Informações do Fluxo Automático -->
+        <div style="background: #e3f2fd; padding: 15px; border-radius: 5px; border-left: 4px solid #2196F3;">
+          <h4 style="margin: 0 0 10px 0; color: #1976d2;">🤖 Processamento Automático (v13)</h4>
+          <p style="margin: 0; line-height: 1.6; color: #555;">
+            Ao fazer upload do XML, o sistema irá <strong>automaticamente</strong>:
+          </p>
+          <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #555;">
+            <li>Extrair dados da NF (fornecedor, produtos, valores)</li>
+            <li>Buscar ou criar o fornecedor na base</li>
+            <li>Cruzar produtos do XML com produtos já cadastrados</li>
+            <li><strong>Produtos encontrados</strong>: Apenas dar entrada no estoque</li>
+            <li><strong>Produtos novos</strong>: Cadastrar com dados básicos da NF</li>
+            <li>Atualizar estoque e custo médio</li>
+          </ul>
+          <p style="margin: 10px 0 0 0; color: #856404; font-weight: 500;">
+            ⚠️ Produtos novos terão dados básicos. Você pode editá-los depois para adicionar: Código Neoformula, Descrição Neoformula, Categoria, Imagem, etc.
+          </p>
+        </div>
+
+        <!-- Botão Cancelar -->
         <div style="display: flex; gap: 10px; margin-top: 20px;">
-          <button type="submit" class="btn btn-success" style="flex: 1;" id="btnCadastrarNF" disabled>
-            ✅ Processar NF e Cadastrar Produtos
-          </button>
           <button type="button" class="btn btn-secondary" onclick="closeModalNF()" style="flex: 1;">
             ❌ Cancelar
           </button>
@@ -5766,9 +5765,9 @@ function renderMovimentacoesTable(movimentacoes) {
     }
 
     /**
-     * Processa arquivo XML selecionado v12
+     * Processa arquivo XML selecionado v13 - FLUXO AUTOMÁTICO
      */
-    function processarArquivoXMLv12(event) {
+    function processarArquivoXMLv13(event) {
       const file = event.target.files[0];
 
       if (!file) return;
@@ -5776,6 +5775,12 @@ function renderMovimentacoesTable(movimentacoes) {
       const tipoProdutos = document.getElementById('nfTipoProdutos').value;
       if (!tipoProdutos) {
         showError('Selecione o tipo de produtos antes de fazer upload do XML');
+        document.getElementById('nfArquivoXML').value = '';
+        return;
+      }
+
+      // Confirmar processamento automático
+      if (!confirm(`Processar NF automaticamente?\n\nO sistema irá:\n✓ Extrair dados do XML\n✓ Buscar/criar fornecedor\n✓ Cruzar produtos com cadastrados\n✓ Cadastrar produtos novos (dados básicos)\n✓ Dar entrada no estoque\n\nVocê poderá editar os produtos depois para completar dados Neoformula.`)) {
         document.getElementById('nfArquivoXML').value = '';
         return;
       }
@@ -5788,16 +5793,19 @@ function renderMovimentacoesTable(movimentacoes) {
         const xmlContent = e.target.result;
         const xmlBase64 = btoa(unescape(encodeURIComponent(xmlContent)));
 
-        // Enviar para backend para parse
+        const observacoes = document.getElementById('nfObservacoes').value || '';
+
+        // Enviar para backend para processamento AUTOMÁTICO
         google.script.run
           .withSuccessHandler(function(response) {
             hideLoading();
 
             if (response && response.success) {
-              dadosNFGlobal = response.dadosNF;
-              exibirTelaMapeamentoV12(response.dadosNF, tipoProdutos);
+              showSuccess(response.mensagem);
+              closeModalNF();
+              loadNotasFiscais();
             } else {
-              showError('Erro ao processar XML: ' + (response ? response.error : 'Erro desconhecido'));
+              showError('Erro ao processar NF: ' + (response ? response.error : 'Erro desconhecido'));
               document.getElementById('nfArquivoXML').value = '';
             }
           })
@@ -5806,7 +5814,11 @@ function renderMovimentacoesTable(movimentacoes) {
             showError('Erro: ' + error.message);
             document.getElementById('nfArquivoXML').value = '';
           })
-          .uploadEProcessarXMLNF(xmlBase64, file.name);
+          .processarNFv13Automatico({
+            xmlBase64: xmlBase64,
+            tipoProdutos: tipoProdutos,
+            observacoes: observacoes
+          });
       };
 
       reader.readAsText(file);

@@ -100,7 +100,7 @@ function setupPlanilha(forcarReconfiguracao = false) {
       }
     }
 
-    Logger.log('🚀 Iniciando configuração da planilha v10.1...');
+    Logger.log('🚀 Iniciando configuração da planilha v13.0...');
 
     // 1. Criar aba de Configurações
     criarAbaConfiguracoes(ss);
@@ -110,19 +110,23 @@ function setupPlanilha(forcarReconfiguracao = false) {
     criarAbaUsuarios(ss);
     Logger.log('✅ Aba Usuários criada');
 
-    // 3. Criar aba de Produtos
+    // 3. Criar aba de Fornecedores (v13.0)
+    criarAbaFornecedores(ss);
+    Logger.log('✅ Aba Fornecedores criada');
+
+    // 4. Criar aba de Produtos
     criarAbaProdutos(ss);
     Logger.log('✅ Aba Produtos criada');
 
-    // 4. Criar aba de Pedidos
+    // 5. Criar aba de Pedidos
     criarAbaPedidos(ss);
     Logger.log('✅ Aba Pedidos criada');
 
-    // 5. Criar aba de Estoque
+    // 6. Criar aba de Estoque
     criarAbaEstoque(ss);
     Logger.log('✅ Aba Estoque criada');
 
-    // 6. Criar aba de Movimentações de Estoque
+    // 7. Criar aba de Movimentações de Estoque
     criarAbaMovimentacoesEstoque(ss);
     Logger.log('✅ Aba Movimentações Estoque criada');
 
@@ -304,7 +308,50 @@ function criarAbaUsuarios(ss) {
 }
 
 /**
- * Cria aba de Produtos (v12.0 - Estrutura com duplo código)
+ * Cria aba de Fornecedores (v13.0)
+ */
+function criarAbaFornecedores(ss) {
+  let aba = ss.getSheetByName(CONFIG.ABAS.FORNECEDORES);
+
+  if (aba) {
+    Logger.log('⚠️ Aba Fornecedores já existe, mantendo dados...');
+    return;
+  }
+
+  aba = ss.insertSheet(CONFIG.ABAS.FORNECEDORES);
+
+  // Cabeçalhos
+  const headers = [
+    'ID',                    // A
+    'Nome',                  // B - Razão Social
+    'Nome Fantasia',         // C
+    'CNPJ',                  // D
+    'Telefone',              // E
+    'Email',                 // F
+    'Endereço',              // G
+    'Cidade',                // H
+    'Estado',                // I
+    'CEP',                   // J
+    'Tipo Produtos',         // K - Papelaria/Limpeza/Ambos
+    'Ativo',                 // L
+    'Data Cadastro',         // M
+    'Observações'            // N
+  ];
+  aba.getRange(1, 1, 1, headers.length).setValues([headers]);
+
+  // Formatação
+  aba.setFrozenRows(1);
+  aba.getRange(1, 1, 1, headers.length)
+    .setBackground(CONFIG.CORES.PRIMARY)
+    .setFontColor('#FFFFFF')
+    .setFontWeight('bold')
+    .setHorizontalAlignment('center');
+
+  aba.autoResizeColumns(1, headers.length);
+}
+
+/**
+ * Cria aba de Produtos (v13.0 - Estrutura simplificada com FK Fornecedor)
  */
 function criarAbaProdutos(ss) {
   let aba = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
@@ -316,25 +363,26 @@ function criarAbaProdutos(ss) {
 
   aba = ss.insertSheet(CONFIG.ABAS.PRODUCTS);
 
-  // Cabeçalhos v12 - Nova estrutura com código/descrição do fornecedor + Neoformula
+  // Cabeçalhos v13 - Estrutura simplificada
   const headers = [
     'ID',                       // A
     'Código Fornecedor',        // B - Do XML da NF
     'Descrição Fornecedor',     // C - Do XML da NF
-    'Código Neoformula',        // D - Preenchido pelo gestor
-    'Descrição Neoformula',     // E - Preenchido pelo gestor
-    'Tipo',                     // F - Papelaria/Limpeza
-    'Categoria',                // G
-    'Unidade',                  // H
-    'Preço Unitário',           // I - Custo médio
-    'Estoque Mínimo',           // J
-    'Ponto de Pedido',          // K
-    'Fornecedor',               // L
-    'ImagemURL',                // M
-    'Ativo',                    // N
-    'Data Cadastro',            // O
-    'NCM',                      // P - Do XML
-    'Mapeamento Códigos'        // Q - JSON histórico
+    'Fornecedor ID',            // D - FK para aba Fornecedores
+    'Código Neoformula',        // E - OPCIONAL - Preenchido depois
+    'Descrição Neoformula',     // F - OPCIONAL - Preenchido depois
+    'Tipo',                     // G - Papelaria/Limpeza
+    'Categoria',                // H - OPCIONAL
+    'Unidade',                  // I
+    'Preço Unitário',           // J - Custo médio
+    'Estoque Mínimo',           // K - OPCIONAL
+    'Ponto de Pedido',          // L - OPCIONAL
+    'ImagemURL',                // M - OPCIONAL
+    'NCM',                      // N - Do XML
+    'Ativo',                    // O
+    'Data Cadastro',            // P
+    'Origem',                   // Q - MANUAL ou NF
+    'Dados Completos'           // R - SIM/NÃO
   ];
   aba.getRange(1, 1, 1, headers.length).setValues([headers]);
 
