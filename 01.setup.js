@@ -150,21 +150,13 @@ function setupPlanilha(forcarReconfiguracao = false) {
     criarAbaItensNotasFiscais(ss);
     Logger.log('✅ Aba Itens NF criada');
 
-    // 12. Popular com dados de teste (APENAS se for primeira configuração)
-    if (!jaConfigurado) {
-      popularDadosTeste(ss);
-      Logger.log('✅ Dados de teste adicionados');
-    } else {
-      Logger.log('⚠️ Dados de teste NÃO adicionados (reconfiguração)');
-    }
-
-    // 10. Aplicar formatação
+    // 12. Aplicar formatação
     aplicarFormatacao(ss);
     Logger.log('✅ Formatação aplicada');
 
     Logger.log('');
-    Logger.log('🎉 CONFIGURAÇÃO v10.1 CONCLUÍDA COM SUCESSO!');
-    Logger.log('📊 Sistema de Pedidos pronto para uso');
+    Logger.log('🎉 CONFIGURAÇÃO v13.0 CONCLUÍDA COM SUCESSO!');
+    Logger.log('📊 Sistema pronto para uso - SEM dados fictícios');
     Logger.log('');
 
     const tipoConfig = jaConfigurado ? 'Reconfigurada' : 'Configurada';
@@ -172,11 +164,17 @@ function setupPlanilha(forcarReconfiguracao = false) {
     // Exibir alerta apenas se tiver UI disponível
     if (ui) {
       ui.alert(
-        `✅ Sistema v10.1 ${tipoConfig}!`,
+        `✅ Sistema v13.0 ${tipoConfig}!`,
         `A planilha foi ${tipoConfig.toLowerCase()} com sucesso.\n\n` +
+        '✅ Nova estrutura v13 criada:\n' +
+        '   • Aba Fornecedores\n' +
+        '   • Produtos com duplo código\n' +
+        '   • Fluxo automático de NF\n\n' +
         'Próximos passos:\n' +
         '1. Configure o ID da pasta do Drive em Configurações\n' +
-        '2. Menu: Sistema de Pedidos → Criar Estrutura de Pastas\n' +
+        '2. Importe sua primeira NF via XML\n' +
+        '3. Complete dados dos produtos conforme necessário\n\n' +
+        '⚠️ DADOS FICTÍCIOS REMOVIDOS - Planilha limpa para uso real',
         '3. Configure o email do gestor\n' +
         '4. Implante como Web App (Extensões > Apps Script > Implantar)',
         ui.ButtonSet.OK
@@ -664,7 +662,16 @@ function criarEstruturaPastas() {
 /**
  * Popular planilha com dados de teste (v6.0)
  */
+/**
+ * FUNÇÃO DESATIVADA - Dados fictícios removidos na v13
+ * Planilha agora é criada limpa para uso real
+ */
 function popularDadosTeste(ss) {
+  Logger.log('⚠️ popularDadosTeste DESATIVADA - Planilha limpa (v13)');
+  return; // Não faz nada
+
+  // CÓDIGO ANTIGO COMENTADO:
+  /*
   Logger.log('📝 Adicionando dados de teste v6.0...');
   
   // Produtos de teste
@@ -858,11 +865,12 @@ function popularDadosTeste(ss) {
   ];
   
   abaMovimentacoes.getRange(2, 1, movimentacoesTeste.length, 10).setValues(movimentacoesTeste);
-  
+
   Logger.log('✅ Dados de teste adicionados:');
   Logger.log(`   - ${produtosTeste.length} produtos`);
   Logger.log(`   - ${pedidosTeste.length} pedidos`);
   Logger.log(`   - ${movimentacoesTeste.length} movimentações de estoque`);
+  */
 }
 
 /**

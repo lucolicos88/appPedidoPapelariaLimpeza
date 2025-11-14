@@ -989,23 +989,28 @@ function buscarProdutos(termo, tipo) {
       return { success: true, produtos: [] };
     }
 
-    const dados = abaProdutos.getRange(2, 1, lastRow - 1, CONFIG.COLUNAS_PRODUTOS.IMAGEM_URL).getValues();
+    const dados = abaProdutos.getRange(2, 1, lastRow - 1, CONFIG.COLUNAS_PRODUTOS.DADOS_COMPLETOS).getValues();
 
     const termoLower = termo ? termo.toLowerCase() : '';
 
     const produtosFiltrados = dados
       .map((row, index) => ({
         id: row[CONFIG.COLUNAS_PRODUTOS.ID - 1],
-        codigo: row[CONFIG.COLUNAS_PRODUTOS.CODIGO - 1],
-        nome: row[CONFIG.COLUNAS_PRODUTOS.NOME - 1],
+        codigoFornecedor: row[CONFIG.COLUNAS_PRODUTOS.CODIGO_FORNECEDOR - 1],
+        descricaoFornecedor: row[CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1],
+        codigoNeoformula: row[CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] || '',
+        descricaoNeoformula: row[CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] || '',
+        // Usar descrição Neoformula se existir, senão usar descrição fornecedor
+        nome: row[CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] || row[CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1],
+        codigo: row[CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] || row[CONFIG.COLUNAS_PRODUTOS.CODIGO_FORNECEDOR - 1],
         tipo: row[CONFIG.COLUNAS_PRODUTOS.TIPO - 1],
         categoria: row[CONFIG.COLUNAS_PRODUTOS.CATEGORIA - 1],
         unidade: row[CONFIG.COLUNAS_PRODUTOS.UNIDADE - 1],
         precoUnitario: row[CONFIG.COLUNAS_PRODUTOS.PRECO_UNITARIO - 1] || 0,
         estoqueMinimo: row[CONFIG.COLUNAS_PRODUTOS.ESTOQUE_MINIMO - 1],
-        fornecedor: row[CONFIG.COLUNAS_PRODUTOS.FORNECEDOR - 1],
         imagemUrl: row[CONFIG.COLUNAS_PRODUTOS.IMAGEM_URL - 1],
-        ativo: row[CONFIG.COLUNAS_PRODUTOS.ATIVO - 1]
+        ativo: row[CONFIG.COLUNAS_PRODUTOS.ATIVO - 1],
+        dadosCompletos: row[CONFIG.COLUNAS_PRODUTOS.DADOS_COMPLETOS - 1]
       }))
       .filter(p => {
         // Filtrar por tipo se especificado
@@ -1016,6 +1021,8 @@ function buscarProdutos(termo, tipo) {
           const match =
             p.nome.toLowerCase().includes(termoLower) ||
             p.codigo.toLowerCase().includes(termoLower) ||
+            (p.descricaoFornecedor && p.descricaoFornecedor.toLowerCase().includes(termoLower)) ||
+            (p.codigoFornecedor && p.codigoFornecedor.toLowerCase().includes(termoLower)) ||
             (p.categoria && p.categoria.toLowerCase().includes(termoLower));
           if (!match) return false;
         }

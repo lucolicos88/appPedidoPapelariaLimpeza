@@ -1,19 +1,22 @@
 /**
  * ========================================
- * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v8.0
+ * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v13.0
  * Módulo: Gerenciamento de Produtos
  * ========================================
  *
+ * NOVIDADES v13.0:
+ * - Estrutura com 18 colunas (dual code: Fornecedor + Neoformula)
+ * - Campo FORNECEDOR_ID (FK para aba Fornecedores)
+ * - Campo ORIGEM (MANUAL ou NF)
+ * - Campo DADOS_COMPLETOS (SIM ou NÃO)
+ * - Produtos podem ser cadastrados via NF com dados parciais
+ * - Gestor completa dados Neoformula posteriormente
+ *
  * NOVIDADES v8.0:
  * - Uso de CONFIG para mapeamento de colunas
- * - ImagemURL na coluna K (índice 11)
- * - Compatibilidade total com estrutura v8.0
- *
- * NOVIDADES v6.0:
+ * - ImagemURL na coluna M (índice 13)
  * - Upload de imagens com preview
- * - Renomeação inteligente de arquivos
  * - Estoque mínimo e ponto de pedido
- * - Histórico de produtos
  *
  * MELHORIAS v6.0.1:
  * - Cache de produtos para otimização
@@ -29,62 +32,71 @@ var CACHE_PRODUTOS = CACHE_PRODUTOS || {};
 var CACHE_PRODUTOS_TTL = 3 * 60 * 1000; // 3 minutos
 
 /**
- * Lista produtos com filtros v6.0
+ * Lista produtos com filtros v13.0
  */
 function listarProdutos(filtros) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
-    
+
     if (!abaProdutos) {
       return { success: false, error: 'Aba de produtos não encontrada' };
     }
-    
+
     const dados = abaProdutos.getDataRange().getValues();
     const produtos = [];
-    
+
     for (let i = 1; i < dados.length; i++) {
       if (!dados[i][0]) continue; // Pular linhas vazias
 
       const produto = {
         id: dados[i][CONFIG.COLUNAS_PRODUTOS.ID - 1],
-        codigo: dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO - 1],
-        nome: dados[i][CONFIG.COLUNAS_PRODUTOS.NOME - 1],
+        codigoFornecedor: dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_FORNECEDOR - 1] || '',
+        descricaoFornecedor: dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1] || '',
+        fornecedorId: dados[i][CONFIG.COLUNAS_PRODUTOS.FORNECEDOR_ID - 1] || '',
+        codigoNeoformula: dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] || '',
+        descricaoNeoformula: dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] || '',
         tipo: dados[i][CONFIG.COLUNAS_PRODUTOS.TIPO - 1],
-        categoria: dados[i][CONFIG.COLUNAS_PRODUTOS.CATEGORIA - 1],
+        categoria: dados[i][CONFIG.COLUNAS_PRODUTOS.CATEGORIA - 1] || '',
         unidade: dados[i][CONFIG.COLUNAS_PRODUTOS.UNIDADE - 1],
-        precoUnitario: dados[i][CONFIG.COLUNAS_PRODUTOS.PRECO_UNITARIO - 1],
+        precoUnitario: dados[i][CONFIG.COLUNAS_PRODUTOS.PRECO_UNITARIO - 1] || 0,
         estoqueMinimo: dados[i][CONFIG.COLUNAS_PRODUTOS.ESTOQUE_MINIMO - 1] || 0,
         pontoPedido: dados[i][CONFIG.COLUNAS_PRODUTOS.PONTO_PEDIDO - 1] || 0,
-        fornecedor: dados[i][CONFIG.COLUNAS_PRODUTOS.FORNECEDOR - 1],
         imagemURL: dados[i][CONFIG.COLUNAS_PRODUTOS.IMAGEM_URL - 1] || '',
+        ncm: dados[i][CONFIG.COLUNAS_PRODUTOS.NCM - 1] || '',
         ativo: dados[i][CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] !== undefined ? dados[i][CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] : 'Sim',
-        dataCadastro: dados[i][CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO - 1]
+        dataCadastro: dados[i][CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO - 1],
+        origem: dados[i][CONFIG.COLUNAS_PRODUTOS.ORIGEM - 1] || 'MANUAL',
+        dadosCompletos: dados[i][CONFIG.COLUNAS_PRODUTOS.DADOS_COMPLETOS - 1] || 'SIM'
       };
-      
+
       // Aplicar filtros
       if (filtros) {
         if (filtros.tipo && produto.tipo !== filtros.tipo) continue;
         if (filtros.categoria && produto.categoria !== filtros.categoria) continue;
         if (filtros.ativo !== undefined && produto.ativo !== filtros.ativo) continue;
+        if (filtros.origem && produto.origem !== filtros.origem) continue;
+        if (filtros.dadosCompletos && produto.dadosCompletos !== filtros.dadosCompletos) continue;
         if (filtros.busca) {
           const busca = filtros.busca.toLowerCase();
-          const encontrado = 
-            produto.nome.toLowerCase().includes(busca) ||
-            produto.codigo.toLowerCase().includes(busca) ||
-            produto.categoria.toLowerCase().includes(busca);
+          const encontrado =
+            (produto.descricaoNeoformula && produto.descricaoNeoformula.toLowerCase().includes(busca)) ||
+            (produto.descricaoFornecedor && produto.descricaoFornecedor.toLowerCase().includes(busca)) ||
+            (produto.codigoNeoformula && produto.codigoNeoformula.toLowerCase().includes(busca)) ||
+            (produto.codigoFornecedor && produto.codigoFornecedor.toLowerCase().includes(busca)) ||
+            (produto.categoria && produto.categoria.toLowerCase().includes(busca));
           if (!encontrado) continue;
         }
       }
-      
+
       produtos.push(produto);
     }
-    
+
     return {
       success: true,
       produtos: produtos
     };
-    
+
   } catch (error) {
     Logger.log('❌ Erro ao listar produtos: ' + error.message);
     return {
@@ -95,7 +107,7 @@ function listarProdutos(filtros) {
 }
 
 /**
- * Busca produto por ID ou código (v6.0.1 - COM CACHE)
+ * Busca produto por ID ou código Neoformula (v13.0 - COM CACHE)
  */
 function buscarProduto(identificador) {
   try {
@@ -132,36 +144,44 @@ function buscarProduto(identificador) {
       return { success: false, error: 'Produto não encontrado' };
     }
 
-    const dados = abaProdutos.getRange(2, 1, lastRow - 1, CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO).getValues();
+    const dados = abaProdutos.getRange(2, 1, lastRow - 1, CONFIG.COLUNAS_PRODUTOS.DADOS_COMPLETOS).getValues();
 
     for (let i = 0; i < dados.length; i++) {
+      // Buscar por ID ou código Neoformula
       if (dados[i][CONFIG.COLUNAS_PRODUTOS.ID - 1] === identificadorStr ||
-          dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO - 1] === identificadorStr) {
+          dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] === identificadorStr) {
         const produto = {
           id: String(dados[i][CONFIG.COLUNAS_PRODUTOS.ID - 1]),
-          codigo: String(dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO - 1]),
-          nome: String(dados[i][CONFIG.COLUNAS_PRODUTOS.NOME - 1]),
+          codigoFornecedor: String(dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_FORNECEDOR - 1] || ''),
+          descricaoFornecedor: String(dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1] || ''),
+          fornecedorId: String(dados[i][CONFIG.COLUNAS_PRODUTOS.FORNECEDOR_ID - 1] || ''),
+          codigoNeoformula: String(dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] || ''),
+          descricaoNeoformula: String(dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] || ''),
           tipo: String(dados[i][CONFIG.COLUNAS_PRODUTOS.TIPO - 1]),
-          categoria: String(dados[i][CONFIG.COLUNAS_PRODUTOS.CATEGORIA - 1]),
+          categoria: String(dados[i][CONFIG.COLUNAS_PRODUTOS.CATEGORIA - 1] || ''),
           unidade: String(dados[i][CONFIG.COLUNAS_PRODUTOS.UNIDADE - 1]),
           precoUnitario: parseFloat(dados[i][CONFIG.COLUNAS_PRODUTOS.PRECO_UNITARIO - 1]) || 0,
           estoqueMinimo: parseInt(dados[i][CONFIG.COLUNAS_PRODUTOS.ESTOQUE_MINIMO - 1]) || 0,
           pontoPedido: parseInt(dados[i][CONFIG.COLUNAS_PRODUTOS.PONTO_PEDIDO - 1]) || 0,
-          fornecedor: String(dados[i][CONFIG.COLUNAS_PRODUTOS.FORNECEDOR - 1] || ''),
           imagemURL: String(dados[i][CONFIG.COLUNAS_PRODUTOS.IMAGEM_URL - 1] || ''),
+          ncm: String(dados[i][CONFIG.COLUNAS_PRODUTOS.NCM - 1] || ''),
           ativo: String(dados[i][CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] !== undefined ? dados[i][CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] : 'Sim'),
-          dataCadastro: dados[i][CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO - 1]
+          dataCadastro: dados[i][CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO - 1],
+          origem: String(dados[i][CONFIG.COLUNAS_PRODUTOS.ORIGEM - 1] || 'MANUAL'),
+          dadosCompletos: String(dados[i][CONFIG.COLUNAS_PRODUTOS.DADOS_COMPLETOS - 1] || 'SIM')
         };
 
-        // Armazenar no cache (tanto por ID quanto por código)
+        // Armazenar no cache (por ID e por código Neoformula)
         CACHE_PRODUTOS[produto.id] = {
           data: produto,
           timestamp: agora
         };
-        CACHE_PRODUTOS[produto.codigo] = {
-          data: produto,
-          timestamp: agora
-        };
+        if (produto.codigoNeoformula) {
+          CACHE_PRODUTOS[produto.codigoNeoformula] = {
+            data: produto,
+            timestamp: agora
+          };
+        }
 
         return {
           success: true,
@@ -203,7 +223,7 @@ function limparCacheProdutos(identificador) {
  * Cadastra novo produto (v6.0 - com suporte a imagem)
  */
 /**
- * Cadastrar Produto v12.0 - com duplo código (Fornecedor + Neoformula)
+ * Cadastrar Produto v13.0 - MANUAL (com dados completos)
  */
 function cadastrarProduto(dadosProduto) {
   try {
@@ -217,7 +237,7 @@ function cadastrarProduto(dadosProduto) {
       };
     }
 
-    // Validar dados obrigatórios (v12 - novos campos)
+    // Validar dados obrigatórios (v13)
     if (!dadosProduto.codigoFornecedor || !dadosProduto.descricaoFornecedor) {
       return {
         success: false,
@@ -239,6 +259,13 @@ function cadastrarProduto(dadosProduto) {
       };
     }
 
+    if (!dadosProduto.fornecedorId) {
+      return {
+        success: false,
+        error: 'Fornecedor é obrigatório. Cadastre o fornecedor primeiro.'
+      };
+    }
+
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
 
@@ -249,7 +276,8 @@ function cadastrarProduto(dadosProduto) {
     // Verificar se código Neoformula já existe
     const dados = abaProdutos.getDataRange().getValues();
     for (let i = 1; i < dados.length; i++) {
-      if (dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] === dadosProduto.codigoNeoformula) {
+      const codigoExistente = dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1];
+      if (codigoExistente && codigoExistente === dadosProduto.codigoNeoformula) {
         return {
           success: false,
           error: 'Código Neoformula já existe'
@@ -279,25 +307,26 @@ function cadastrarProduto(dadosProduto) {
       }
     }
 
-    // Adicionar produto usando CONFIG v12
+    // Adicionar produto usando CONFIG v13
     const novoProduto = [];
     novoProduto[CONFIG.COLUNAS_PRODUTOS.ID - 1] = id;
     novoProduto[CONFIG.COLUNAS_PRODUTOS.CODIGO_FORNECEDOR - 1] = dadosProduto.codigoFornecedor;
     novoProduto[CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1] = dadosProduto.descricaoFornecedor;
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.FORNECEDOR_ID - 1] = dadosProduto.fornecedorId; // v13
     novoProduto[CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] = dadosProduto.codigoNeoformula;
     novoProduto[CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] = dadosProduto.descricaoNeoformula;
     novoProduto[CONFIG.COLUNAS_PRODUTOS.TIPO - 1] = dadosProduto.tipo;
     novoProduto[CONFIG.COLUNAS_PRODUTOS.CATEGORIA - 1] = dadosProduto.categoria || '';
     novoProduto[CONFIG.COLUNAS_PRODUTOS.UNIDADE - 1] = dadosProduto.unidade || 'UN';
     novoProduto[CONFIG.COLUNAS_PRODUTOS.PRECO_UNITARIO - 1] = dadosProduto.precoUnitario || 0;
-    novoProduto[CONFIG.COLUNAS_PRODUTOS.ESTOQUE_MINIMO - 1] = dadosProduto.estoqueMinimo || 0;
-    novoProduto[CONFIG.COLUNAS_PRODUTOS.PONTO_PEDIDO - 1] = dadosProduto.pontoPedido || 0;
-    novoProduto[CONFIG.COLUNAS_PRODUTOS.FORNECEDOR - 1] = dadosProduto.fornecedor || '';
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.ESTOQUE_MINIMO - 1] = dadosProduto.estoqueMinimo || '';
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.PONTO_PEDIDO - 1] = dadosProduto.pontoPedido || '';
     novoProduto[CONFIG.COLUNAS_PRODUTOS.IMAGEM_URL - 1] = imagemURL;
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.NCM - 1] = dadosProduto.ncm || '';
     novoProduto[CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] = 'Sim';
     novoProduto[CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO - 1] = new Date();
-    novoProduto[CONFIG.COLUNAS_PRODUTOS.NCM - 1] = dadosProduto.ncm || '';
-    novoProduto[CONFIG.COLUNAS_PRODUTOS.MAPEAMENTO_CODIGOS - 1] = '';
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.ORIGEM - 1] = 'MANUAL'; // v13
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.DADOS_COMPLETOS - 1] = 'SIM'; // v13 - produto manual tem dados completos
 
     abaProdutos.appendRow(novoProduto);
 
@@ -336,12 +365,12 @@ function cadastrarProduto(dadosProduto) {
 }
 
 /**
- * Atualiza dados de um produto (Core - v10.1)
+ * Atualiza dados de um produto (v13.0)
  */
 function atualizarProdutoCore(produtoId, dadosAtualizados) {
   try {
     const email = Session.getActiveUser().getEmail();
-    
+
     // Verificar permissão
     if (!verificarPermissao(email, CONFIG.PERMISSOES.GESTOR)) {
       return {
@@ -349,33 +378,42 @@ function atualizarProdutoCore(produtoId, dadosAtualizados) {
         error: 'Permissão negada. Somente gestores podem atualizar produtos.'
       };
     }
-    
+
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
-    
+
     if (!abaProdutos) {
       return { success: false, error: 'Aba de produtos não encontrada' };
     }
-    
+
     const dados = abaProdutos.getDataRange().getValues();
 
     // Procurar produto
     for (let i = 1; i < dados.length; i++) {
       if (dados[i][CONFIG.COLUNAS_PRODUTOS.ID - 1] === produtoId) {
-        // Atualizar campos usando CONFIG
-        if (dadosAtualizados.codigo) {
-          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.CODIGO).setValue(dadosAtualizados.codigo);
+        // Atualizar campos usando CONFIG v13
+        if (dadosAtualizados.codigoFornecedor !== undefined) {
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.CODIGO_FORNECEDOR).setValue(dadosAtualizados.codigoFornecedor);
         }
-        if (dadosAtualizados.nome) {
-          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.NOME).setValue(dadosAtualizados.nome);
+        if (dadosAtualizados.descricaoFornecedor !== undefined) {
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR).setValue(dadosAtualizados.descricaoFornecedor);
         }
-        if (dadosAtualizados.tipo) {
+        if (dadosAtualizados.fornecedorId !== undefined) {
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.FORNECEDOR_ID).setValue(dadosAtualizados.fornecedorId);
+        }
+        if (dadosAtualizados.codigoNeoformula !== undefined) {
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA).setValue(dadosAtualizados.codigoNeoformula);
+        }
+        if (dadosAtualizados.descricaoNeoformula !== undefined) {
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA).setValue(dadosAtualizados.descricaoNeoformula);
+        }
+        if (dadosAtualizados.tipo !== undefined) {
           abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.TIPO).setValue(dadosAtualizados.tipo);
         }
-        if (dadosAtualizados.categoria) {
+        if (dadosAtualizados.categoria !== undefined) {
           abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.CATEGORIA).setValue(dadosAtualizados.categoria);
         }
-        if (dadosAtualizados.unidade) {
+        if (dadosAtualizados.unidade !== undefined) {
           abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.UNIDADE).setValue(dadosAtualizados.unidade);
         }
         if (dadosAtualizados.precoUnitario !== undefined) {
@@ -387,8 +425,11 @@ function atualizarProdutoCore(produtoId, dadosAtualizados) {
         if (dadosAtualizados.pontoPedido !== undefined) {
           abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.PONTO_PEDIDO).setValue(dadosAtualizados.pontoPedido);
         }
-        if (dadosAtualizados.fornecedor) {
-          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.FORNECEDOR).setValue(dadosAtualizados.fornecedor);
+        if (dadosAtualizados.ncm !== undefined) {
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.NCM).setValue(dadosAtualizados.ncm);
+        }
+        if (dadosAtualizados.ativo !== undefined) {
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.ATIVO).setValue(dadosAtualizados.ativo);
         }
 
         // Atualizar imagem se fornecida
@@ -398,7 +439,7 @@ function atualizarProdutoCore(produtoId, dadosAtualizados) {
             fileName: dadosAtualizados.imagemFileName || 'produto.jpg',
             mimeType: dadosAtualizados.imagemMimeType || 'image/jpeg',
             produtoId: produtoId,
-            produtoNome: dadosAtualizados.nome || dados[i][CONFIG.COLUNAS_PRODUTOS.NOME - 1],
+            produtoNome: dadosAtualizados.descricaoNeoformula || dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] || dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1],
             tipo: dadosAtualizados.tipo || dados[i][CONFIG.COLUNAS_PRODUTOS.TIPO - 1]
           });
 
@@ -407,12 +448,26 @@ function atualizarProdutoCore(produtoId, dadosAtualizados) {
           }
         }
 
-        if (dadosAtualizados.ativo !== undefined) {
-          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.ATIVO).setValue(dadosAtualizados.ativo);
+        // IMPORTANTE: Atualizar DADOS_COMPLETOS se campos Neoformula foram preenchidos
+        const codigoNeo = dadosAtualizados.codigoNeoformula !== undefined ?
+          dadosAtualizados.codigoNeoformula :
+          dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1];
+        const descNeo = dadosAtualizados.descricaoNeoformula !== undefined ?
+          dadosAtualizados.descricaoNeoformula :
+          dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1];
+
+        if (codigoNeo && descNeo) {
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.DADOS_COMPLETOS).setValue('SIM');
+        } else {
+          abaProdutos.getRange(i + 1, CONFIG.COLUNAS_PRODUTOS.DADOS_COMPLETOS).setValue('NÃO');
         }
 
+        // Limpar cache
+        limparCacheProdutos(produtoId);
+
         // Registrar log
-        registrarLog('PRODUTO_ATUALIZADO', `Produto ${dados[i][CONFIG.COLUNAS_PRODUTOS.NOME - 1]} atualizado`, 'SUCESSO');
+        const nomeProduto = descNeo || dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1];
+        registrarLog('PRODUTO_ATUALIZADO', `Produto ${nomeProduto} atualizado`, 'SUCESSO');
 
         return {
           success: true,
@@ -420,12 +475,12 @@ function atualizarProdutoCore(produtoId, dadosAtualizados) {
         };
       }
     }
-    
+
     return {
       success: false,
       error: 'Produto não encontrado'
     };
-    
+
   } catch (error) {
     Logger.log('❌ Erro ao atualizar produto: ' + error.message);
     return {
@@ -494,29 +549,31 @@ function exportarProdutosCSV() {
 }
 
 /**
- * Obtém análise de produtos (NOVO v6.0)
+ * Obtém análise de produtos (v13.0)
  */
 function getAnaliseProdutos() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
     const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
-    
+
     if (!abaProdutos || !abaEstoque) {
       return { success: false, error: 'Abas não encontradas' };
     }
-    
+
     const dadosProdutos = abaProdutos.getDataRange().getValues();
     const dadosEstoque = abaEstoque.getDataRange().getValues();
-    
+
     let totalProdutos = 0;
     let produtosAtivos = 0;
     let produtosEstoqueBaixo = 0;
     let produtosPontoPedido = 0;
     let valorTotalEstoque = 0;
-    
+    let produtosDadosCompletos = 0;
+    let produtosDadosIncompletos = 0;
+
     const produtosEmAlerta = [];
-    
+
     for (let i = 1; i < dadosProdutos.length; i++) {
       if (!dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ID - 1]) continue;
 
@@ -526,8 +583,18 @@ function getAnaliseProdutos() {
         produtosAtivos++;
       }
 
+      // Contar dados completos vs incompletos
+      const dadosCompletos = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.DADOS_COMPLETOS - 1];
+      if (dadosCompletos === 'SIM') {
+        produtosDadosCompletos++;
+      } else {
+        produtosDadosIncompletos++;
+      }
+
       const produtoId = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ID - 1];
-      const produtoNome = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.NOME - 1];
+      // Priorizar descrição Neoformula, se não existir usar descrição Fornecedor
+      const produtoNome = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] ||
+                          dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1];
       const estoqueMinimo = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ESTOQUE_MINIMO - 1] || 0;
       const pontoPedido = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.PONTO_PEDIDO - 1] || 0;
       const precoUnitario = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.PRECO_UNITARIO - 1] || 0;
@@ -540,9 +607,9 @@ function getAnaliseProdutos() {
           break;
         }
       }
-      
+
       valorTotalEstoque += qtdAtual * precoUnitario;
-      
+
       // Verificar alertas
       if (qtdAtual <= estoqueMinimo && estoqueMinimo > 0) {
         produtosEstoqueBaixo++;
@@ -553,7 +620,7 @@ function getAnaliseProdutos() {
           tipo: 'ESTOQUE_BAIXO'
         });
       }
-      
+
       if (qtdAtual <= pontoPedido && pontoPedido > 0) {
         produtosPontoPedido++;
         if (!produtosEmAlerta.find(p => p.nome === produtoNome)) {
@@ -566,7 +633,7 @@ function getAnaliseProdutos() {
         }
       }
     }
-    
+
     return {
       success: true,
       analise: {
@@ -575,10 +642,12 @@ function getAnaliseProdutos() {
         produtosEstoqueBaixo: produtosEstoqueBaixo,
         produtosPontoPedido: produtosPontoPedido,
         valorTotalEstoque: valorTotalEstoque,
+        produtosDadosCompletos: produtosDadosCompletos,
+        produtosDadosIncompletos: produtosDadosIncompletos,
         produtosEmAlerta: produtosEmAlerta
       }
     };
-    
+
   } catch (error) {
     Logger.log('❌ Erro ao obter análise de produtos: ' + error.message);
     return {
@@ -589,7 +658,7 @@ function getAnaliseProdutos() {
 }
 
 /**
- * Obtém apenas produtos em alerta (v10.1 - NOVO)
+ * Obtém apenas produtos em alerta (v13.0)
  * Usado na aba Movimentações
  */
 function getProdutosEmAlerta() {
@@ -611,7 +680,9 @@ function getProdutosEmAlerta() {
       if (!dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ID - 1]) continue;
 
       const produtoId = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ID - 1];
-      const produtoNome = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.NOME - 1];
+      // Priorizar descrição Neoformula, se não existir usar descrição Fornecedor
+      const produtoNome = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] ||
+                          dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1];
       const estoqueMinimo = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ESTOQUE_MINIMO - 1] || 0;
       const pontoPedido = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.PONTO_PEDIDO - 1] || 0;
 
@@ -658,126 +729,11 @@ function getProdutosEmAlerta() {
 
 /**
  * ========================================
- * CADASTRO AUTOMÁTICO DE PRODUTOS (v10.4)
+ * FUNÇÃO OBSOLETA - REMOVIDA EM v13.0
  * ========================================
- */
-
-/**
- * Cadastra produto automaticamente a partir de dados da NF (v10.4)
  *
- * @param {object} dadosProduto - Dados do produto da NF
- * @param {string} dadosProduto.tipo - Tipo: 'Papelaria' ou 'Limpeza'
- * @param {string} dadosProduto.descricao - Descrição do produto na NF
- * @param {string} dadosProduto.codigoNF - Código do produto na NF
- * @param {string} dadosProduto.fornecedor - Fornecedor
- * @param {string} dadosProduto.unidade - Unidade
- * @param {number} dadosProduto.preco - Preço unitário
- * @param {string} dadosProduto.categoria - Categoria (opcional)
- * @returns {object} - { success, produtoId }
+ * cadastrarProdutoAutomatico() foi substituída por processarProdutosNF()
+ * em 13.processarNFv13.js
+ *
+ * A v13 usa um fluxo completamente novo de cadastro automático via NF.
  */
-function cadastrarProdutoAutomatico(dadosProduto) {
-  try {
-    Logger.log('🤖 Cadastrando produto automaticamente...');
-    Logger.log(`   Descrição: ${dadosProduto.descricao}`);
-    Logger.log(`   Código NF: ${dadosProduto.codigoNF}`);
-
-    // Validações
-    if (!dadosProduto.descricao || !dadosProduto.tipo) {
-      return {
-        success: false,
-        error: 'Descrição e Tipo são obrigatórios'
-      };
-    }
-
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
-
-    if (!abaProdutos) {
-      return {
-        success: false,
-        error: 'Aba de produtos não encontrada'
-      };
-    }
-
-    // Gerar código interno único baseado no tipo
-    const timestamp = Date.now();
-    let codigoInterno;
-
-    if (dadosProduto.tipo === 'Papelaria') {
-      codigoInterno = `PAP-${timestamp}`;
-    } else if (dadosProduto.tipo === 'Limpeza') {
-      codigoInterno = `LMP-${timestamp}`;
-    } else {
-      codigoInterno = `PRD-${timestamp}`;
-    }
-
-    // Gerar ID único
-    const produtoId = 'PROD-' + timestamp;
-
-    // Criar mapeamento de códigos (JSON)
-    const mapeamentoCodigos = JSON.stringify([{
-      fornecedor: dadosProduto.fornecedor || '',
-      codigo: dadosProduto.codigoNF || '',
-      principal: true
-    }]);
-
-    // Preparar nova linha
-    const novaLinha = [
-      produtoId,                                  // A - ID
-      codigoInterno,                              // B - Código
-      dadosProduto.descricao,                     // C - Nome
-      dadosProduto.tipo,                          // D - Tipo
-      dadosProduto.categoria || 'Geral',          // E - Categoria
-      dadosProduto.unidade || 'UN',               // F - Unidade
-      dadosProduto.preco || 0,                    // G - Preço Unitário
-      10,                                         // H - Estoque Mínimo (padrão)
-      20,                                         // I - Ponto de Pedido (padrão)
-      dadosProduto.fornecedor || '',              // J - Fornecedor
-      '',                                         // K - ImagemURL
-      'Sim',                                      // L - Ativo
-      new Date(),                                 // M - Data Cadastro
-      dadosProduto.codigoNF || '',                // N - Código Fornecedor
-      mapeamentoCodigos                           // O - Mapeamento Códigos (JSON)
-    ];
-
-    // Adicionar produto
-    abaProdutos.appendRow(novaLinha);
-
-    // Criar registro de estoque zerado
-    const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
-    if (abaEstoque) {
-      const estoqueId = 'EST-' + timestamp;
-      const novaLinhaEstoque = [
-        estoqueId,                                // A - ID
-        produtoId,                                // B - Produto ID
-        dadosProduto.descricao,                   // C - Produto Nome
-        0,                                        // D - Quantidade Atual
-        0,                                        // E - Quantidade Reservada
-        0,                                        // F - Estoque Disponível
-        new Date(),                               // G - Última Atualização
-        Session.getActiveUser().getEmail()       // H - Responsável
-      ];
-
-      abaEstoque.appendRow(novaLinhaEstoque);
-      Logger.log(`✅ Estoque zerado criado para produto ${produtoId}`);
-    }
-
-    Logger.log(`✅ Produto cadastrado automaticamente: ${produtoId}`);
-    Logger.log(`   Código Interno: ${codigoInterno}`);
-    Logger.log(`   Código Fornecedor: ${dadosProduto.codigoNF}`);
-
-    return {
-      success: true,
-      produtoId: produtoId,
-      codigoInterno: codigoInterno
-    };
-
-  } catch (error) {
-    Logger.log('❌ Erro ao cadastrar produto automaticamente: ' + error.message);
-    Logger.log('Stack: ' + error.stack);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}

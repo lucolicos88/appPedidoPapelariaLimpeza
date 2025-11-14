@@ -1,5 +1,21 @@
 /**
  * ========================================
+ * ⚠️ ARQUIVO OBSOLETO - NÃO USAR EM v13.0+
+ * ========================================
+ *
+ * Este arquivo contém código da v10.4 que foi COMPLETAMENTE SUBSTITUÍDO
+ * pelo novo módulo 13.processarNFv13.js
+ *
+ * FLUXO ANTIGO (v10.4-v12):
+ * - Upload XML → Mapeamento manual → Cadastro
+ *
+ * FLUXO NOVO (v13):
+ * - Upload XML → Processamento automático completo
+ * - Ver: 13.processarNFv13.js
+ *
+ * ⚠️ IMPORTANTE: Não utilize funções deste arquivo em v13+
+ *
+ * ========================================
  * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v10.4
  * Módulo: 11. NOTAS FISCAIS DE ENTRADA COM UPLOAD XML
  * ========================================
