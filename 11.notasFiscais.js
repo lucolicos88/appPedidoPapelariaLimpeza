@@ -1368,3 +1368,181 @@ function registrarItemNF(dados) {
     };
   }
 }
+
+/**
+ * ========================================
+ * PROCESSAR NF V12 - CADASTRO DE PRODUTOS COM DUPLO CÓDIGO
+ * ========================================
+ */
+
+/**
+ * Processa NF v12 - Cadastra produtos e registra NF
+ * @param {object} dadosSubmit - Dados submetidos do frontend
+ * @returns {object} - { success, nfId, produtosCriados }
+ */
+function processarNFv12(dadosSubmit) {
+  try {
+    Logger.log('📋 PROCESSAR NF V12 - INÍCIO');
+    const email = Session.getActiveUser().getEmail();
+
+    // Verificar permissão
+    if (!verificarPermissao(email, CONFIG.PERMISSOES.GESTOR)) {
+      return {
+        success: false,
+        error: 'Permissão negada. Somente gestores podem processar NFs.'
+      };
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+    const abaNF = ss.getSheetByName(CONFIG.ABAS.NOTAS_FISCAIS);
+    const abaItensNF = ss.getSheetByName(CONFIG.ABAS.ITENS_NOTAS_FISCAIS);
+
+    if (!abaProdutos || !abaNF) {
+      return { success: false, error: 'Abas necessárias não encontradas' };
+    }
+
+    Logger.log('📦 Produtos a cadastrar: ' + dadosSubmit.produtos.length);
+
+    // 1. Cadastrar produtos novos
+    let produtosCriados = 0;
+    const produtosIds = [];
+
+    for (const produto of dadosSubmit.produtos) {
+      // Verificar se código Neoformula já existe
+      const dadosProdutos = abaProdutos.getDataRange().getValues();
+      let produtoExiste = false;
+      let produtoId = null;
+
+      for (let i = 1; i < dadosProdutos.length; i++) {
+        if (dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] === produto.codigoNeoformula) {
+          produtoExiste = true;
+          produtoId = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ID - 1];
+          Logger.log('⚠️ Produto já existe: ' + produto.codigoNeoformula);
+          break;
+        }
+      }
+
+      if (!produtoExiste) {
+        // Cadastrar novo produto
+        produtoId = Utilities.getUuid();
+
+        // Upload de imagem se houver
+        let imagemURL = '';
+        if (produto.imagemBase64) {
+          const resultadoUpload = uploadImagemProduto({
+            base64Data: produto.imagemBase64,
+            fileName: produto.imagemFileName || 'produto.jpg',
+            mimeType: produto.imagemMimeType || 'image/jpeg',
+            produtoId: produtoId,
+            produtoNome: produto.descricaoNeoformula,
+            tipo: produto.tipo
+          });
+
+          if (resultadoUpload.success) {
+            imagemURL = resultadoUpload.imageUrl;
+          }
+        }
+
+        const novoProduto = [];
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.ID - 1] = produtoId;
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.CODIGO_FORNECEDOR - 1] = produto.codigoFornecedor;
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1] = produto.descricaoFornecedor;
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] = produto.codigoNeoformula;
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] = produto.descricaoNeoformula;
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.TIPO - 1] = produto.tipo;
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.CATEGORIA - 1] = produto.categoria || '';
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.UNIDADE - 1] = produto.unidade || 'UN';
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.PRECO_UNITARIO - 1] = produto.valorUnitario;
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.ESTOQUE_MINIMO - 1] = 0;
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.PONTO_PEDIDO - 1] = 0;
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.FORNECEDOR - 1] = dadosSubmit.dadosNF.fornecedor;
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.IMAGEM_URL - 1] = imagemURL;
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] = 'Sim';
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO - 1] = new Date();
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.NCM - 1] = produto.ncm || '';
+        novoProduto[CONFIG.COLUNAS_PRODUTOS.MAPEAMENTO_CODIGOS - 1] = '';
+
+        abaProdutos.appendRow(novoProduto);
+
+        // Criar estoque inicial
+        const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
+        if (abaEstoque) {
+          const novoEstoque = [];
+          novoEstoque[CONFIG.COLUNAS_ESTOQUE.ID - 1] = Utilities.getUuid();
+          novoEstoque[CONFIG.COLUNAS_ESTOQUE.PRODUTO_ID - 1] = produtoId;
+          novoEstoque[CONFIG.COLUNAS_ESTOQUE.PRODUTO_NOME - 1] = produto.descricaoNeoformula;
+          novoEstoque[CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL - 1] = 0;
+          novoEstoque[CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_RESERVADA - 1] = 0;
+          novoEstoque[CONFIG.COLUNAS_ESTOQUE.ESTOQUE_DISPONIVEL - 1] = 0;
+          novoEstoque[CONFIG.COLUNAS_ESTOQUE.ULTIMA_ATUALIZACAO - 1] = new Date();
+          novoEstoque[CONFIG.COLUNAS_ESTOQUE.RESPONSAVEL - 1] = email;
+          abaEstoque.appendRow(novoEstoque);
+        }
+
+        produtosCriados++;
+        Logger.log('✅ Produto cadastrado: ' + produto.descricaoNeoformula);
+      }
+
+      produtosIds.push({
+        produtoId: produtoId,
+        quantidade: produto.quantidade,
+        valorUnitario: produto.valorUnitario
+      });
+    }
+
+    // 2. Cadastrar NF
+    const nfId = Utilities.getUuid();
+
+    const novaNF = [];
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.ID - 1] = nfId;
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.NUMERO_NF - 1] = dadosSubmit.dadosNF.numeroNF;
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.DATA_EMISSAO - 1] = new Date(dadosSubmit.dadosNF.dataEmissao);
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.DATA_ENTRADA - 1] = new Date();
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.FORNECEDOR - 1] = dadosSubmit.dadosNF.fornecedor;
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.CNPJ_FORNECEDOR - 1] = dadosSubmit.dadosNF.cnpjFornecedor || '';
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.VALOR_TOTAL - 1] = dadosSubmit.dadosNF.valorTotal;
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.PRODUTOS - 1] = JSON.stringify(produtosIds.map(p => p.produtoId));
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.QUANTIDADE - 1] = JSON.stringify(produtosIds.map(p => p.quantidade));
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.VALORES_UNITARIOS - 1] = JSON.stringify(produtosIds.map(p => p.valorUnitario));
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.TIPO_PRODUTOS - 1] = dadosSubmit.tipoProdutos;
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.STATUS - 1] = 'Processada';
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.RESPONSAVEL - 1] = email;
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.OBSERVACOES - 1] = dadosSubmit.observacoes || '';
+    novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.DATA_CADASTRO - 1] = new Date();
+
+    abaNF.appendRow(novaNF);
+
+    // 3. Atualizar estoque e custo médio
+    for (const item of produtosIds) {
+      registrarMovimentacao({
+        tipo: CONFIG.TIPOS_MOVIMENTACAO.ENTRADA,
+        produtoId: item.produtoId,
+        quantidade: item.quantidade,
+        observacoes: `Entrada NF ${dadosSubmit.dadosNF.numeroNF}`,
+        responsavel: email,
+        nfId: nfId,
+        custoUnitario: item.valorUnitario
+      });
+
+      atualizarCustoMedioProduto(item.produtoId, item.quantidade, item.valorUnitario);
+    }
+
+    Logger.log('✅ NF processada com sucesso!');
+
+    return {
+      success: true,
+      message: 'NF processada com sucesso',
+      nfId: nfId,
+      produtosCriados: produtosCriados
+    };
+
+  } catch (error) {
+    Logger.log('❌ ERRO ao processar NF v12: ' + error.message);
+    Logger.log('❌ Stack: ' + error.stack);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}

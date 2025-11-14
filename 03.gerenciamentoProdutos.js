@@ -202,10 +202,13 @@ function limparCacheProdutos(identificador) {
 /**
  * Cadastra novo produto (v6.0 - com suporte a imagem)
  */
+/**
+ * Cadastrar Produto v12.0 - com duplo código (Fornecedor + Neoformula)
+ */
 function cadastrarProduto(dadosProduto) {
   try {
     const email = Session.getActiveUser().getEmail();
-    
+
     // Verificar permissão
     if (!verificarPermissao(email, CONFIG.PERMISSOES.GESTOR)) {
       return {
@@ -213,36 +216,50 @@ function cadastrarProduto(dadosProduto) {
         error: 'Permissão negada. Somente gestores podem cadastrar produtos.'
       };
     }
-    
-    // Validar dados obrigatórios
-    if (!dadosProduto.nome || !dadosProduto.tipo || !dadosProduto.codigo) {
+
+    // Validar dados obrigatórios (v12 - novos campos)
+    if (!dadosProduto.codigoFornecedor || !dadosProduto.descricaoFornecedor) {
       return {
         success: false,
-        error: 'Nome, tipo e código são obrigatórios'
+        error: 'Código e descrição do fornecedor são obrigatórios'
       };
     }
-    
+
+    if (!dadosProduto.codigoNeoformula || !dadosProduto.descricaoNeoformula) {
+      return {
+        success: false,
+        error: 'Código e descrição Neoformula são obrigatórios'
+      };
+    }
+
+    if (!dadosProduto.tipo) {
+      return {
+        success: false,
+        error: 'Tipo do produto é obrigatório'
+      };
+    }
+
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
-    
+
     if (!abaProdutos) {
       return { success: false, error: 'Aba de produtos não encontrada' };
     }
-    
-    // Verificar se código já existe
+
+    // Verificar se código Neoformula já existe
     const dados = abaProdutos.getDataRange().getValues();
     for (let i = 1; i < dados.length; i++) {
-      if (dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO - 1] === dadosProduto.codigo) {
+      if (dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] === dadosProduto.codigoNeoformula) {
         return {
           success: false,
-          error: 'Código de produto já existe'
+          error: 'Código Neoformula já existe'
         };
       }
     }
-    
+
     // Gerar ID único
     const id = Utilities.getUuid();
-    
+
     // Se tiver imagem, fazer upload
     let imagemURL = '';
     if (dadosProduto.imagemBase64) {
@@ -251,22 +268,24 @@ function cadastrarProduto(dadosProduto) {
         fileName: dadosProduto.imagemFileName || 'produto.jpg',
         mimeType: dadosProduto.imagemMimeType || 'image/jpeg',
         produtoId: id,
-        produtoNome: dadosProduto.nome,
+        produtoNome: dadosProduto.descricaoNeoformula,
         tipo: dadosProduto.tipo
       });
-      
+
       if (resultadoUpload.success) {
         imagemURL = resultadoUpload.imageUrl;
       } else {
         Logger.log('⚠️ Erro ao fazer upload da imagem: ' + resultadoUpload.error);
       }
     }
-    
-    // Adicionar produto usando CONFIG
+
+    // Adicionar produto usando CONFIG v12
     const novoProduto = [];
     novoProduto[CONFIG.COLUNAS_PRODUTOS.ID - 1] = id;
-    novoProduto[CONFIG.COLUNAS_PRODUTOS.CODIGO - 1] = dadosProduto.codigo;
-    novoProduto[CONFIG.COLUNAS_PRODUTOS.NOME - 1] = dadosProduto.nome;
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.CODIGO_FORNECEDOR - 1] = dadosProduto.codigoFornecedor;
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1] = dadosProduto.descricaoFornecedor;
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] = dadosProduto.codigoNeoformula;
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] = dadosProduto.descricaoNeoformula;
     novoProduto[CONFIG.COLUNAS_PRODUTOS.TIPO - 1] = dadosProduto.tipo;
     novoProduto[CONFIG.COLUNAS_PRODUTOS.CATEGORIA - 1] = dadosProduto.categoria || '';
     novoProduto[CONFIG.COLUNAS_PRODUTOS.UNIDADE - 1] = dadosProduto.unidade || 'UN';
@@ -277,16 +296,18 @@ function cadastrarProduto(dadosProduto) {
     novoProduto[CONFIG.COLUNAS_PRODUTOS.IMAGEM_URL - 1] = imagemURL;
     novoProduto[CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] = 'Sim';
     novoProduto[CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO - 1] = new Date();
-    
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.NCM - 1] = dadosProduto.ncm || '';
+    novoProduto[CONFIG.COLUNAS_PRODUTOS.MAPEAMENTO_CODIGOS - 1] = '';
+
     abaProdutos.appendRow(novoProduto);
-    
+
     // Criar registro de estoque inicial usando CONFIG
     const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
     if (abaEstoque) {
       const novoEstoque = [];
       novoEstoque[CONFIG.COLUNAS_ESTOQUE.ID - 1] = Utilities.getUuid();
       novoEstoque[CONFIG.COLUNAS_ESTOQUE.PRODUTO_ID - 1] = id;
-      novoEstoque[CONFIG.COLUNAS_ESTOQUE.PRODUTO_NOME - 1] = dadosProduto.nome;
+      novoEstoque[CONFIG.COLUNAS_ESTOQUE.PRODUTO_NOME - 1] = dadosProduto.descricaoNeoformula;
       novoEstoque[CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL - 1] = 0;
       novoEstoque[CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_RESERVADA - 1] = 0;
       novoEstoque[CONFIG.COLUNAS_ESTOQUE.ESTOQUE_DISPONIVEL - 1] = 0;
@@ -294,10 +315,10 @@ function cadastrarProduto(dadosProduto) {
       novoEstoque[CONFIG.COLUNAS_ESTOQUE.RESPONSAVEL - 1] = email;
       abaEstoque.appendRow(novoEstoque);
     }
-    
+
     // Registrar log
-    registrarLog('PRODUTO_CADASTRADO', `Produto ${dadosProduto.nome} cadastrado`, 'SUCESSO');
-    
+    registrarLog('PRODUTO_CADASTRADO', `Produto ${dadosProduto.descricaoNeoformula} cadastrado`, 'SUCESSO');
+
     return {
       success: true,
       message: 'Produto cadastrado com sucesso',

@@ -269,26 +269,40 @@ function criarAbaUsuarios(ss) {
 }
 
 /**
- * Cria aba de Produtos (v6.0 - com campo de imagem)
+ * Cria aba de Produtos (v12.0 - Estrutura com duplo código)
  */
 function criarAbaProdutos(ss) {
   let aba = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
-  
+
   if (aba) {
     Logger.log('⚠️ Aba Produtos já existe, mantendo dados...');
     return;
   }
-  
+
   aba = ss.insertSheet(CONFIG.ABAS.PRODUCTS);
-  
-  // Cabeçalhos
+
+  // Cabeçalhos v12 - Nova estrutura com código/descrição do fornecedor + Neoformula
   const headers = [
-    'ID', 'Código', 'Nome', 'Tipo', 'Categoria', 'Unidade',
-    'Preço Unitário', 'Estoque Mínimo', 'Ponto de Pedido', 'Fornecedor',
-    'ImagemURL', 'Ativo', 'Data Cadastro', 'Código Fornecedor', 'Mapeamento Códigos'
+    'ID',                       // A
+    'Código Fornecedor',        // B - Do XML da NF
+    'Descrição Fornecedor',     // C - Do XML da NF
+    'Código Neoformula',        // D - Preenchido pelo gestor
+    'Descrição Neoformula',     // E - Preenchido pelo gestor
+    'Tipo',                     // F - Papelaria/Limpeza
+    'Categoria',                // G
+    'Unidade',                  // H
+    'Preço Unitário',           // I - Custo médio
+    'Estoque Mínimo',           // J
+    'Ponto de Pedido',          // K
+    'Fornecedor',               // L
+    'ImagemURL',                // M
+    'Ativo',                    // N
+    'Data Cadastro',            // O
+    'NCM',                      // P - Do XML
+    'Mapeamento Códigos'        // Q - JSON histórico
   ];
   aba.getRange(1, 1, 1, headers.length).setValues([headers]);
-  
+
   // Formatação
   aba.setFrozenRows(1);
   aba.getRange(1, 1, 1, headers.length)

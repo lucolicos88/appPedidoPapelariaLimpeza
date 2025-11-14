@@ -21,23 +21,25 @@ const CONFIG = {
     ITENS_NOTAS_FISCAIS: 'Itens NF'    // v10.4
   },
 
-  // Mapeamento de colunas - ABA PRODUTOS
+  // Mapeamento de colunas - ABA PRODUTOS (v12 - Estrutura atualizada)
   COLUNAS_PRODUTOS: {
-    ID: 1,                    // A - ID
-    CODIGO: 2,                // B - Código
-    NOME: 3,                  // C - Nome
-    TIPO: 4,                  // D - Tipo
-    CATEGORIA: 5,             // E - Categoria
-    UNIDADE: 6,               // F - Unidade
-    PRECO_UNITARIO: 7,        // G - Preço Unitário
-    ESTOQUE_MINIMO: 8,        // H - Estoque Mínimo
-    PONTO_PEDIDO: 9,          // I - Ponto de Pedido
-    FORNECEDOR: 10,           // J - Fornecedor
-    IMAGEM_URL: 11,           // K - ImagemURL (v8.0)
-    ATIVO: 12,                // L - Ativo
-    DATA_CADASTRO: 13,        // M - Data Cadastro
-    CODIGO_FORNECEDOR: 14,    // N - Código Fornecedor (v10.4)
-    MAPEAMENTO_CODIGOS: 15    // O - Mapeamento Códigos JSON (v10.4)
+    ID: 1,                       // A - ID
+    CODIGO_FORNECEDOR: 2,        // B - Código Fornecedor (do XML da NF)
+    DESCRICAO_FORNECEDOR: 3,     // C - Descrição Fornecedor (do XML da NF)
+    CODIGO_NEOFORMULA: 4,        // D - Código Neoformula (interno)
+    DESCRICAO_NEOFORMULA: 5,     // E - Descrição Neoformula (interno)
+    TIPO: 6,                     // F - Tipo (Papelaria/Limpeza)
+    CATEGORIA: 7,                // G - Categoria
+    UNIDADE: 8,                  // H - Unidade
+    PRECO_UNITARIO: 9,           // I - Preço Unitário (custo médio)
+    ESTOQUE_MINIMO: 10,          // J - Estoque Mínimo
+    PONTO_PEDIDO: 11,            // K - Ponto de Pedido
+    FORNECEDOR: 12,              // L - Fornecedor Principal
+    IMAGEM_URL: 13,              // M - ImagemURL
+    ATIVO: 14,                   // N - Ativo
+    DATA_CADASTRO: 15,           // O - Data Cadastro
+    NCM: 16,                     // P - NCM (do XML)
+    MAPEAMENTO_CODIGOS: 17       // Q - Mapeamento Códigos JSON (histórico)
   },
 
   // Mapeamento de colunas - ABA PEDIDOS
@@ -245,9 +247,14 @@ const CONFIG = {
   LOGO_URL: 'https://neoformula.com.br/cdn/shop/files/Logotipo-NeoFormula-Manipulacao-Homeopatia_76b2fa98-5ffa-4cc3-ac0a-6d41e1bc8810.png?height=100&v=1677088468',
 
   // Versão do sistema
-  VERSAO: '10.1',
-  DATA_VERSAO: '2025-11-10',
+  VERSAO: '12.0',
+  DATA_VERSAO: '2025-11-14',
   CHANGELOG: [
+    'v12.0 - REESTRUTURAÇÃO COMPLETA: Sistema de NF com duplo código (Fornecedor + Neoformula)',
+    'v12.0 - NOVA ESTRUTURA: Produtos agora têm código/descrição do fornecedor E da Neoformula',
+    'v12.0 - NOVA FUNCIONALIDADE: Tela de mapeamento pós-upload XML',
+    'v12.0 - FLUXO: Upload XML → Extração dados → Gestor preenche campos Neoformula → Salvar',
+    'v12.0 - CAMPO NOVO: NCM extraído do XML',
     'v10.1 - FEATURE: Modal de alteração de status de pedido para Gestor/Admin',
     'v10.1 - FEATURE: Observações opcionais na mudança de status de pedido',
     'v10.1 - DEBUG: Logs detalhados para investigar problema de pedidos não aparecendo',

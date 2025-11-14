@@ -1814,43 +1814,70 @@
     </div>
   </div>
 
-  <!-- Modal: Novo Produto -->
+  <!-- Modal: Novo Produto (v12.0 - Estrutura com duplo código) -->
   <div class="modal" id="modalNovoProduto">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 900px;">
       <div class="modal-header">
-        <h3 class="modal-title">➕ Novo Produto</h3>
+        <h3 class="modal-title">➕ Novo Produto (v12)</h3>
         <button class="modal-close" onclick="closeModal('modalNovoProduto')">&times;</button>
       </div>
-      
+
       <form id="formNovoProduto" onsubmit="submitNovoProduto(event)">
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Código *</label>
-            <input type="text" class="form-control" id="novoProdutoCodigo" required>
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">Nome *</label>
-            <input type="text" class="form-control" id="novoProdutoNome" required>
+        <!-- SEÇÃO: DADOS DO FORNECEDOR (do XML da NF) -->
+        <div style="background: #e3f2fd; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+          <h4 style="margin: 0 0 15px 0; color: #1976d2;">📦 Dados do Fornecedor (do XML da NF)</h4>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Código Fornecedor *</label>
+              <input type="text" class="form-control" id="novoProdutoCodigoFornecedor" required>
+              <small style="color: #666;">Código do produto conforme consta na NF do fornecedor</small>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Descrição Fornecedor *</label>
+              <input type="text" class="form-control" id="novoProdutoDescricaoFornecedor" required>
+              <small style="color: #666;">Descrição do produto conforme consta na NF do fornecedor</small>
+            </div>
           </div>
         </div>
-        
+
+        <!-- SEÇÃO: DADOS NEOFORMULA (preenchidos pelo gestor) -->
+        <div style="background: #e8f5e9; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+          <h4 style="margin: 0 0 15px 0; color: #388e3c;">🏢 Dados Neoformula (interno)</h4>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Código Neoformula *</label>
+              <input type="text" class="form-control" id="novoProdutoCodigoNeoformula" required>
+              <small style="color: #666;">Código interno usado pela Neoformula</small>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Descrição Neoformula *</label>
+              <input type="text" class="form-control" id="novoProdutoDescricaoNeoformula" required>
+              <small style="color: #666;">Nome/descrição interna da Neoformula</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEÇÃO: CLASSIFICAÇÃO E VALORES -->
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Tipo *</label>
             <select class="form-control" id="novoProdutoTipo" required>
               <option value="">Selecione...</option>
-              <option value="Papelaria">Papelaria</option>
-              <option value="Limpeza">Limpeza</option>
+              <option value="Papelaria">📝 Papelaria</option>
+              <option value="Limpeza">🧹 Limpeza</option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label class="form-label">Categoria</label>
             <input type="text" class="form-control" id="novoProdutoCategoria">
           </div>
         </div>
-        
+
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Unidade</label>
@@ -1864,30 +1891,39 @@
               <option value="PAR">Par</option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label class="form-label">Preço Unitário (R$)</label>
             <input type="number" class="form-control" id="novoProdutoPreco" step="0.01" min="0">
+            <small style="color: #666;">Será calculado automaticamente com custo médio nas NFs</small>
           </div>
         </div>
-        
+
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Estoque Mínimo</label>
             <input type="number" class="form-control" id="novoProdutoEstoqueMin" min="0" value="0">
           </div>
-          
+
           <div class="form-group">
             <label class="form-label">Ponto de Pedido</label>
             <input type="number" class="form-control" id="novoProdutoPontoPedido" min="0" value="0">
           </div>
         </div>
-        
-        <div class="form-group">
-          <label class="form-label">Fornecedor</label>
-          <input type="text" class="form-control" id="novoProdutoFornecedor">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Fornecedor Principal</label>
+            <input type="text" class="form-control" id="novoProdutoFornecedor">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">NCM</label>
+            <input type="text" class="form-control" id="novoProdutoNCM" maxlength="8">
+            <small style="color: #666;">Código NCM (8 dígitos)</small>
+          </div>
         </div>
-        
+
         <div class="form-group">
           <label class="form-label">Imagem do Produto</label>
           <input type="file" class="form-control" id="novoProdutoImagem" accept="image/*" onchange="previewImage(event, 'previewNovoProduto')">
@@ -1895,9 +1931,9 @@
             <div class="image-preview-placeholder">Nenhuma imagem selecionada</div>
           </div>
         </div>
-        
+
         <div style="display: flex; gap: 10px; margin-top: 20px;">
-          <button type="submit" class="btn btn-success" style="flex: 1;">✅ Cadastrar</button>
+          <button type="submit" class="btn btn-success" style="flex: 1;">✅ Cadastrar Produto</button>
           <button type="button" class="btn btn-secondary" onclick="closeModal('modalNovoProduto')" style="flex: 1;">❌ Cancelar</button>
         </div>
       </form>
@@ -2144,12 +2180,12 @@
     </div>
   </div>
 
-  <!-- Modal: Nova Nota Fiscal com Upload XML (v10.4) -->
+  <!-- Modal: Nova Nota Fiscal com Upload XML (v12.0 - Com mapeamento manual) -->
   <div class="modal" id="modalNovaNF">
-    <div class="modal-content" style="max-width: 1000px;">
+    <div class="modal-content" style="max-width: 1200px;">
       <div class="modal-header">
-        <h3 class="modal-title">📄 Nova Nota Fiscal - Upload XML</h3>
-        <button class="modal-close" onclick="closeModal('modalNovaNF')">&times;</button>
+        <h3 class="modal-title">📄 Nova Nota Fiscal - Carregar XML (v12)</h3>
+        <button class="modal-close" onclick="closeModalNF()">&times;</button>
       </div>
 
       <form id="formNovaNF" onsubmit="submitNovaNFXML(event)">
@@ -2168,7 +2204,7 @@
         <!-- Upload de Arquivo XML -->
         <div class="form-group">
           <label class="form-label">Arquivo XML da NF-e *</label>
-          <input type="file" class="form-control" id="nfArquivoXML" accept=".xml" required onchange="processarArquivoXML(event)">
+          <input type="file" class="form-control" id="nfArquivoXML" accept=".xml" required onchange="processarArquivoXMLv12(event)">
           <small style="color: #666;">Faça upload do arquivo XML da nota fiscal eletrônica</small>
         </div>
 
@@ -2177,21 +2213,13 @@
           <h4 style="margin-top: 0;">📋 Dados da NF carregados:</h4>
           <div id="nfDadosBasicos" style="background: white; padding: 10px; border-radius: 5px; margin-bottom: 15px;"></div>
 
-          <h4>📦 Produtos identificados:</h4>
-          <div id="nfProdutosMapeados"></div>
+          <h4>📦 Produtos do XML - Preencha os dados Neoformula:</h4>
+          <div id="nfProdutosTable" style="overflow-x: auto;"></div>
 
-          <div id="nfProdutosNaoMapeados" style="margin-top: 15px;"></div>
-
-          <!-- Checkbox para cadastro automático -->
-          <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ff9800;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
-              <input type="checkbox" id="nfCadastrarNovos" style="margin-right: 10px; width: 18px; height: 18px;">
-              <span><strong>🤖 Cadastrar automaticamente produtos não identificados</strong></span>
-            </label>
-            <small style="color: #856404; margin-left: 28px; display: block; margin-top: 5px;">
-              Os produtos não identificados serão criados automaticamente no sistema com os dados da NF
-            </small>
-          </div>
+          <p style="margin-top: 15px; color: #666;">
+            <strong>ℹ️ Instruções:</strong> Para cada produto, preencha o <strong>Código Neoformula</strong> e a <strong>Descrição Neoformula</strong> (campos internos da empresa).
+            Você também pode adicionar a imagem do produto.
+          </p>
         </div>
 
         <!-- Hidden fields para armazenar dados -->
@@ -2206,9 +2234,9 @@
         <!-- Botões -->
         <div style="display: flex; gap: 10px; margin-top: 20px;">
           <button type="submit" class="btn btn-success" style="flex: 1;" id="btnCadastrarNF" disabled>
-            ✅ Cadastrar e Processar NF
+            ✅ Processar NF e Cadastrar Produtos
           </button>
-          <button type="button" class="btn btn-secondary" onclick="closeModal('modalNovaNF')" style="flex: 1;">
+          <button type="button" class="btn btn-secondary" onclick="closeModalNF()" style="flex: 1;">
             ❌ Cancelar
           </button>
         </div>
@@ -4533,21 +4561,29 @@ function loadProdutos() {
      */
     function submitNovoProduto(event) {
       event.preventDefault();
-      
+
       showLoading();
-      
+
       const dadosProduto = {
-        codigo: document.getElementById('novoProdutoCodigo').value,
-        nome: document.getElementById('novoProdutoNome').value,
+        // Dados do Fornecedor (do XML)
+        codigoFornecedor: document.getElementById('novoProdutoCodigoFornecedor').value,
+        descricaoFornecedor: document.getElementById('novoProdutoDescricaoFornecedor').value,
+
+        // Dados Neoformula (interno)
+        codigoNeoformula: document.getElementById('novoProdutoCodigoNeoformula').value,
+        descricaoNeoformula: document.getElementById('novoProdutoDescricaoNeoformula').value,
+
+        // Classificação e valores
         tipo: document.getElementById('novoProdutoTipo').value,
         categoria: document.getElementById('novoProdutoCategoria').value,
         unidade: document.getElementById('novoProdutoUnidade').value,
         precoUnitario: parseFloat(document.getElementById('novoProdutoPreco').value) || 0,
         estoqueMinimo: parseInt(document.getElementById('novoProdutoEstoqueMin').value) || 0,
         pontoPedido: parseInt(document.getElementById('novoProdutoPontoPedido').value) || 0,
-        fornecedor: document.getElementById('novoProdutoFornecedor').value
+        fornecedor: document.getElementById('novoProdutoFornecedor').value,
+        ncm: document.getElementById('novoProdutoNCM').value || ''
       };
-      
+
       // Processar imagem se houver
       const imagemInput = document.getElementById('novoProdutoImagem');
       if (imagemInput.files && imagemInput.files[0]) {
@@ -5710,14 +5746,29 @@ function renderMovimentacoesTable(movimentacoes) {
 
     /**
      * ========================================
-     * UPLOAD E PROCESSAMENTO DE XML (v10.4)
+     * UPLOAD E PROCESSAMENTO DE XML (v12.0)
      * ========================================
      */
 
+    let dadosNFGlobal = null; // Armazena dados da NF extraídos
+    let produtosNFData = []; // Array de produtos com dados para mapeamento
+
     /**
-     * Processa arquivo XML selecionado
+     * Fecha modal da NF e limpa dados
      */
-    function processarArquivoXML(event) {
+    function closeModalNF() {
+      closeModal('modalNovaNF');
+      document.getElementById('formNovaNF').reset();
+      document.getElementById('nfPreviewArea').style.display = 'none';
+      document.getElementById('btnCadastrarNF').disabled = true;
+      dadosNFGlobal = null;
+      produtosNFData = [];
+    }
+
+    /**
+     * Processa arquivo XML selecionado v12
+     */
+    function processarArquivoXMLv12(event) {
       const file = event.target.files[0];
 
       if (!file) return;
@@ -5743,8 +5794,8 @@ function renderMovimentacoesTable(movimentacoes) {
             hideLoading();
 
             if (response && response.success) {
-              // Mapear produtos
-              mapearProdutosNFFromXML(response.dadosNF, tipoProdutos);
+              dadosNFGlobal = response.dadosNF;
+              exibirTelaMapeamentoV12(response.dadosNF, tipoProdutos);
             } else {
               showError('Erro ao processar XML: ' + (response ? response.error : 'Erro desconhecido'));
               document.getElementById('nfArquivoXML').value = '';
@@ -5762,7 +5813,214 @@ function renderMovimentacoesTable(movimentacoes) {
     }
 
     /**
-     * Mapeia produtos da NF com o backend
+     * Exibe tela de mapeamento v12 - Gestor preenche dados Neoformula
+     */
+    function exibirTelaMapeamentoV12(dadosNF, tipoProdutos) {
+      console.log('📋 Exibindo tela de mapeamento v12', dadosNF);
+
+      // Dados básicos da NF
+      document.getElementById('nfDadosBasicos').innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+          <div>
+            <strong>Número NF:</strong><br>
+            <span style="font-size: 1.2em;">${dadosNF.numeroNF}</span>
+          </div>
+          <div>
+            <strong>Fornecedor:</strong><br>
+            ${dadosNF.fornecedor}
+          </div>
+          <div>
+            <strong>CNPJ:</strong><br>
+            ${dadosNF.cnpjFornecedor || 'N/A'}
+          </div>
+          <div>
+            <strong>Data Emissão:</strong><br>
+            ${new Date(dadosNF.dataEmissao).toLocaleDateString('pt-BR')}
+          </div>
+          <div>
+            <strong>Valor Total:</strong><br>
+            <span style="font-size: 1.2em; color: #00A651;">R$ ${formatMoney(dadosNF.valorTotal)}</span>
+          </div>
+        </div>
+      `;
+
+      // Tabela de produtos para mapeamento
+      let html = `
+        <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 5px; overflow: hidden;">
+          <thead style="background: #00A651; color: white;">
+            <tr>
+              <th style="padding: 10px; text-align: left;">Código Fornecedor</th>
+              <th style="padding: 10px; text-align: left;">Descrição Fornecedor</th>
+              <th style="padding: 10px; text-align: center;">Qtd</th>
+              <th style="padding: 10px; text-align: right;">Valor Unit.</th>
+              <th style="padding: 10px; text-align: left; background: #e8f5e9; color: #333;">Código Neoformula *</th>
+              <th style="padding: 10px; text-align: left; background: #e8f5e9; color: #333;">Descrição Neoformula *</th>
+              <th style="padding: 10px; text-align: center; background: #e8f5e9; color: #333;">Imagem</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      produtosNFData = []; // Reset array
+
+      dadosNF.produtos.forEach((produto, index) => {
+        produtosNFData.push({
+          codigoFornecedor: produto.codigoNF || '',
+          descricaoFornecedor: produto.descricao,
+          quantidade: produto.quantidade,
+          valorUnitario: produto.valorUnitario,
+          unidade: produto.unidade || 'UN',
+          ncm: produto.ncm || '',
+          // Campos a serem preenchidos:
+          codigoNeoformula: '',
+          descricaoNeoformula: '',
+          categoria: '',
+          imagemBase64: null,
+          imagemFileName: null
+        });
+
+        html += `
+          <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 8px; font-family: monospace;">${produto.codigoNF || 'N/A'}</td>
+            <td style="padding: 8px;">${produto.descricao}</td>
+            <td style="padding: 8px; text-align: center;">${produto.quantidade}</td>
+            <td style="padding: 8px; text-align: right;">R$ ${formatMoney(produto.valorUnitario)}</td>
+            <td style="padding: 8px; background: #f9fff9;">
+              <input type="text"
+                     class="form-control"
+                     id="codNeo_${index}"
+                     required
+                     placeholder="Ex: NEO001"
+                     style="font-family: monospace; min-width: 120px;">
+            </td>
+            <td style="padding: 8px; background: #f9fff9;">
+              <input type="text"
+                     class="form-control"
+                     id="descNeo_${index}"
+                     required
+                     placeholder="Ex: Caneta Azul BIC"
+                     style="min-width: 200px;">
+            </td>
+            <td style="padding: 8px; text-align: center; background: #f9fff9;">
+              <input type="file"
+                     id="imgProd_${index}"
+                     accept="image/*"
+                     onchange="previewImageNF(${index}, event)"
+                     style="font-size: 0.85em; max-width: 150px;">
+              <div id="previewImg_${index}" style="margin-top: 5px;"></div>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += `
+          </tbody>
+        </table>
+      `;
+
+      document.getElementById('nfProdutosTable').innerHTML = html;
+
+      // Armazenar dados básicos
+      document.getElementById('nfDadosParsed').value = JSON.stringify({
+        dadosNF: dadosNF,
+        tipoProdutos: tipoProdutos
+      });
+
+      // Mostrar área de preview e habilitar botão
+      document.getElementById('nfPreviewArea').style.display = 'block';
+      document.getElementById('btnCadastrarNF').disabled = false;
+    }
+
+    /**
+     * Preview de imagem de produto na tabela de mapeamento
+     */
+    function previewImageNF(index, event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64Data = e.target.result.split(',')[1];
+        produtosNFData[index].imagemBase64 = base64Data;
+        produtosNFData[index].imagemFileName = file.name;
+        produtosNFData[index].imagemMimeType = file.type;
+
+        document.getElementById('previewImg_' + index).innerHTML = `
+          <img src="${e.target.result}" style="max-width: 80px; max-height: 80px; border-radius: 3px;">
+        `;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    /**
+     * Submete NF v12 - Cadastra produtos e processa NF
+     */
+    function submitNovaNFXML(event) {
+      event.preventDefault();
+
+      const dadosParsedStr = document.getElementById('nfDadosParsed').value;
+      if (!dadosParsedStr) {
+        showError('Faça upload do XML primeiro');
+        return;
+      }
+
+      const dadosParsed = JSON.parse(dadosParsedStr);
+
+      // Coletar dados preenchidos pelo gestor
+      const produtosCompletos = [];
+
+      for (let i = 0; i < produtosNFData.length; i++) {
+        const codigoNeo = document.getElementById('codNeo_' + i).value.trim();
+        const descNeo = document.getElementById('descNeo_' + i).value.trim();
+
+        if (!codigoNeo || !descNeo) {
+          showError(`Preencha Código e Descrição Neoformula para o produto ${i + 1}`);
+          return;
+        }
+
+        produtosCompletos.push({
+          ...produtosNFData[i],
+          codigoNeoformula: codigoNeo,
+          descricaoNeoformula: descNeo,
+          tipo: dadosParsed.tipoProdutos
+        });
+      }
+
+      const observacoes = document.getElementById('nfObservacoes').value;
+
+      const dadosSubmit = {
+        dadosNF: dadosParsed.dadosNF,
+        tipoProdutos: dadosParsed.tipoProdutos,
+        produtos: produtosCompletos,
+        observacoes: observacoes
+      };
+
+      console.log('📤 Enviando dados v12:', dadosSubmit);
+
+      showLoading();
+
+      // Chamar backend para cadastrar produtos e processar NF
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+
+          if (response && response.success) {
+            showSuccess(`NF cadastrada com sucesso! ${response.produtosCriados} produtos cadastrados.`);
+            closeModalNF();
+            loadNotasFiscais();
+          } else {
+            showError('Erro ao processar NF: ' + (response ? response.error : 'Erro desconhecido'));
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .processarNFv12(dadosSubmit);
+    }
+
+    /**
+     * Mapeia produtos da NF com o backend (FUNÇÃO ANTIGA - MANTIDA PARA COMPATIBILIDADE)
      */
     function mapearProdutosNFFromXML(dadosNF, tipoProdutos) {
       console.log('📋 Dados da NF:', dadosNF);
