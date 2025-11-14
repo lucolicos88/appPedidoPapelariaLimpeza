@@ -670,16 +670,16 @@ function getNotaFiscal(nfId) {
  */
 function uploadEProcessarXMLNF(xmlBase64, fileName) {
   try {
-    Logger.log(`📄 Processando XML da NF: ${fileName}`);
+    Logger.log(`[NF XML] Processando arquivo: ${fileName}`);
 
-    // 1. Decodificar Base64
-    const xmlContent = Utilities.newBlob(
-      Utilities.base64Decode(xmlBase64)
-    ).getDataAsString();
+    const xmlContent = decodificarXMLBase64(xmlBase64);
 
-    Logger.log(`✅ XML decodificado: ${xmlContent.length} caracteres`);
+    if (!xmlContent || !xmlContent.trim()) {
+      throw new Error('Conteudo do XML vazio apos leitura. Verifique se o arquivo esta integro.');
+    }
 
-    // 2. Parse do XML
+    Logger.log(`[NF XML] XML decodificado com ${xmlContent.length} caracteres`);
+
     const dadosNF = parseXMLNotaFiscal(xmlContent);
 
     if (!dadosNF.success) {
@@ -693,21 +693,53 @@ function uploadEProcessarXMLNF(xmlBase64, fileName) {
     };
 
   } catch (error) {
-    Logger.log(`❌ Erro ao processar XML: ${error.message}`);
+    Logger.log(`[NF XML] Erro ao processar XML: ${error.message}`);
     return {
       success: false,
-      error: error.message
+      error: error.message || 'Falha desconhecida ao processar o XML'
     };
   }
 }
 
-/**
- * Parse do XML da NF-e (v10.4)
- * Extrai dados da nota fiscal eletrônica
- *
- * @param {string} xmlContent - Conteúdo do XML
- * @returns {object} - { success: boolean, dados: {} }
- */
+function decodificarXMLBase64(xmlBase64) {
+  const rawBytes = Utilities.base64Decode(xmlBase64);
+  const blob = Utilities.newBlob(rawBytes);
+
+  let xmlString = blob.getDataAsString('UTF-8');
+  const encodingMatch = xmlString.match(/encoding=["']([^"']+)["']/i);
+
+  if (encodingMatch) {
+    const encoding = normalizarEncodingXML(encodingMatch[1]);
+
+    if (encoding && encoding !== 'UTF-8') {
+      try {
+        xmlString = Utilities.newBlob(rawBytes).getDataAsString(encoding);
+        Logger.log(`[NF XML] Encoding detectado (${encoding}) aplicado.`);
+      } catch (error) {
+        Logger.log(`[NF XML] Falha ao aplicar encoding ${encoding}: ${error.message}. Mantendo UTF-8.`);
+      }
+    }
+  }
+
+  return xmlString;
+}
+
+function normalizarEncodingXML(valor) {
+  if (!valor) return null;
+
+  const mapa = {
+    'UTF8': 'UTF-8',
+    'UTF-8': 'UTF-8',
+    'ISO-8859-1': 'ISO-8859-1',
+    'ISO8859-1': 'ISO-8859-1',
+    'ISO8859_1': 'ISO-8859-1',
+    'WINDOWS-1252': 'windows-1252'
+  };
+
+  const chave = valor.toUpperCase();
+  return mapa[chave] || valor;
+}
+
 function parseXMLNotaFiscal(xmlContent) {
   try {
     Logger.log('🔍 Iniciando parse do XML da NF-e...');
