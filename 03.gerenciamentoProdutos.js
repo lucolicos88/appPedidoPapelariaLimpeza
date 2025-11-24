@@ -51,13 +51,16 @@ function listarProdutos(filtros) {
 
       const descricaoNeoformula = dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] || '';
       const descricaoFornecedor = dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1] || '';
+      const codigoNeoformula = dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] || '';
+      const codigoFornecedor = dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_FORNECEDOR - 1] || '';
+      const dadosCompletos = dados[i][CONFIG.COLUNAS_PRODUTOS.DADOS_COMPLETOS - 1] || 'SIM';
 
       const produto = {
         id: dados[i][CONFIG.COLUNAS_PRODUTOS.ID - 1],
-        codigoFornecedor: dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_FORNECEDOR - 1] || '',
+        codigoFornecedor: codigoFornecedor,
         descricaoFornecedor: descricaoFornecedor,
         fornecedorId: dados[i][CONFIG.COLUNAS_PRODUTOS.FORNECEDOR_ID - 1] || '',
-        codigoNeoformula: dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] || '',
+        codigoNeoformula: codigoNeoformula,
         descricaoNeoformula: descricaoNeoformula,
         tipo: dados[i][CONFIG.COLUNAS_PRODUTOS.TIPO - 1],
         categoria: dados[i][CONFIG.COLUNAS_PRODUTOS.CATEGORIA - 1] || '',
@@ -70,8 +73,10 @@ function listarProdutos(filtros) {
         ativo: dados[i][CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] !== undefined ? dados[i][CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] : 'Sim',
         dataCadastro: dados[i][CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO - 1],
         origem: dados[i][CONFIG.COLUNAS_PRODUTOS.ORIGEM - 1] || 'MANUAL',
-        dadosCompletos: dados[i][CONFIG.COLUNAS_PRODUTOS.DADOS_COMPLETOS - 1] || 'SIM',
-        // Campo computado 'nome' para compatibilidade com frontend
+        dadosCompletos: dadosCompletos,
+        // Campos computados para compatibilidade com frontend
+        // PRIORIZAR SEMPRE NEOFORMULA (dados internos) sobre Fornecedor
+        codigo: codigoNeoformula || codigoFornecedor || 'SEM CÓDIGO',
         nome: descricaoNeoformula || descricaoFornecedor || 'Produto sem descrição'
       };
 
@@ -157,13 +162,16 @@ function buscarProduto(identificador) {
           dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] === identificadorStr) {
         const descricaoNeoformula = String(dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] || '');
         const descricaoFornecedor = String(dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1] || '');
+        const codigoNeoformula = String(dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] || '');
+        const codigoFornecedor = String(dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_FORNECEDOR - 1] || '');
+        const dadosCompletos = String(dados[i][CONFIG.COLUNAS_PRODUTOS.DADOS_COMPLETOS - 1] || 'SIM');
 
         const produto = {
           id: String(dados[i][CONFIG.COLUNAS_PRODUTOS.ID - 1]),
-          codigoFornecedor: String(dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_FORNECEDOR - 1] || ''),
+          codigoFornecedor: codigoFornecedor,
           descricaoFornecedor: descricaoFornecedor,
           fornecedorId: String(dados[i][CONFIG.COLUNAS_PRODUTOS.FORNECEDOR_ID - 1] || ''),
-          codigoNeoformula: String(dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] || ''),
+          codigoNeoformula: codigoNeoformula,
           descricaoNeoformula: descricaoNeoformula,
           tipo: String(dados[i][CONFIG.COLUNAS_PRODUTOS.TIPO - 1]),
           categoria: String(dados[i][CONFIG.COLUNAS_PRODUTOS.CATEGORIA - 1] || ''),
@@ -176,8 +184,10 @@ function buscarProduto(identificador) {
           ativo: String(dados[i][CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] !== undefined ? dados[i][CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] : 'Sim'),
           dataCadastro: dados[i][CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO - 1],
           origem: String(dados[i][CONFIG.COLUNAS_PRODUTOS.ORIGEM - 1] || 'MANUAL'),
-          dadosCompletos: String(dados[i][CONFIG.COLUNAS_PRODUTOS.DADOS_COMPLETOS - 1] || 'SIM'),
-          // Campo computado 'nome' para compatibilidade com frontend
+          dadosCompletos: dadosCompletos,
+          // Campos computados para compatibilidade com frontend
+          // PRIORIZAR SEMPRE NEOFORMULA (dados internos) sobre Fornecedor
+          codigo: codigoNeoformula || codigoFornecedor || 'SEM CÓDIGO',
           nome: descricaoNeoformula || descricaoFornecedor || 'Produto sem descrição'
         };
 

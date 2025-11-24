@@ -4664,21 +4664,27 @@ function loadProdutos() {
         const imagemHtml = produto.imagemURL
           ? `<img src="${produto.imagemURL}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;" onerror="this.onerror=null; this.outerHTML='📦'">`
           : '📦';
-        
+
+        // Verificar se dados estão incompletos
+        const dadosIncompletos = produto.dadosCompletos === 'NÃO' || (produto.origem === 'NF' && (!produto.codigoNeoformula || !produto.descricaoNeoformula));
+        const badgeIncompleto = dadosIncompletos
+          ? '<span class="badge" style="background: #ff9800; color: white; margin-left: 8px; font-size: 0.75rem;">⚠️ CADASTRO INCOMPLETO</span>'
+          : '';
+
         html += `
-          <tr>
+          <tr style="${dadosIncompletos ? 'background: #fff3e0;' : ''}">
             <td>${imagemHtml}</td>
-            <td>${produto.codigo}</td>
-            <td><strong>${produto.nome}</strong></td>
+            <td>${produto.codigo}${dadosIncompletos ? '<br><small style="color: #f57c00;">Código do Fornecedor</small>' : ''}</td>
+            <td><strong>${produto.nome}</strong>${badgeIncompleto}</td>
             <td>${produto.tipo}</td>
-            <td>${produto.categoria}</td>
+            <td>${produto.categoria || '<span style="color: #999;">—</span>'}</td>
             <td><strong>R$ ${formatMoney(produto.precoUnitario)}</strong></td>
             <td>
               <button class="btn btn-outline" onclick="verDetalhesProduto('${produto.id}')" style="padding: 5px 10px; font-size: 0.85rem; margin-right: 5px;">
                 👁️ Ver
               </button>
               <button class="btn btn-primary" onclick="abrirModalEditarProduto('${produto.id}')" style="padding: 5px 10px; font-size: 0.85rem; margin-right: 5px;">
-                ✏️ Editar
+                ${dadosIncompletos ? '✏️ Completar' : '✏️ Editar'}
               </button>
               <button class="btn btn-outline" onclick="navigateToMovimentacoes('${produto.id}', '${produto.nome}')" style="padding: 5px 10px; font-size: 0.85rem; background: #e3f2fd; color: #1976d2;">
                 📊 Movimentações

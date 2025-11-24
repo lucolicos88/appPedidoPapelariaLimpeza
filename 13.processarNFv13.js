@@ -68,6 +68,27 @@ function processarNFv13Automatico(params) {
     const dadosNF = resultadoXML.dadosNF;
     Logger.log(`✅ XML processado: NF ${dadosNF.numeroNF} com ${dadosNF.produtos.length} produtos`);
 
+    // 2.1. VALIDAR SE NF JÁ FOI IMPORTADA (evitar duplicação)
+    Logger.log('2️⃣.1 Verificando se NF já foi importada...');
+    const abaNF = ss.getSheetByName(CONFIG.ABAS.NOTAS_FISCAIS);
+    if (!abaNF) {
+      return { success: false, error: 'Aba Notas Fiscais não encontrada' };
+    }
+
+    const dadosNFExistentes = abaNF.getDataRange().getValues();
+    for (let i = 1; i < dadosNFExistentes.length; i++) {
+      const numeroNFExistente = dadosNFExistentes[i][CONFIG.COLUNAS_NOTAS_FISCAIS.NUMERO_NF - 1];
+      const cnpjExistente = dadosNFExistentes[i][CONFIG.COLUNAS_NOTAS_FISCAIS.CNPJ_FORNECEDOR - 1];
+
+      if (numeroNFExistente == dadosNF.numeroNF && cnpjExistente === dadosNF.cnpjFornecedor) {
+        return {
+          success: false,
+          error: `❌ NOTA FISCAL DUPLICADA!\n\nA NF ${dadosNF.numeroNF} do fornecedor ${dadosNF.fornecedor} (CNPJ: ${dadosNF.cnpjFornecedor}) já foi importada anteriormente.\n\nVerifique a aba "Notas Fiscais" para confirmar.`
+        };
+      }
+    }
+    Logger.log('✅ NF não está duplicada, prosseguindo...');
+
     // 3. PROCESSAR PRODUTOS (CRUZAMENTO + CADASTRO)
     Logger.log('3️⃣ Processando produtos da NF...');
     const resultadoProdutos = processarProdutosNF({
@@ -90,11 +111,7 @@ function processarNFv13Automatico(params) {
     Logger.log('4️⃣ Registrando Nota Fiscal...');
     const nfId = Utilities.getUuid();
 
-    const abaNF = ss.getSheetByName(CONFIG.ABAS.NOTAS_FISCAIS);
-    if (!abaNF) {
-      return { success: false, error: 'Aba Notas Fiscais não encontrada' };
-    }
-
+    // Aba já foi carregada na validação de duplicação
     const novaNF = [];
     novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.ID - 1] = nfId;
     novaNF[CONFIG.COLUNAS_NOTAS_FISCAIS.NUMERO_NF - 1] = dadosNF.numeroNF;
@@ -136,20 +153,25 @@ function processarNFv13Automatico(params) {
     Logger.log('✅ Estoque e custos atualizados');
 
     // 6. MENSAGEM DE SUCESSO
-    let mensagem = `NF ${dadosNF.numeroNF} processada com sucesso!\n\n`;
-    mensagem += `🏢 Fornecedor: ${fornecedor.nome}\n\n`;
+    let mensagem = `✅ NF ${dadosNF.numeroNF} processada com sucesso!\n\n`;
+    mensagem += `🏢 Fornecedor: ${fornecedor.nome}\n`;
+    mensagem += `💰 Valor Total: R$ ${dadosNF.valorTotal.toFixed(2)}\n\n`;
     mensagem += `📦 ${dadosNF.produtos.length} produtos processados:\n`;
-    mensagem += `   • ${resultadoProdutos.produtosCriados} produtos novos cadastrados\n`;
-    mensagem += `   • ${resultadoProdutos.produtosEncontrados} produtos já existentes\n\n`;
+    mensagem += `   ✓ ${resultadoProdutos.produtosEncontrados} produtos já existentes (entrada no estoque)\n`;
+    mensagem += `   ➕ ${resultadoProdutos.produtosCriados} produtos novos cadastrados\n\n`;
 
     if (resultadoProdutos.produtosCriados > 0) {
-      mensagem += `⚠️ ATENÇÃO: Os ${resultadoProdutos.produtosCriados} produtos novos foram cadastrados com dados básicos da NF.\n`;
-      mensagem += `Você pode editá-los depois para adicionar:\n`;
-      mensagem += `   • Código Neoformula\n`;
-      mensagem += `   • Descrição Neoformula\n`;
-      mensagem += `   • Categoria\n`;
-      mensagem += `   • Imagem\n`;
-      mensagem += `   • Estoque mínimo / Ponto de pedido\n`;
+      mensagem += `⚠️ IMPORTANTE - CADASTROS INCOMPLETOS!\n\n`;
+      mensagem += `Os ${resultadoProdutos.produtosCriados} produtos novos foram cadastrados APENAS com:\n`;
+      mensagem += `   • Código e Descrição do FORNECEDOR (da NF)\n`;
+      mensagem += `   • Preço, Unidade, NCM (da NF)\n\n`;
+      mensagem += `Você DEVE completar os cadastros com:\n`;
+      mensagem += `   📝 Código Neoformula (seu código interno)\n`;
+      mensagem += `   📝 Descrição Neoformula (sua descrição)\n`;
+      mensagem += `   📂 Categoria\n`;
+      mensagem += `   🖼️ Imagem do produto\n`;
+      mensagem += `   📊 Estoque mínimo e Ponto de pedido\n\n`;
+      mensagem += `➡️ Vá em "Produtos" → produtos com badge "⚠️ CADASTRO INCOMPLETO" → clique em "✏️ Completar"`;
     }
 
     Logger.log('========== PROCESSAR NF V13 - CONCLUÍDO ==========');
