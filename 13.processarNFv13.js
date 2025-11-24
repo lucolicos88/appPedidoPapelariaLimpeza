@@ -13,9 +13,9 @@
  */
 
 /**
- * Processa NF v13 - Importação automática completa
- * @param {object} params - { xmlBase64, tipoProdutos, observacoes }
- * @returns {object} - { success, nfId, fornecedorCriado, produtosCriados, produtosAtualizados }
+ * Processa NF v13 - Importação com fornecedor PRÉ-SELECIONADO
+ * @param {object} params - { xmlBase64, fornecedorId, tipoProdutos, observacoes }
+ * @returns {object} - { success, nfId, produtosCriados, produtosEncontrados }
  */
 function processarNFv13Automatico(params) {
   try {
@@ -30,10 +30,32 @@ function processarNFv13Automatico(params) {
       };
     }
 
+    // Validar fornecedor ID
+    if (!params.fornecedorId) {
+      return {
+        success: false,
+        error: 'Fornecedor é obrigatório. Selecione um fornecedor antes de importar o XML.'
+      };
+    }
+
     const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    // 1. PARSE DO XML
-    Logger.log('1️⃣ Fazendo parse do XML...');
+    // 1. VALIDAR FORNECEDOR
+    Logger.log('1️⃣ Validando fornecedor...');
+    const fornecedorResult = buscarFornecedor(params.fornecedorId);
+
+    if (!fornecedorResult.success) {
+      return {
+        success: false,
+        error: 'Fornecedor não encontrado. Cadastre o fornecedor primeiro.'
+      };
+    }
+
+    const fornecedor = fornecedorResult.fornecedor;
+    Logger.log(`✅ Fornecedor: ${fornecedor.nome} - ID: ${params.fornecedorId}`);
+
+    // 2. PARSE DO XML
+    Logger.log('2️⃣ Fazendo parse do XML...');
     const resultadoXML = uploadEProcessarXMLNF(params.xmlBase64, 'nf.xml');
 
     if (!resultadoXML.success) {
@@ -46,30 +68,11 @@ function processarNFv13Automatico(params) {
     const dadosNF = resultadoXML.dadosNF;
     Logger.log(`✅ XML processado: NF ${dadosNF.numeroNF} com ${dadosNF.produtos.length} produtos`);
 
-    // 2. BUSCAR OU CRIAR FORNECEDOR
-    Logger.log('2️⃣ Buscando/criando fornecedor...');
-    const fornecedorResult = buscarOuCriarFornecedor({
-      nome: dadosNF.fornecedor,
-      cnpj: dadosNF.cnpjFornecedor,
-      tipoProdutos: params.tipoProdutos
-    });
-
-    if (!fornecedorResult.success) {
-      return {
-        success: false,
-        error: 'Erro ao processar fornecedor: ' + fornecedorResult.error
-      };
-    }
-
-    const fornecedorId = fornecedorResult.fornecedorId;
-    const fornecedorCriado = fornecedorResult.criado;
-    Logger.log(`✅ Fornecedor: ${fornecedorCriado ? 'CRIADO' : 'ENCONTRADO'} - ID: ${fornecedorId}`);
-
     // 3. PROCESSAR PRODUTOS (CRUZAMENTO + CADASTRO)
     Logger.log('3️⃣ Processando produtos da NF...');
     const resultadoProdutos = processarProdutosNF({
       produtos: dadosNF.produtos,
-      fornecedorId: fornecedorId,
+      fornecedorId: params.fornecedorId,
       tipoProdutos: params.tipoProdutos,
       email: email
     });
@@ -134,13 +137,10 @@ function processarNFv13Automatico(params) {
 
     // 6. MENSAGEM DE SUCESSO
     let mensagem = `NF ${dadosNF.numeroNF} processada com sucesso!\n\n`;
+    mensagem += `🏢 Fornecedor: ${fornecedor.nome}\n\n`;
     mensagem += `📦 ${dadosNF.produtos.length} produtos processados:\n`;
     mensagem += `   • ${resultadoProdutos.produtosCriados} produtos novos cadastrados\n`;
     mensagem += `   • ${resultadoProdutos.produtosEncontrados} produtos já existentes\n\n`;
-
-    if (fornecedorCriado) {
-      mensagem += `🏢 Fornecedor "${dadosNF.fornecedor}" cadastrado automaticamente\n\n`;
-    }
 
     if (resultadoProdutos.produtosCriados > 0) {
       mensagem += `⚠️ ATENÇÃO: Os ${resultadoProdutos.produtosCriados} produtos novos foram cadastrados com dados básicos da NF.\n`;
@@ -157,7 +157,6 @@ function processarNFv13Automatico(params) {
     return {
       success: true,
       nfId: nfId,
-      fornecedorCriado: fornecedorCriado,
       produtosCriados: resultadoProdutos.produtosCriados,
       produtosEncontrados: resultadoProdutos.produtosEncontrados,
       mensagem: mensagem
@@ -174,70 +173,12 @@ function processarNFv13Automatico(params) {
 }
 
 /**
- * Busca fornecedor por CNPJ ou cria novo
+ * FUNÇÃO REMOVIDA EM v13.1
+ *
+ * buscarOuCriarFornecedor() foi removida.
+ * Agora o fornecedor DEVE ser selecionado ANTES do upload do XML.
+ * Use cadastrarFornecedor() em 12.gerenciamentoFornecedores.js para cadastrar novos fornecedores.
  */
-function buscarOuCriarFornecedor(dados) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const abaFornecedores = ss.getSheetByName(CONFIG.ABAS.FORNECEDORES);
-
-    if (!abaFornecedores) {
-      return { success: false, error: 'Aba Fornecedores não encontrada. Execute setupPlanilha().' };
-    }
-
-    const dadosFornecedores = abaFornecedores.getDataRange().getValues();
-
-    // Buscar por CNPJ
-    let fornecedorId = null;
-    for (let i = 1; i < dadosFornecedores.length; i++) {
-      const cnpjExistente = dadosFornecedores[i][CONFIG.COLUNAS_FORNECEDORES.CNPJ - 1];
-      if (cnpjExistente === dados.cnpj) {
-        fornecedorId = dadosFornecedores[i][CONFIG.COLUNAS_FORNECEDORES.ID - 1];
-        Logger.log(`✅ Fornecedor encontrado: ${fornecedorId}`);
-        return {
-          success: true,
-          fornecedorId: fornecedorId,
-          criado: false
-        };
-      }
-    }
-
-    // Não encontrado - criar novo
-    fornecedorId = Utilities.getUuid();
-
-    const novoFornecedor = [];
-    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.ID - 1] = fornecedorId;
-    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.NOME - 1] = dados.nome;
-    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.NOME_FANTASIA - 1] = '';
-    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.CNPJ - 1] = dados.cnpj || '';
-    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.TELEFONE - 1] = '';
-    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.EMAIL - 1] = '';
-    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.ENDERECO - 1] = '';
-    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.CIDADE - 1] = '';
-    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.ESTADO - 1] = '';
-    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.CEP - 1] = '';
-    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.TIPO_PRODUTOS - 1] = dados.tipoProdutos;
-    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.ATIVO - 1] = 'Sim';
-    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.DATA_CADASTRO - 1] = new Date();
-    novoFornecedor[CONFIG.COLUNAS_FORNECEDORES.OBSERVACOES - 1] = 'Cadastrado automaticamente via NF';
-
-    abaFornecedores.appendRow(novoFornecedor);
-    Logger.log(`✅ Fornecedor criado: ${fornecedorId}`);
-
-    return {
-      success: true,
-      fornecedorId: fornecedorId,
-      criado: true
-    };
-
-  } catch (error) {
-    Logger.log(`❌ Erro ao buscar/criar fornecedor: ${error.message}`);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}
 
 /**
  * Processa produtos da NF: cruza com cadastrados e cadastra novos

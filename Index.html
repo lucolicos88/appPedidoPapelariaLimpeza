@@ -1530,7 +1530,7 @@
             Controle de notas fiscais de fornecedores e entrada de produtos no estoque
           </p>
           <button class="btn btn-primary" onclick="abrirModalNovaNF()" style="margin-top: 10px;">
-            ➕ Nova Nota Fiscal
+            📤 Importar XML
           </button>
         </div>
 
@@ -2180,31 +2180,45 @@
     </div>
   </div>
 
-  <!-- Modal: Nova Nota Fiscal com Upload XML (v13.0 - Processamento AUTOMÁTICO) -->
+  <!-- Modal: Importar XML (v13.1 - COM SELEÇÃO DE FORNECEDOR) -->
   <div class="modal" id="modalNovaNF">
     <div class="modal-content" style="max-width: 800px;">
       <div class="modal-header">
-        <h3 class="modal-title">📄 Nova Nota Fiscal - Importar XML (v13)</h3>
+        <h3 class="modal-title">📤 Importar XML da Nota Fiscal</h3>
         <button class="modal-close" onclick="closeModalNF()">&times;</button>
       </div>
 
       <form id="formNovaNF" onsubmit="return false;">
 
-        <!-- Tipo de Produto (OBRIGATÓRIO ANTES DO UPLOAD) -->
+        <!-- PASSO 1: Selecionar Fornecedor -->
         <div class="form-group">
-          <label class="form-label">Tipo de Produtos da NF *</label>
-          <select class="form-control" id="nfTipoProdutos" required>
+          <label class="form-label">
+            1️⃣ Fornecedor *
+            <button type="button" class="btn btn-sm" onclick="abrirModalNovoFornecedor()" style="margin-left: 10px; padding: 4px 12px; font-size: 0.85rem;">
+              ➕ Cadastrar Novo Fornecedor
+            </button>
+          </label>
+          <select class="form-control" id="nfFornecedorId" required onchange="habilitarUploadXML()">
+            <option value="">Selecione o fornecedor...</option>
+            <!-- Opções preenchidas via JS -->
+          </select>
+          <small style="color: #666;">⚠️ Selecione o fornecedor ANTES de fazer upload do XML</small>
+        </div>
+
+        <!-- PASSO 2: Tipo de Produto -->
+        <div class="form-group">
+          <label class="form-label">2️⃣ Tipo de Produtos da NF *</label>
+          <select class="form-control" id="nfTipoProdutos" required onchange="habilitarUploadXML()">
             <option value="">Selecione...</option>
             <option value="Papelaria">📝 Papelaria</option>
             <option value="Limpeza">🧹 Limpeza</option>
           </select>
-          <small style="color: #666;">⚠️ Selecione o tipo ANTES de fazer upload do XML</small>
         </div>
 
-        <!-- Upload de Arquivo XML -->
+        <!-- PASSO 3: Upload de Arquivo XML -->
         <div class="form-group">
-          <label class="form-label">Arquivo XML da NF-e *</label>
-          <input type="file" class="form-control" id="nfArquivoXML" accept=".xml" required onchange="processarArquivoXMLv13(event)">
+          <label class="form-label">3️⃣ Arquivo XML da NF-e *</label>
+          <input type="file" class="form-control" id="nfArquivoXML" accept=".xml" required onchange="processarArquivoXMLv13(event)" disabled>
           <small style="color: #666;">Faça upload do arquivo XML da nota fiscal eletrônica</small>
         </div>
 
@@ -2216,20 +2230,19 @@
 
         <!-- Informações do Fluxo Automático -->
         <div style="background: #e3f2fd; padding: 15px; border-radius: 5px; border-left: 4px solid #2196F3;">
-          <h4 style="margin: 0 0 10px 0; color: #1976d2;">🤖 Processamento Automático (v13)</h4>
+          <h4 style="margin: 0 0 10px 0; color: #1976d2;">🤖 Processamento Automático (v13.1)</h4>
           <p style="margin: 0; line-height: 1.6; color: #555;">
             Ao fazer upload do XML, o sistema irá <strong>automaticamente</strong>:
           </p>
           <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #555;">
-            <li>Extrair dados da NF (fornecedor, produtos, valores)</li>
-            <li>Buscar ou criar o fornecedor na base</li>
-            <li>Cruzar produtos do XML com produtos já cadastrados</li>
+            <li>Extrair dados da NF (produtos, valores, códigos e descrições do fornecedor)</li>
+            <li>Cruzar produtos do XML com produtos já cadastrados (por código + fornecedor)</li>
             <li><strong>Produtos encontrados</strong>: Apenas dar entrada no estoque</li>
-            <li><strong>Produtos novos</strong>: Cadastrar com dados básicos da NF</li>
-            <li>Atualizar estoque e custo médio</li>
+            <li><strong>Produtos novos</strong>: Cadastrar com Código e Descrição do Fornecedor</li>
+            <li>Atualizar estoque e custo médio automaticamente</li>
           </ul>
           <p style="margin: 10px 0 0 0; color: #856404; font-weight: 500;">
-            ⚠️ Produtos novos terão dados básicos. Você pode editá-los depois para adicionar: Código Neoformula, Descrição Neoformula, Categoria, Imagem, etc.
+            ⚠️ Produtos novos precisarão ser completados manualmente depois com: <strong>Código Neoformula, Descrição Neoformula, Categoria, Imagem, Estoque Mínimo, Ponto de Pedido</strong>.
           </p>
         </div>
 
@@ -2237,6 +2250,67 @@
         <div style="display: flex; gap: 10px; margin-top: 20px;">
           <button type="button" class="btn btn-secondary" onclick="closeModalNF()" style="flex: 1;">
             ❌ Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Cadastrar Novo Fornecedor -->
+  <div class="modal" id="modalNovoFornecedor">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🏢 Cadastrar Novo Fornecedor</h3>
+        <button class="modal-close" onclick="closeModal('modalNovoFornecedor')">&times;</button>
+      </div>
+
+      <form id="formNovoFornecedor" onsubmit="return false;">
+        <div class="form-group">
+          <label class="form-label">Nome/Razão Social *</label>
+          <input type="text" class="form-control" id="fornecedorNome" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nome Fantasia</label>
+          <input type="text" class="form-control" id="fornecedorNomeFantasia">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">CNPJ</label>
+          <input type="text" class="form-control" id="fornecedorCNPJ" placeholder="00.000.000/0000-00">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Telefone</label>
+          <input type="text" class="form-control" id="fornecedorTelefone" placeholder="(00) 00000-0000">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control" id="fornecedorEmail">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tipo de Produtos</label>
+          <select class="form-control" id="fornecedorTipoProdutos">
+            <option value="">Selecione...</option>
+            <option value="Papelaria">📝 Papelaria</option>
+            <option value="Limpeza">🧹 Limpeza</option>
+            <option value="Ambos">📦 Ambos</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Observações</label>
+          <textarea class="form-control" id="fornecedorObservacoes" rows="3"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modalNovoFornecedor')" style="flex: 1;">
+            ❌ Cancelar
+          </button>
+          <button type="button" class="btn btn-primary" onclick="salvarNovoFornecedor()" style="flex: 1;">
+            ✅ Salvar Fornecedor
           </button>
         </div>
       </form>
@@ -5463,19 +5537,119 @@ function renderMovimentacoesTable(movimentacoes) {
     /**
      * Abre modal para nova Nota Fiscal
      */
+    /**
+     * Abre modal de Importar XML (v13.1 - COM FORNECEDOR)
+     */
     function abrirModalNovaNF() {
-      nfProdutosCount = 0;
       document.getElementById('formNovaNF').reset();
-      document.getElementById('nfProdutosContainer').innerHTML = '';
+      document.getElementById('nfArquivoXML').disabled = true; // Desabilitar até selecionar fornecedor e tipo
 
-      // Adicionar primeiro produto automaticamente
-      adicionarProdutoNF();
-
-      // Definir data padrão como hoje
-      document.getElementById('nfDataEmissao').valueAsDate = new Date();
-      document.getElementById('nfDataEntrada').valueAsDate = new Date();
+      // Carregar lista de fornecedores
+      carregarFornecedoresDropdown();
 
       document.getElementById('modalNovaNF').classList.add('active');
+    }
+
+    /**
+     * Carrega lista de fornecedores para o dropdown
+     */
+    function carregarFornecedoresDropdown() {
+      showLoading();
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+          if (response && response.success) {
+            const select = document.getElementById('nfFornecedorId');
+            select.innerHTML = '<option value="">Selecione o fornecedor...</option>';
+
+            response.fornecedores.forEach(function(fornecedor) {
+              const option = document.createElement('option');
+              option.value = fornecedor.id;
+              option.textContent = fornecedor.nome + (fornecedor.cnpj ? ' - ' + fornecedor.cnpj : '');
+              select.appendChild(option);
+            });
+          } else {
+            showError('Erro ao carregar fornecedores: ' + (response ? response.error : 'Erro desconhecido'));
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro ao carregar fornecedores: ' + error.message);
+        })
+        .listarFornecedoresParaDropdown();
+    }
+
+    /**
+     * Habilita upload de XML quando fornecedor e tipo estiverem selecionados
+     */
+    function habilitarUploadXML() {
+      const fornecedorId = document.getElementById('nfFornecedorId').value;
+      const tipoProdutos = document.getElementById('nfTipoProdutos').value;
+      const uploadInput = document.getElementById('nfArquivoXML');
+
+      if (fornecedorId && tipoProdutos) {
+        uploadInput.disabled = false;
+        uploadInput.style.opacity = '1';
+      } else {
+        uploadInput.disabled = true;
+        uploadInput.style.opacity = '0.5';
+      }
+    }
+
+    /**
+     * Abre modal de cadastro de fornecedor
+     */
+    function abrirModalNovoFornecedor() {
+      document.getElementById('formNovoFornecedor').reset();
+      document.getElementById('modalNovoFornecedor').classList.add('active');
+    }
+
+    /**
+     * Salva novo fornecedor
+     */
+    function salvarNovoFornecedor() {
+      const nome = document.getElementById('fornecedorNome').value.trim();
+
+      if (!nome) {
+        showError('Nome do fornecedor é obrigatório');
+        return;
+      }
+
+      const dadosFornecedor = {
+        nome: nome,
+        nomeFantasia: document.getElementById('fornecedorNomeFantasia').value.trim(),
+        cnpj: document.getElementById('fornecedorCNPJ').value.trim(),
+        telefone: document.getElementById('fornecedorTelefone').value.trim(),
+        email: document.getElementById('fornecedorEmail').value.trim(),
+        tipoProdutos: document.getElementById('fornecedorTipoProdutos').value,
+        observacoes: document.getElementById('fornecedorObservacoes').value.trim()
+      };
+
+      showLoading();
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+          if (response && response.success) {
+            showSuccess('Fornecedor cadastrado com sucesso!');
+            closeModal('modalNovoFornecedor');
+
+            // Recarregar lista de fornecedores
+            carregarFornecedoresDropdown();
+
+            // Selecionar automaticamente o fornecedor recém-criado
+            setTimeout(function() {
+              document.getElementById('nfFornecedorId').value = response.fornecedorId;
+              habilitarUploadXML();
+            }, 500);
+          } else {
+            showError('Erro ao cadastrar fornecedor: ' + (response ? response.error : 'Erro desconhecido'));
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro ao cadastrar fornecedor: ' + error.message);
+        })
+        .cadastrarFornecedor(dadosFornecedor);
     }
 
     /**
@@ -5765,14 +5939,22 @@ function renderMovimentacoesTable(movimentacoes) {
     }
 
     /**
-     * Processa arquivo XML selecionado v13 - FLUXO AUTOMÁTICO
+     * Processa arquivo XML selecionado v13.1 - FLUXO COM FORNECEDOR PRÉ-SELECIONADO
      */
     function processarArquivoXMLv13(event) {
       const file = event.target.files[0];
 
       if (!file) return;
 
+      const fornecedorId = document.getElementById('nfFornecedorId').value;
       const tipoProdutos = document.getElementById('nfTipoProdutos').value;
+
+      if (!fornecedorId) {
+        showError('Selecione o fornecedor antes de fazer upload do XML');
+        document.getElementById('nfArquivoXML').value = '';
+        return;
+      }
+
       if (!tipoProdutos) {
         showError('Selecione o tipo de produtos antes de fazer upload do XML');
         document.getElementById('nfArquivoXML').value = '';
@@ -5780,7 +5962,7 @@ function renderMovimentacoesTable(movimentacoes) {
       }
 
       // Confirmar processamento automático
-      if (!confirm(`Processar NF automaticamente?\n\nO sistema irá:\n✓ Extrair dados do XML\n✓ Buscar/criar fornecedor\n✓ Cruzar produtos com cadastrados\n✓ Cadastrar produtos novos (dados básicos)\n✓ Dar entrada no estoque\n\nVocê poderá editar os produtos depois para completar dados Neoformula.`)) {
+      if (!confirm(`Processar NF automaticamente?\n\nO sistema irá:\n✓ Extrair dados do XML (Código e Descrição do Fornecedor)\n✓ Cruzar produtos com cadastrados (por código + fornecedor)\n✓ Cadastrar produtos novos (somente com dados do fornecedor)\n✓ Dar entrada no estoque e atualizar custos\n\n⚠️ Produtos novos precisarão ser completados depois com Código e Descrição Neoformula.`)) {
         document.getElementById('nfArquivoXML').value = '';
         return;
       }
@@ -5801,7 +5983,7 @@ function renderMovimentacoesTable(movimentacoes) {
             hideLoading();
 
             if (response && response.success) {
-              showSuccess(response.mensagem);
+              showSuccess(response.mensagem || 'NF processada com sucesso!');
               closeModalNF();
               loadNotasFiscais();
             } else {
@@ -5816,6 +5998,7 @@ function renderMovimentacoesTable(movimentacoes) {
           })
           .processarNFv13Automatico({
             xmlBase64: xmlBase64,
+            fornecedorId: fornecedorId,
             tipoProdutos: tipoProdutos,
             observacoes: observacoes
           });
