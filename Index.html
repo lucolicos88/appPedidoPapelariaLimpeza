@@ -2280,19 +2280,19 @@
 
       <form id="formNovaNF" onsubmit="return false;">
 
-        <!-- PASSO 1: Selecionar Fornecedor -->
+        <!-- PASSO 1: Selecionar Fornecedor (OPCIONAL) -->
         <div class="form-group">
           <label class="form-label">
-            1️⃣ Fornecedor *
+            1️⃣ Fornecedor (opcional)
             <button type="button" class="btn btn-sm" onclick="abrirModalNovoFornecedor()" style="margin-left: 10px; padding: 4px 12px; font-size: 0.85rem;">
               ➕ Cadastrar Novo Fornecedor
             </button>
           </label>
-          <select class="form-control" id="nfFornecedorId" required onchange="habilitarUploadXML()">
-            <option value="">Selecione o fornecedor...</option>
+          <select class="form-control" id="nfFornecedorId" onchange="habilitarUploadXML()">
+            <option value="">Deixe vazio para cadastro automático...</option>
             <!-- Opções preenchidas via JS -->
           </select>
-          <small style="color: #666;">⚠️ Selecione o fornecedor ANTES de fazer upload do XML</small>
+          <small style="color: #666;">💡 Se deixar vazio, o sistema criará o fornecedor automaticamente a partir dos dados do XML</small>
         </div>
 
         <!-- PASSO 2: Tipo de Produto -->
@@ -5841,14 +5841,13 @@ function renderMovimentacoesTable(movimentacoes) {
     }
 
     /**
-     * Habilita upload de XML quando fornecedor e tipo estiverem selecionados
+     * Habilita upload de XML quando tipo de produto estiver selecionado (fornecedor é opcional)
      */
     function habilitarUploadXML() {
-      const fornecedorId = document.getElementById('nfFornecedorId').value;
       const tipoProdutos = document.getElementById('nfTipoProdutos').value;
       const uploadInput = document.getElementById('nfArquivoXML');
 
-      if (fornecedorId && tipoProdutos) {
+      if (tipoProdutos) {
         uploadInput.disabled = false;
         uploadInput.style.opacity = '1';
       } else {
@@ -6073,56 +6072,67 @@ function renderMovimentacoesTable(movimentacoes) {
      * Processa uma Nota Fiscal (atualiza estoque)
      */
     function processarNF(nfId) {
-      if (!confirm('Deseja processar esta Nota Fiscal?\n\nIsso irá atualizar o estoque de todos os produtos da NF.')) {
-        return;
-      }
+      showConfirmModal(
+        '📦 Processar Nota Fiscal',
+        'Deseja processar esta Nota Fiscal?\n\nIsso irá atualizar o estoque de todos os produtos da NF.',
+        function() {
+          // Confirmado
+          showLoading();
 
-      showLoading();
-
-      google.script.run
-        .withSuccessHandler(function(response) {
-          hideLoading();
-          if (response && response.success) {
-            showSuccess(response.message);
-            loadNotasFiscais();
-          } else {
-            showError('Erro ao processar NF: ' + (response ? response.error : 'Erro desconhecido'));
-          }
-        })
-        .withFailureHandler(function(error) {
-          hideLoading();
-          showError('Erro: ' + error.message);
-        })
-        .processarNotaFiscal(nfId);
+          google.script.run
+            .withSuccessHandler(function(response) {
+              hideLoading();
+              if (response && response.success) {
+                showSuccess(response.message);
+                loadNotasFiscais();
+              } else {
+                showError('Erro ao processar NF: ' + (response ? response.error : 'Erro desconhecido'));
+              }
+            })
+            .withFailureHandler(function(error) {
+              hideLoading();
+              showError('Erro: ' + error.message);
+            })
+            .processarNotaFiscal(nfId);
+        }
+      );
     }
 
     /**
      * Cancela uma Nota Fiscal
      */
     function cancelarNF(nfId) {
-      const motivo = prompt('Informe o motivo do cancelamento:');
-
-      if (!motivo) {
-        return;
-      }
-
-      showLoading();
-
-      google.script.run
-        .withSuccessHandler(function(response) {
-          hideLoading();
-          if (response && response.success) {
-            showSuccess('Nota Fiscal cancelada');
-            loadNotasFiscais();
-          } else {
-            showError('Erro ao cancelar NF: ' + (response ? response.error : 'Erro desconhecido'));
+      showPromptModal(
+        '❌ Cancelar Nota Fiscal',
+        'Informe o motivo do cancelamento:',
+        function(motivo) {
+          // Confirmado com motivo
+          if (!motivo) {
+            showError('É necessário informar o motivo do cancelamento');
+            return;
           }
-        })
-        .withFailureHandler(function(error) {
-          hideLoading();
-          showError('Erro: ' + error.message);
-        })
-        .cancelarNotaFiscal(nfId, motivo);
+
+          showLoading();
+
+          google.script.run
+            .withSuccessHandler(function(response) {
+              hideLoading();
+              if (response && response.success) {
+                showSuccess('Nota Fiscal cancelada');
+                loadNotasFiscais();
+              } else {
+                showError('Erro ao cancelar NF: ' + (response ? response.error : 'Erro desconhecido'));
+              }
+            })
+            .withFailureHandler(function(error) {
+              hideLoading();
+              showError('Erro: ' + error.message);
+            })
+            .cancelarNotaFiscal(nfId, motivo);
+        },
+        null,
+        'Digite o motivo...'
+      );
     }
 
     /**
@@ -6193,14 +6203,17 @@ function renderMovimentacoesTable(movimentacoes) {
     function closeModalNF() {
       closeModal('modalNovaNF');
       document.getElementById('formNovaNF').reset();
-      document.getElementById('nfPreviewArea').style.display = 'none';
-      document.getElementById('btnCadastrarNF').disabled = true;
-      dadosNFGlobal = null;
-      produtosNFData = [];
+
+      // Reabilitar input após reset
+      document.getElementById('nfArquivoXML').disabled = true;
+
+      // Limpar variáveis globais se existirem
+      if (typeof dadosNFGlobal !== 'undefined') dadosNFGlobal = null;
+      if (typeof produtosNFData !== 'undefined') produtosNFData = [];
     }
 
     /**
-     * Processa arquivo XML selecionado v13.1 - FLUXO COM FORNECEDOR PRÉ-SELECIONADO
+     * Processa arquivo XML selecionado v13.1.4 - FORNECEDOR OPCIONAL COM AUTO-CADASTRO
      */
     function processarArquivoXMLv13(event) {
       const file = event.target.files[0];
@@ -6210,23 +6223,40 @@ function renderMovimentacoesTable(movimentacoes) {
       const fornecedorId = document.getElementById('nfFornecedorId').value;
       const tipoProdutos = document.getElementById('nfTipoProdutos').value;
 
-      if (!fornecedorId) {
-        showError('Selecione o fornecedor antes de fazer upload do XML');
-        document.getElementById('nfArquivoXML').value = '';
-        return;
-      }
-
       if (!tipoProdutos) {
         showError('Selecione o tipo de produtos antes de fazer upload do XML');
         document.getElementById('nfArquivoXML').value = '';
         return;
       }
 
-      // Confirmar processamento automático
-      if (!confirm(`Processar NF automaticamente?\n\nO sistema irá:\n✓ Extrair dados do XML (Código e Descrição do Fornecedor)\n✓ Cruzar produtos com cadastrados (por código + fornecedor)\n✓ Cadastrar produtos novos (somente com dados do fornecedor)\n✓ Dar entrada no estoque e atualizar custos\n\n⚠️ Produtos novos precisarão ser completados depois com Código e Descrição Neoformula.`)) {
-        document.getElementById('nfArquivoXML').value = '';
-        return;
+      // Montar mensagem de confirmação
+      let mensagemConfirmacao = `Processar NF automaticamente?\n\nO sistema irá:\n`;
+
+      if (!fornecedorId) {
+        mensagemConfirmacao += `✓ Cadastrar o fornecedor automaticamente a partir do XML\n`;
       }
+
+      mensagemConfirmacao += `✓ Extrair dados do XML (Código e Descrição do Fornecedor)\n✓ Cruzar produtos com cadastrados (por código + fornecedor)\n✓ Cadastrar produtos novos (somente com dados do fornecedor)\n✓ Dar entrada no estoque e atualizar custos\n\n⚠️ Produtos novos precisarão ser completados depois com Código e Descrição Neoformula.`;
+
+      // Confirmar processamento automático com modal customizado
+      showConfirmModal(
+        '📤 Processar Nota Fiscal',
+        mensagemConfirmacao,
+        function() {
+          // Usuário confirmou, processar XML
+          processarXMLConfirmado(file, fornecedorId, tipoProdutos);
+        },
+        function() {
+          // Usuário cancelou, limpar input
+          document.getElementById('nfArquivoXML').value = '';
+        }
+      );
+    }
+
+    /**
+     * Processa XML após confirmação do usuário (v13.1.4)
+     */
+    function processarXMLConfirmado(file, fornecedorId, tipoProdutos) {
 
       showLoading();
 
@@ -6642,9 +6672,17 @@ function renderMovimentacoesTable(movimentacoes) {
         const cadastrarNovos = document.getElementById('nfCadastrarNovos').checked;
 
         if (!cadastrarNovos) {
-          if (!confirm(`Atenção: ${dadosParsed.naoMapeados.length} produto(s) não foram identificados e NÃO serão processados.\\n\\nDeseja continuar mesmo assim?`)) {
-            return;
-          }
+          showConfirmModal(
+            '⚠️ Produtos Não Identificados',
+            `Atenção: ${dadosParsed.naoMapeados.length} produto(s) não foram identificados e NÃO serão processados.\n\nDeseja continuar mesmo assim?`,
+            function() {
+              // Usuário confirmou, continuar sem os produtos não mapeados
+              const observacoes = document.getElementById('nfObservacoes').value;
+              showLoading();
+              cadastrarEProcessarNF(dadosParsed.dadosNF, dadosParsed.mapeamento, observacoes);
+            }
+          );
+          return;
         }
       }
 
@@ -7209,13 +7247,15 @@ function renderMovimentacoesTable(movimentacoes) {
      * Exclui usuário (v10.1)
      */
     function excluirUsuario(email) {
-      if (!confirm(`Tem certeza que deseja excluir o usuário ${email}?`)) {
-        return;
-      }
-
-      console.log('🗑️ Excluindo usuário:', email);
-      showError('Funcionalidade de exclusão de usuários será implementada em breve.');
-      // TODO v10.2: Implementar exclusão de usuário com backend
+      showConfirmModal(
+        '🗑️ Excluir Usuário',
+        `Tem certeza que deseja excluir o usuário ${email}?`,
+        function() {
+          console.log('🗑️ Excluindo usuário:', email);
+          showError('Funcionalidade de exclusão de usuários será implementada em breve.');
+          // TODO v10.2: Implementar exclusão de usuário com backend
+        }
+      );
     }
 
     /**
@@ -7357,11 +7397,52 @@ function renderMovimentacoesTable(movimentacoes) {
     }
     
     /**
-     * Mostra mensagem de erro
+     * Mostra mensagem de erro (v13.1.4 - Modal estilizado)
      */
     function showError(message) {
-      alert('❌ Erro: ' + message);
-      console.error('Erro:', message);
+      // Criar overlay
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+      `;
+
+      // Criar modal
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        max-width: 500px;
+        animation: slideDown 0.3s ease;
+      `;
+
+      modal.innerHTML = `
+        <div style="font-size: 4rem; margin-bottom: 20px; color: #f44336;">❌</div>
+        <h2 style="color: #f44336; margin-bottom: 15px; font-size: 1.5rem;">Erro!</h2>
+        <p style="color: #666; font-size: 1.1rem; margin-bottom: 25px; white-space: pre-line;">${message}</p>
+        <button onclick="this.closest('[data-error-overlay]').remove()"
+                style="background: #f44336; color: white; border: none; padding: 12px 30px; border-radius: 6px; font-size: 1rem; cursor: pointer; transition: all 0.3s;">
+          Fechar
+        </button>
+      `;
+
+      overlay.setAttribute('data-error-overlay', 'true');
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+
+      console.error('❌ Erro:', message);
     }
     
     /**
@@ -7420,7 +7501,179 @@ function renderMovimentacoesTable(movimentacoes) {
 
       console.log('✅ Sucesso:', message);
     }
-    
+
+    /**
+     * Mostra modal de confirmação (v13.1.4 - Modal estilizado)
+     * @param {string} title - Título do modal
+     * @param {string} message - Mensagem de confirmação
+     * @param {function} onConfirm - Callback executado quando usuário confirma
+     * @param {function} onCancel - Callback executado quando usuário cancela (opcional)
+     */
+    function showConfirmModal(title, message, onConfirm, onCancel) {
+      // Criar overlay
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+      `;
+
+      // Criar modal
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        max-width: 600px;
+        animation: slideDown 0.3s ease;
+      `;
+
+      modal.innerHTML = `
+        <div style="font-size: 3rem; margin-bottom: 20px; color: #ff9800;">⚠️</div>
+        <h2 style="color: var(--primary); margin-bottom: 15px; font-size: 1.5rem;">${title}</h2>
+        <p style="color: #666; font-size: 1.05rem; margin-bottom: 25px; white-space: pre-line; text-align: left; line-height: 1.6;">${message}</p>
+        <div style="display: flex; gap: 15px; justify-content: center;">
+          <button id="btnConfirmCancel"
+                  style="background: #999; color: white; border: none; padding: 12px 30px; border-radius: 6px; font-size: 1rem; cursor: pointer; transition: all 0.3s;">
+            ❌ Cancelar
+          </button>
+          <button id="btnConfirmOk"
+                  style="background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 6px; font-size: 1rem; cursor: pointer; transition: all 0.3s;">
+            ✅ Confirmar
+          </button>
+        </div>
+      `;
+
+      overlay.setAttribute('data-confirm-overlay', 'true');
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+
+      // Event listeners
+      const btnOk = modal.querySelector('#btnConfirmOk');
+      const btnCancel = modal.querySelector('#btnConfirmCancel');
+
+      btnOk.addEventListener('click', function() {
+        overlay.remove();
+        if (onConfirm) onConfirm();
+      });
+
+      btnCancel.addEventListener('click', function() {
+        overlay.remove();
+        if (onCancel) onCancel();
+      });
+
+      // Fechar com ESC
+      const handleEsc = function(e) {
+        if (e.key === 'Escape') {
+          overlay.remove();
+          if (onCancel) onCancel();
+          document.removeEventListener('keydown', handleEsc);
+        }
+      };
+      document.addEventListener('keydown', handleEsc);
+    }
+
+    /**
+     * Mostra modal de prompt (v13.1.4 - Modal estilizado)
+     * @param {string} title - Título do modal
+     * @param {string} message - Mensagem do prompt
+     * @param {function} onConfirm - Callback executado com o valor digitado (value)
+     * @param {function} onCancel - Callback executado quando usuário cancela (opcional)
+     * @param {string} placeholder - Placeholder do input (opcional)
+     */
+    function showPromptModal(title, message, onConfirm, onCancel, placeholder) {
+      // Criar overlay
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+      `;
+
+      // Criar modal
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        animation: slideDown 0.3s ease;
+      `;
+
+      modal.innerHTML = `
+        <div style="font-size: 3rem; margin-bottom: 20px; text-align: center; color: #2196f3;">📝</div>
+        <h2 style="color: var(--primary); margin-bottom: 15px; font-size: 1.5rem; text-align: center;">${title}</h2>
+        <p style="color: #666; font-size: 1.05rem; margin-bottom: 20px; line-height: 1.6;">${message}</p>
+        <input type="text" id="promptInput" class="form-control" placeholder="${placeholder || ''}" style="margin-bottom: 25px; width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem;">
+        <div style="display: flex; gap: 15px; justify-content: center;">
+          <button id="btnPromptCancel"
+                  style="background: #999; color: white; border: none; padding: 12px 30px; border-radius: 6px; font-size: 1rem; cursor: pointer; transition: all 0.3s;">
+            ❌ Cancelar
+          </button>
+          <button id="btnPromptOk"
+                  style="background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 6px; font-size: 1rem; cursor: pointer; transition: all 0.3s;">
+            ✅ Confirmar
+          </button>
+        </div>
+      `;
+
+      overlay.setAttribute('data-prompt-overlay', 'true');
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+
+      // Focus no input
+      const input = modal.querySelector('#promptInput');
+      setTimeout(() => input.focus(), 100);
+
+      // Event listeners
+      const btnOk = modal.querySelector('#btnPromptOk');
+      const btnCancel = modal.querySelector('#btnPromptCancel');
+
+      const handleConfirm = function() {
+        const value = input.value.trim();
+        overlay.remove();
+        if (onConfirm) onConfirm(value);
+      };
+
+      const handleCancel = function() {
+        overlay.remove();
+        if (onCancel) onCancel();
+      };
+
+      btnOk.addEventListener('click', handleConfirm);
+      btnCancel.addEventListener('click', handleCancel);
+
+      // Enter para confirmar
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleConfirm();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          handleCancel();
+        }
+      });
+    }
+
     /**
      * Formata valor monetário
      */
@@ -7493,11 +7746,11 @@ function renderMovimentacoesTable(movimentacoes) {
      * Insere dados fictícios na planilha
      */
     function inserirDadosFicticios() {
-      if (!confirm('⚠️ Confirma a inserção de dados fictícios para teste?\n\nSerão inseridos:\n• 12 pedidos\n• 5 produtos\n• 5 registros de estoque\n• 3 movimentações\n\nOs dados não serão duplicados se já existirem.')) {
-        return;
-      }
-
-      showLoading();
+      showConfirmModal(
+        '⚠️ Inserir Dados de Teste',
+        'Confirma a inserção de dados fictícios para teste?\n\nSerão inseridos:\n• 12 pedidos\n• 5 produtos\n• 5 registros de estoque\n• 3 movimentações\n\nOs dados não serão duplicados se já existirem.',
+        function() {
+          showLoading();
       const resultadoDiv = document.getElementById('dadosFicticiosResultado');
       resultadoDiv.style.display = 'none';
 
@@ -7556,17 +7809,19 @@ function renderMovimentacoesTable(movimentacoes) {
           resultadoDiv.innerHTML = `<strong>❌ Erro:</strong> ${error.message}`;
         })
         .__inserirDadosFicticios();
+        }
+      );
     }
 
     /**
      * Limpa dados fictícios da planilha
      */
     function limparDadosFicticios() {
-      if (!confirm('⚠️ Confirma a REMOÇÃO dos dados fictícios?\n\nSerão removidos APENAS os dados de teste inseridos anteriormente:\n• 12 pedidos (PED-001 a PED-012)\n• 5 produtos (PROD-021 a PROD-025)\n• 5 registros de estoque (EST-001 a EST-005)\n• 3 movimentações (MOV-001 a MOV-003)\n\nDados reais NÃO serão afetados.')) {
-        return;
-      }
-
-      showLoading();
+      showConfirmModal(
+        '⚠️ Remover Dados de Teste',
+        'Confirma a REMOÇÃO dos dados fictícios?\n\nSerão removidos APENAS os dados de teste inseridos anteriormente:\n• 12 pedidos (PED-001 a PED-012)\n• 5 produtos (PROD-021 a PROD-025)\n• 5 registros de estoque (EST-001 a EST-005)\n• 3 movimentações (MOV-001 a MOV-003)\n\nDados reais NÃO serão afetados.',
+        function() {
+          showLoading();
       const resultadoDiv = document.getElementById('dadosFicticiosResultado');
       resultadoDiv.style.display = 'none';
 
@@ -7618,20 +7873,22 @@ function renderMovimentacoesTable(movimentacoes) {
           resultadoDiv.innerHTML = `<strong>❌ Erro:</strong> ${error.message}`;
         })
         .__limparDadosFicticios();
+        }
+      );
     }
 
     /**
      * Corrige URLs antigas de imagens para formato thumbnail
      */
     function corrigirURLsImagens() {
-      if (!confirm('Deseja converter todas as URLs antigas de imagens para o novo formato?\n\nIsto irá atualizar os registros na planilha.')) {
-        return;
-      }
+      showConfirmModal(
+        '🖼️ Corrigir URLs de Imagens',
+        'Deseja converter todas as URLs antigas de imagens para o novo formato?\n\nIsto irá atualizar os registros na planilha.',
+        function() {
+          showLoading();
 
-      showLoading();
-
-      google.script.run
-        .withSuccessHandler(function(response) {
+          google.script.run
+            .withSuccessHandler(function(response) {
           hideLoading();
 
           if (response && response.success) {
@@ -7650,6 +7907,8 @@ function renderMovimentacoesTable(movimentacoes) {
           showError('Erro: ' + error.message);
         })
         .corrigirURLsImagensAntigas();
+        }
+      );
     }
 
     /**
