@@ -420,10 +420,10 @@ function getHistoricoMovimentacoes(filtros) {
     // Ordenar por data (mais recente primeiro)
     movimentacoes.sort((a, b) => new Date(b.dataHora) - new Date(a.dataHora));
 
-    return {
+    return serializarParaFrontend({
       success: true,
       movimentacoes: movimentacoes
-    };
+    });
 
   } catch (error) {
     Logger.log('❌ Erro ao obter histórico: ' + error.message);

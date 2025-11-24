@@ -599,10 +599,10 @@ function listarNotasFiscais(filtros) {
     // Ordenar por data de cadastro (mais recente primeiro)
     notasFiscais.sort((a, b) => new Date(b.dataCadastro) - new Date(a.dataCadastro));
 
-    return {
+    return serializarParaFrontend({
       success: true,
       notasFiscais: notasFiscais
-    };
+    });
 
   } catch (error) {
     Logger.log('❌ Erro ao listar NFs: ' + error.message);

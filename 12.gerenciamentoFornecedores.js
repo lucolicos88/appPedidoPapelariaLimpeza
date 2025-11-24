@@ -245,3 +245,96 @@ function listarFornecedoresParaDropdown() {
     };
   }
 }
+
+/**
+ * Atualiza fornecedor existente (v13.1)
+ */
+function atualizarFornecedor(dadosFornecedor) {
+  try {
+    const email = Session.getActiveUser().getEmail();
+
+    // Verificar permissão
+    if (!verificarPermissao(email, CONFIG.PERMISSOES.GESTOR)) {
+      return {
+        success: false,
+        error: 'Permissão negada. Somente gestores podem atualizar fornecedores.'
+      };
+    }
+
+    // Validar dados obrigatórios
+    if (!dadosFornecedor.id || !dadosFornecedor.nome) {
+      return {
+        success: false,
+        error: 'ID e Nome do fornecedor são obrigatórios'
+      };
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaFornecedores = ss.getSheetByName(CONFIG.ABAS.FORNECEDORES);
+
+    if (!abaFornecedores) {
+      return { success: false, error: 'Aba Fornecedores não encontrada' };
+    }
+
+    const dados = abaFornecedores.getDataRange().getValues();
+    let linhaFornecedor = -1;
+
+    // Encontrar linha do fornecedor
+    for (let i = 1; i < dados.length; i++) {
+      if (dados[i][CONFIG.COLUNAS_FORNECEDORES.ID - 1] === dadosFornecedor.id) {
+        linhaFornecedor = i + 1;
+        break;
+      }
+    }
+
+    if (linhaFornecedor === -1) {
+      return {
+        success: false,
+        error: 'Fornecedor não encontrado'
+      };
+    }
+
+    // Verificar se CNPJ já existe em outro fornecedor (se fornecido e alterado)
+    if (dadosFornecedor.cnpj) {
+      for (let i = 1; i < dados.length; i++) {
+        const cnpjExistente = dados[i][CONFIG.COLUNAS_FORNECEDORES.CNPJ - 1];
+        const idExistente = dados[i][CONFIG.COLUNAS_FORNECEDORES.ID - 1];
+        if (cnpjExistente && cnpjExistente === dadosFornecedor.cnpj && idExistente !== dadosFornecedor.id) {
+          return {
+            success: false,
+            error: 'CNPJ já cadastrado para outro fornecedor'
+          };
+        }
+      }
+    }
+
+    // Atualizar fornecedor
+    abaFornecedores.getRange(linhaFornecedor, CONFIG.COLUNAS_FORNECEDORES.NOME).setValue(dadosFornecedor.nome);
+    abaFornecedores.getRange(linhaFornecedor, CONFIG.COLUNAS_FORNECEDORES.NOME_FANTASIA).setValue(dadosFornecedor.nomeFantasia || '');
+    abaFornecedores.getRange(linhaFornecedor, CONFIG.COLUNAS_FORNECEDORES.CNPJ).setValue(dadosFornecedor.cnpj || '');
+    abaFornecedores.getRange(linhaFornecedor, CONFIG.COLUNAS_FORNECEDORES.TELEFONE).setValue(dadosFornecedor.telefone || '');
+    abaFornecedores.getRange(linhaFornecedor, CONFIG.COLUNAS_FORNECEDORES.EMAIL).setValue(dadosFornecedor.email || '');
+    abaFornecedores.getRange(linhaFornecedor, CONFIG.COLUNAS_FORNECEDORES.ENDERECO).setValue(dadosFornecedor.endereco || '');
+    abaFornecedores.getRange(linhaFornecedor, CONFIG.COLUNAS_FORNECEDORES.CIDADE).setValue(dadosFornecedor.cidade || '');
+    abaFornecedores.getRange(linhaFornecedor, CONFIG.COLUNAS_FORNECEDORES.ESTADO).setValue(dadosFornecedor.estado || '');
+    abaFornecedores.getRange(linhaFornecedor, CONFIG.COLUNAS_FORNECEDORES.CEP).setValue(dadosFornecedor.cep || '');
+    abaFornecedores.getRange(linhaFornecedor, CONFIG.COLUNAS_FORNECEDORES.TIPO_PRODUTOS).setValue(dadosFornecedor.tipoProdutos || '');
+    abaFornecedores.getRange(linhaFornecedor, CONFIG.COLUNAS_FORNECEDORES.ATIVO).setValue(dadosFornecedor.ativo || 'Sim');
+    abaFornecedores.getRange(linhaFornecedor, CONFIG.COLUNAS_FORNECEDORES.OBSERVACOES).setValue(dadosFornecedor.observacoes || '');
+
+    // Registrar log
+    registrarLog('FORNECEDOR_ATUALIZADO', `Fornecedor ${dadosFornecedor.nome} atualizado`, 'SUCESSO');
+
+    return {
+      success: true,
+      message: 'Fornecedor atualizado com sucesso'
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao atualizar fornecedor: ' + error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}

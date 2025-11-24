@@ -994,6 +994,7 @@
         <li class="nav-item" data-page="estoque">📊 Estoque</li>
         <li class="nav-item" data-page="movimentacoes">📦 Movimentações</li>
         <li class="nav-item" data-page="notas-fiscais" id="nav-notas-fiscais" style="display: none;">📄 Notas Fiscais</li>
+        <li class="nav-item" data-page="fornecedores" id="nav-fornecedores" style="display: none;">🏢 Fornecedores</li>
         <li class="nav-item" data-page="relatorios">📄 Relatórios</li>
         <li class="nav-item" data-page="configuracoes">⚙️ Configurações</li>
       </ul>
@@ -1587,6 +1588,77 @@
             </thead>
             <tbody id="notasFiscaisTableBody">
               <!-- Notas Fiscais serão inseridas aqui -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PÁGINA: Fornecedores -->
+    <section class="page-section" id="page-fornecedores">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">🏢 Gerenciamento de Fornecedores</h2>
+          <p style="margin: 8px 0 0 0; color: #666; font-size: 0.9rem;">
+            Cadastro e gerenciamento de fornecedores para importação de notas fiscais
+          </p>
+          <button class="btn btn-primary" onclick="abrirModalEditarFornecedor(null)" style="margin-top: 10px;">
+            ➕ Novo Fornecedor
+          </button>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters" style="margin-bottom: 24px;">
+          <div class="filter-grid">
+            <div class="form-group">
+              <label class="form-label">Buscar</label>
+              <input type="text" class="form-control" id="fornecedorFilterBusca" placeholder="Nome, CNPJ...">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Tipo de Produtos</label>
+              <select class="form-control" id="fornecedorFilterTipo">
+                <option value="">Todos</option>
+                <option value="Papelaria">📝 Papelaria</option>
+                <option value="Limpeza">🧹 Limpeza</option>
+                <option value="Ambos">📦 Ambos</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              <select class="form-control" id="fornecedorFilterAtivo">
+                <option value="">Todos</option>
+                <option value="Sim">✅ Ativo</option>
+                <option value="Não">❌ Inativo</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: flex-end;">
+              <button class="btn btn-primary" onclick="loadFornecedores()" style="width: 100%;">
+                🔍 Filtrar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabela de Fornecedores -->
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome/Razão Social</th>
+                <th>Nome Fantasia</th>
+                <th>CNPJ</th>
+                <th>Telefone</th>
+                <th>Email</th>
+                <th>Tipo de Produtos</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="fornecedoresTableBody">
+              <!-- Fornecedores serão inseridos aqui -->
             </tbody>
           </table>
         </div>
@@ -2317,6 +2389,97 @@
     </div>
   </div>
 
+  <!-- Modal: Editar Fornecedor (v13.1) -->
+  <div class="modal" id="modalEditarFornecedor">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="titleEditarFornecedor">✏️ Editar Fornecedor</h3>
+        <button class="modal-close" onclick="closeModal('modalEditarFornecedor')">&times;</button>
+      </div>
+
+      <form id="formEditarFornecedor" onsubmit="return false;">
+        <input type="hidden" id="editFornecedorId">
+
+        <div class="form-group">
+          <label class="form-label">Nome/Razão Social *</label>
+          <input type="text" class="form-control" id="editFornecedorNome" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nome Fantasia</label>
+          <input type="text" class="form-control" id="editFornecedorNomeFantasia">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">CNPJ</label>
+          <input type="text" class="form-control" id="editFornecedorCNPJ" placeholder="00.000.000/0000-00">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Telefone</label>
+          <input type="text" class="form-control" id="editFornecedorTelefone" placeholder="(00) 00000-0000">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control" id="editFornecedorEmail">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Endereço</label>
+          <input type="text" class="form-control" id="editFornecedorEndereco">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Cidade</label>
+          <input type="text" class="form-control" id="editFornecedorCidade">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <input type="text" class="form-control" id="editFornecedorEstado" maxlength="2" placeholder="SP">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">CEP</label>
+          <input type="text" class="form-control" id="editFornecedorCEP" placeholder="00000-000">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tipo de Produtos</label>
+          <select class="form-control" id="editFornecedorTipoProdutos">
+            <option value="">Selecione...</option>
+            <option value="Papelaria">📝 Papelaria</option>
+            <option value="Limpeza">🧹 Limpeza</option>
+            <option value="Ambos">📦 Ambos</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-control" id="editFornecedorAtivo">
+            <option value="Sim">✅ Ativo</option>
+            <option value="Não">❌ Inativo</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Observações</label>
+          <textarea class="form-control" id="editFornecedorObservacoes" rows="3"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modalEditarFornecedor')" style="flex: 1;">
+            ❌ Cancelar
+          </button>
+          <button type="button" class="btn btn-primary" onclick="salvarEditarFornecedor()" style="flex: 1;">
+            ✅ Salvar Alterações
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- JavaScript -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
@@ -2530,6 +2693,9 @@ function initializeSystem() {
             break;
           case 'notas-fiscais':
             loadNotasFiscais();
+            break;
+          case 'fornecedores':
+            loadFornecedores();
             break;
           case 'configuracoes':
             loadConfiguracoes();
@@ -6520,6 +6686,205 @@ function renderMovimentacoesTable(movimentacoes) {
           showError('Erro: ' + error.message);
         })
         .processarNFComCustoMedio(nfId);
+    }
+
+    // =======================================
+    // FORNECEDORES (v13.1)
+    // =======================================
+
+    /**
+     * Carrega lista de fornecedores com filtros
+     */
+    function loadFornecedores() {
+      showLoading();
+
+      const filtros = {
+        busca: document.getElementById('fornecedorFilterBusca')?.value || null,
+        tipoProdutos: document.getElementById('fornecedorFilterTipo')?.value || null,
+        ativo: document.getElementById('fornecedorFilterAtivo')?.value || null
+      };
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response && response.success) {
+            renderFornecedoresTable(response.fornecedores || []);
+          } else {
+            showError('Erro ao carregar fornecedores: ' + (response ? response.error : 'Resposta vazia'));
+          }
+          hideLoading();
+        })
+        .withFailureHandler(function(error) {
+          showError('Erro: ' + error.message);
+          hideLoading();
+        })
+        .listarFornecedores(filtros);
+    }
+
+    /**
+     * Renderiza tabela de fornecedores
+     */
+    function renderFornecedoresTable(fornecedores) {
+      const tbody = document.getElementById('fornecedoresTableBody');
+
+      if (!fornecedores || fornecedores.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="empty-state">
+              <div class="empty-state-icon">🏢</div>
+              <div class="empty-state-title">Nenhum fornecedor encontrado</div>
+              <div class="empty-state-message">Cadastre fornecedores para facilitar a importação de notas fiscais</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      let html = '';
+      fornecedores.forEach(fornecedor => {
+        const statusBadge = fornecedor.ativo === 'Sim'
+          ? '<span class="badge badge-success">✅ Ativo</span>'
+          : '<span class="badge" style="background: #999;">❌ Inativo</span>';
+
+        const tipoBadge =
+          fornecedor.tipoProdutos === 'Papelaria' ? '<span class="badge" style="background: #2196f3;">📝 Papelaria</span>' :
+          fornecedor.tipoProdutos === 'Limpeza' ? '<span class="badge" style="background: #4caf50;">🧹 Limpeza</span>' :
+          fornecedor.tipoProdutos === 'Ambos' ? '<span class="badge" style="background: #9c27b0;">📦 Ambos</span>' :
+          '<span class="badge" style="background: #999;">—</span>';
+
+        html += `
+          <tr>
+            <td style="font-weight: 500;">${fornecedor.nome || '—'}</td>
+            <td>${fornecedor.nomeFantasia || '—'}</td>
+            <td style="font-family: monospace;">${fornecedor.cnpj || '—'}</td>
+            <td>${fornecedor.telefone || '—'}</td>
+            <td>${fornecedor.email || '—'}</td>
+            <td>${tipoBadge}</td>
+            <td>${statusBadge}</td>
+            <td>
+              <button class="btn btn-sm btn-primary" onclick="abrirModalEditarFornecedor('${fornecedor.id}')" title="Editar">
+                ✏️ Editar
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    /**
+     * Abre modal para editar/criar fornecedor
+     */
+    function abrirModalEditarFornecedor(fornecedorId) {
+      if (fornecedorId) {
+        // EDITAR
+        document.getElementById('titleEditarFornecedor').textContent = '✏️ Editar Fornecedor';
+        showLoading();
+
+        google.script.run
+          .withSuccessHandler(function(response) {
+            hideLoading();
+            if (response && response.success) {
+              const f = response.fornecedor;
+              document.getElementById('editFornecedorId').value = f.id;
+              document.getElementById('editFornecedorNome').value = f.nome || '';
+              document.getElementById('editFornecedorNomeFantasia').value = f.nomeFantasia || '';
+              document.getElementById('editFornecedorCNPJ').value = f.cnpj || '';
+              document.getElementById('editFornecedorTelefone').value = f.telefone || '';
+              document.getElementById('editFornecedorEmail').value = f.email || '';
+              document.getElementById('editFornecedorEndereco').value = f.endereco || '';
+              document.getElementById('editFornecedorCidade').value = f.cidade || '';
+              document.getElementById('editFornecedorEstado').value = f.estado || '';
+              document.getElementById('editFornecedorCEP').value = f.cep || '';
+              document.getElementById('editFornecedorTipoProdutos').value = f.tipoProdutos || '';
+              document.getElementById('editFornecedorAtivo').value = f.ativo || 'Sim';
+              document.getElementById('editFornecedorObservacoes').value = f.observacoes || '';
+
+              document.getElementById('modalEditarFornecedor').classList.add('active');
+            } else {
+              showError('Erro ao carregar fornecedor: ' + (response ? response.error : 'Erro desconhecido'));
+            }
+          })
+          .withFailureHandler(function(error) {
+            hideLoading();
+            showError('Erro: ' + error.message);
+          })
+          .buscarFornecedor(fornecedorId);
+      } else {
+        // CRIAR NOVO
+        document.getElementById('titleEditarFornecedor').textContent = '➕ Novo Fornecedor';
+        document.getElementById('editFornecedorId').value = '';
+        document.getElementById('formEditarFornecedor').reset();
+        document.getElementById('editFornecedorAtivo').value = 'Sim';
+        document.getElementById('modalEditarFornecedor').classList.add('active');
+      }
+    }
+
+    /**
+     * Salva edição de fornecedor
+     */
+    function salvarEditarFornecedor() {
+      const fornecedorId = document.getElementById('editFornecedorId').value;
+      const dadosFornecedor = {
+        nome: document.getElementById('editFornecedorNome').value,
+        nomeFantasia: document.getElementById('editFornecedorNomeFantasia').value,
+        cnpj: document.getElementById('editFornecedorCNPJ').value,
+        telefone: document.getElementById('editFornecedorTelefone').value,
+        email: document.getElementById('editFornecedorEmail').value,
+        endereco: document.getElementById('editFornecedorEndereco').value,
+        cidade: document.getElementById('editFornecedorCidade').value,
+        estado: document.getElementById('editFornecedorEstado').value,
+        cep: document.getElementById('editFornecedorCEP').value,
+        tipoProdutos: document.getElementById('editFornecedorTipoProdutos').value,
+        ativo: document.getElementById('editFornecedorAtivo').value,
+        observacoes: document.getElementById('editFornecedorObservacoes').value
+      };
+
+      if (!dadosFornecedor.nome) {
+        showError('Nome/Razão Social é obrigatório');
+        return;
+      }
+
+      showLoading();
+
+      if (fornecedorId) {
+        // ATUALIZAR
+        dadosFornecedor.id = fornecedorId;
+        google.script.run
+          .withSuccessHandler(function(response) {
+            hideLoading();
+            if (response && response.success) {
+              showSuccess('Fornecedor atualizado com sucesso!');
+              closeModal('modalEditarFornecedor');
+              loadFornecedores();
+            } else {
+              showError('Erro ao atualizar fornecedor: ' + (response ? response.error : 'Erro desconhecido'));
+            }
+          })
+          .withFailureHandler(function(error) {
+            hideLoading();
+            showError('Erro: ' + error.message);
+          })
+          .atualizarFornecedor(dadosFornecedor);
+      } else {
+        // CRIAR NOVO
+        google.script.run
+          .withSuccessHandler(function(response) {
+            hideLoading();
+            if (response && response.success) {
+              showSuccess('Fornecedor cadastrado com sucesso!');
+              closeModal('modalEditarFornecedor');
+              loadFornecedores();
+            } else {
+              showError('Erro ao cadastrar fornecedor: ' + (response ? response.error : 'Erro desconhecido'));
+            }
+          })
+          .withFailureHandler(function(error) {
+            hideLoading();
+            showError('Erro: ' + error.message);
+          })
+          .cadastrarFornecedor(dadosFornecedor);
+      }
     }
 
     /**

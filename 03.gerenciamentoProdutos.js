@@ -49,13 +49,16 @@ function listarProdutos(filtros) {
     for (let i = 1; i < dados.length; i++) {
       if (!dados[i][0]) continue; // Pular linhas vazias
 
+      const descricaoNeoformula = dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] || '';
+      const descricaoFornecedor = dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1] || '';
+
       const produto = {
         id: dados[i][CONFIG.COLUNAS_PRODUTOS.ID - 1],
         codigoFornecedor: dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_FORNECEDOR - 1] || '',
-        descricaoFornecedor: dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1] || '',
+        descricaoFornecedor: descricaoFornecedor,
         fornecedorId: dados[i][CONFIG.COLUNAS_PRODUTOS.FORNECEDOR_ID - 1] || '',
         codigoNeoformula: dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] || '',
-        descricaoNeoformula: dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] || '',
+        descricaoNeoformula: descricaoNeoformula,
         tipo: dados[i][CONFIG.COLUNAS_PRODUTOS.TIPO - 1],
         categoria: dados[i][CONFIG.COLUNAS_PRODUTOS.CATEGORIA - 1] || '',
         unidade: dados[i][CONFIG.COLUNAS_PRODUTOS.UNIDADE - 1],
@@ -67,7 +70,9 @@ function listarProdutos(filtros) {
         ativo: dados[i][CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] !== undefined ? dados[i][CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] : 'Sim',
         dataCadastro: dados[i][CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO - 1],
         origem: dados[i][CONFIG.COLUNAS_PRODUTOS.ORIGEM - 1] || 'MANUAL',
-        dadosCompletos: dados[i][CONFIG.COLUNAS_PRODUTOS.DADOS_COMPLETOS - 1] || 'SIM'
+        dadosCompletos: dados[i][CONFIG.COLUNAS_PRODUTOS.DADOS_COMPLETOS - 1] || 'SIM',
+        // Campo computado 'nome' para compatibilidade com frontend
+        nome: descricaoNeoformula || descricaoFornecedor || 'Produto sem descrição'
       };
 
       // Aplicar filtros
@@ -80,11 +85,11 @@ function listarProdutos(filtros) {
         if (filtros.busca) {
           const busca = filtros.busca.toLowerCase();
           const encontrado =
-            (produto.descricaoNeoformula && produto.descricaoNeoformula.toLowerCase().includes(busca)) ||
-            (produto.descricaoFornecedor && produto.descricaoFornecedor.toLowerCase().includes(busca)) ||
-            (produto.codigoNeoformula && produto.codigoNeoformula.toLowerCase().includes(busca)) ||
-            (produto.codigoFornecedor && produto.codigoFornecedor.toLowerCase().includes(busca)) ||
-            (produto.categoria && produto.categoria.toLowerCase().includes(busca));
+            (produto.descricaoNeoformula && String(produto.descricaoNeoformula).toLowerCase().includes(busca)) ||
+            (produto.descricaoFornecedor && String(produto.descricaoFornecedor).toLowerCase().includes(busca)) ||
+            (produto.codigoNeoformula && String(produto.codigoNeoformula).toLowerCase().includes(busca)) ||
+            (produto.codigoFornecedor && String(produto.codigoFornecedor).toLowerCase().includes(busca)) ||
+            (produto.categoria && String(produto.categoria).toLowerCase().includes(busca));
           if (!encontrado) continue;
         }
       }
@@ -150,13 +155,16 @@ function buscarProduto(identificador) {
       // Buscar por ID ou código Neoformula
       if (dados[i][CONFIG.COLUNAS_PRODUTOS.ID - 1] === identificadorStr ||
           dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] === identificadorStr) {
+        const descricaoNeoformula = String(dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] || '');
+        const descricaoFornecedor = String(dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1] || '');
+
         const produto = {
           id: String(dados[i][CONFIG.COLUNAS_PRODUTOS.ID - 1]),
           codigoFornecedor: String(dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_FORNECEDOR - 1] || ''),
-          descricaoFornecedor: String(dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1] || ''),
+          descricaoFornecedor: descricaoFornecedor,
           fornecedorId: String(dados[i][CONFIG.COLUNAS_PRODUTOS.FORNECEDOR_ID - 1] || ''),
           codigoNeoformula: String(dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] || ''),
-          descricaoNeoformula: String(dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] || ''),
+          descricaoNeoformula: descricaoNeoformula,
           tipo: String(dados[i][CONFIG.COLUNAS_PRODUTOS.TIPO - 1]),
           categoria: String(dados[i][CONFIG.COLUNAS_PRODUTOS.CATEGORIA - 1] || ''),
           unidade: String(dados[i][CONFIG.COLUNAS_PRODUTOS.UNIDADE - 1]),
@@ -168,7 +176,9 @@ function buscarProduto(identificador) {
           ativo: String(dados[i][CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] !== undefined ? dados[i][CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] : 'Sim'),
           dataCadastro: dados[i][CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO - 1],
           origem: String(dados[i][CONFIG.COLUNAS_PRODUTOS.ORIGEM - 1] || 'MANUAL'),
-          dadosCompletos: String(dados[i][CONFIG.COLUNAS_PRODUTOS.DADOS_COMPLETOS - 1] || 'SIM')
+          dadosCompletos: String(dados[i][CONFIG.COLUNAS_PRODUTOS.DADOS_COMPLETOS - 1] || 'SIM'),
+          // Campo computado 'nome' para compatibilidade com frontend
+          nome: descricaoNeoformula || descricaoFornecedor || 'Produto sem descrição'
         };
 
         // Armazenar no cache (por ID e por código Neoformula)
