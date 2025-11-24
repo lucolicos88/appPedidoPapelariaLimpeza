@@ -247,6 +247,62 @@ function listarFornecedoresParaDropdown() {
 }
 
 /**
+ * Busca fornecedor por CNPJ (v13.1.3)
+ */
+function buscarFornecedorPorCNPJ(cnpj) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaFornecedores = ss.getSheetByName(CONFIG.ABAS.FORNECEDORES);
+
+    if (!abaFornecedores) {
+      return { success: false, error: 'Aba Fornecedores não encontrada' };
+    }
+
+    const dados = abaFornecedores.getDataRange().getValues();
+
+    for (let i = 1; i < dados.length; i++) {
+      const cnpjFornecedor = dados[i][CONFIG.COLUNAS_FORNECEDORES.CNPJ - 1];
+
+      if (cnpjFornecedor && cnpjFornecedor === cnpj) {
+        const fornecedor = {
+          id: dados[i][CONFIG.COLUNAS_FORNECEDORES.ID - 1],
+          nome: dados[i][CONFIG.COLUNAS_FORNECEDORES.NOME - 1],
+          nomeFantasia: dados[i][CONFIG.COLUNAS_FORNECEDORES.NOME_FANTASIA - 1] || '',
+          cnpj: cnpjFornecedor,
+          telefone: dados[i][CONFIG.COLUNAS_FORNECEDORES.TELEFONE - 1] || '',
+          email: dados[i][CONFIG.COLUNAS_FORNECEDORES.EMAIL - 1] || '',
+          endereco: dados[i][CONFIG.COLUNAS_FORNECEDORES.ENDERECO - 1] || '',
+          cidade: dados[i][CONFIG.COLUNAS_FORNECEDORES.CIDADE - 1] || '',
+          estado: dados[i][CONFIG.COLUNAS_FORNECEDORES.ESTADO - 1] || '',
+          cep: dados[i][CONFIG.COLUNAS_FORNECEDORES.CEP - 1] || '',
+          tipoProdutos: dados[i][CONFIG.COLUNAS_FORNECEDORES.TIPO_PRODUTOS - 1] || '',
+          ativo: dados[i][CONFIG.COLUNAS_FORNECEDORES.ATIVO - 1],
+          dataCadastro: dados[i][CONFIG.COLUNAS_FORNECEDORES.DATA_CADASTRO - 1],
+          observacoes: dados[i][CONFIG.COLUNAS_FORNECEDORES.OBSERVACOES - 1] || ''
+        };
+
+        return {
+          success: true,
+          fornecedor: fornecedor
+        };
+      }
+    }
+
+    return {
+      success: false,
+      error: 'Fornecedor não encontrado com este CNPJ'
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao buscar fornecedor por CNPJ: ' + error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
  * Atualiza fornecedor existente (v13.1)
  */
 function atualizarFornecedor(dadosFornecedor) {

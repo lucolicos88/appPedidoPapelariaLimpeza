@@ -1089,6 +1089,11 @@
             <h3 style="margin-bottom: 15px;">⚠️ Alertas de Estoque</h3>
             <div id="alertasEstoque"></div>
           </div>
+
+          <div style="margin-top: 30px;" id="kpisFornecedoresContainer">
+            <h3 style="margin-bottom: 15px;">🏢 Fornecedores</h3>
+            <div class="kpi-grid" id="kpiGridFornecedores"></div>
+          </div>
         </div>
 
         <!-- TAB: Financeiro -->
@@ -1385,8 +1390,8 @@
             <thead>
               <tr>
                 <th>Imagem</th>
-                <th>Código</th>
-                <th>Nome</th>
+                <th>Código Neoformula</th>
+                <th>Descrição Neoformula</th>
                 <th>Tipo</th>
                 <th>Categoria</th>
                 <th>Preço</th>
@@ -2783,6 +2788,13 @@ function initializeSystem() {
         navNF.style.display = 'block';
       }
 
+      // v13.1.3: Mostrar aba "Fornecedores" apenas para Admin/Gestor
+      const navFornecedores = document.getElementById('nav-fornecedores');
+      if (isGestor && navFornecedores) {
+        console.log('✅ [v13.1.3] Mostrando aba Fornecedores para Gestor/Admin');
+        navFornecedores.style.display = 'block';
+      }
+
       // v10.0: Controle de visibilidade de abas por perfil
       const navItems = {
         dashboard: document.querySelector('[data-page="dashboard"]'),
@@ -2879,6 +2891,11 @@ function loadDashboard() {
           renderKPIs(resumoKPIs);
           renderCharts(resumoKPIs);
           renderAlertasEstoque(resumoKPIs);
+
+          // v13.1.3: Renderizar KPIs de fornecedores
+          if (response.kpis.fornecedores) {
+            renderFornecedoresKPIs(response.kpis.fornecedores);
+          }
 
           // Renderizar abas específicas
           renderFinanceiroTab(response.kpis.financeiros);
@@ -3068,19 +3085,66 @@ function loadDashboard() {
      */
     function renderAlertasEstoque(kpis) {
       const container = document.getElementById('alertasEstoque');
-      
+
       if (!kpis.produtosEstoqueBaixo || kpis.produtosEstoqueBaixo === 0) {
         container.innerHTML = '<div class="alert alert-success">✅ Nenhum produto com estoque baixo</div>';
         return;
       }
-      
+
       container.innerHTML = `
         <div class="alert alert-warning">
-          ⚠️ ${kpis.produtosEstoqueBaixo} produto(s) com estoque baixo. 
+          ⚠️ ${kpis.produtosEstoqueBaixo} produto(s) com estoque baixo.
           Acesse a aba <strong>Gerenciamento</strong> para mais detalhes.
         </div>
       `;
     }
+
+    /**
+     * v13.1.3: Renderiza KPIs de Fornecedores
+     */
+    function renderFornecedoresKPIs(kpis) {
+      const container = document.getElementById('kpiGridFornecedores');
+
+      const kpisHtml = `
+        <div class="kpi-card" style="border-left-color: #9c27b0;">
+          <div class="kpi-label">Total de Fornecedores</div>
+          <div class="kpi-value">${kpis.totalFornecedores || 0}</div>
+        </div>
+
+        <div class="kpi-card" style="border-left-color: var(--success);">
+          <div class="kpi-label">Fornecedores Ativos</div>
+          <div class="kpi-value">${kpis.fornecedoresAtivos || 0}</div>
+        </div>
+
+        <div class="kpi-card" style="border-left-color: #999;">
+          <div class="kpi-label">Fornecedores Inativos</div>
+          <div class="kpi-value">${kpis.fornecedoresInativos || 0}</div>
+        </div>
+
+        <div class="kpi-card" style="border-left-color: #2196f3;">
+          <div class="kpi-label">📝 Papelaria</div>
+          <div class="kpi-value">${kpis.fornecedoresPapelaria || 0}</div>
+        </div>
+
+        <div class="kpi-card" style="border-left-color: #4caf50;">
+          <div class="kpi-label">🧹 Limpeza</div>
+          <div class="kpi-value">${kpis.fornecedoresLimpeza || 0}</div>
+        </div>
+
+        <div class="kpi-card" style="border-left-color: #9c27b0;">
+          <div class="kpi-label">📦 Ambos</div>
+          <div class="kpi-value">${kpis.fornecedoresAmbos || 0}</div>
+        </div>
+
+        <div class="kpi-card" style="border-left-color: var(--accent);">
+          <div class="kpi-label">Notas Fiscais</div>
+          <div class="kpi-value">${kpis.totalNotasFiscais || 0}</div>
+        </div>
+      `;
+
+      container.innerHTML = kpisHtml;
+    }
+
     /**
      * Aplica filtros no dashboard
      */
@@ -4665,17 +4729,29 @@ function loadProdutos() {
           ? `<img src="${produto.imagemURL}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;" onerror="this.onerror=null; this.outerHTML='📦'">`
           : '📦';
 
-        // Verificar se dados estão incompletos
-        const dadosIncompletos = produto.dadosCompletos === 'NÃO' || (produto.origem === 'NF' && (!produto.codigoNeoformula || !produto.descricaoNeoformula));
+        // v13.1.3: Verificar se dados Neoformula estão incompletos
+        const codigoIncompleto = !produto.codigoNeoformula || produto.codigoNeoformula === '';
+        const descricaoIncompleta = !produto.descricaoNeoformula || produto.descricaoNeoformula === '';
+        const dadosIncompletos = codigoIncompleto || descricaoIncompleta;
+
         const badgeIncompleto = dadosIncompletos
           ? '<span class="badge" style="background: #ff9800; color: white; margin-left: 8px; font-size: 0.75rem;">⚠️ CADASTRO INCOMPLETO</span>'
           : '';
 
+        // Mostrar código/descrição Neoformula, ou indicar que está vazio
+        const codigoDisplay = produto.codigoNeoformula
+          ? produto.codigoNeoformula
+          : `<span style="color: #f57c00;">${produto.codigoFornecedor || 'SEM CÓDIGO'}</span><br><small style="color: #999;">Código do Fornecedor</small>`;
+
+        const descricaoDisplay = produto.descricaoNeoformula
+          ? `<strong>${produto.descricaoNeoformula}</strong>`
+          : `<span style="color: #f57c00;">${produto.descricaoFornecedor || 'SEM DESCRIÇÃO'}</span><br><small style="color: #999;">Descrição do Fornecedor</small>`;
+
         html += `
           <tr style="${dadosIncompletos ? 'background: #fff3e0;' : ''}">
             <td>${imagemHtml}</td>
-            <td>${produto.codigo}${dadosIncompletos ? '<br><small style="color: #f57c00;">Código do Fornecedor</small>' : ''}</td>
-            <td><strong>${produto.nome}</strong>${badgeIncompleto}</td>
+            <td>${codigoDisplay}</td>
+            <td>${descricaoDisplay}${badgeIncompleto}</td>
             <td>${produto.tipo}</td>
             <td>${produto.categoria || '<span style="color: #999;">—</span>'}</td>
             <td><strong>R$ ${formatMoney(produto.precoUnitario)}</strong></td>

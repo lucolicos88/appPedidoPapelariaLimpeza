@@ -13,13 +13,13 @@
  */
 
 /**
- * Processa NF v13 - Importação com fornecedor PRÉ-SELECIONADO
- * @param {object} params - { xmlBase64, fornecedorId, tipoProdutos, observacoes }
+ * Processa NF v13.1.3 - Importação com AUTO-CADASTRO de fornecedor
+ * @param {object} params - { xmlBase64, fornecedorId (opcional), tipoProdutos, observacoes }
  * @returns {object} - { success, nfId, produtosCriados, produtosEncontrados }
  */
 function processarNFv13Automatico(params) {
   try {
-    Logger.log('📋 ========== PROCESSAR NF V13 - INÍCIO ==========');
+    Logger.log('📋 ========== PROCESSAR NF V13.1.3 - INÍCIO ==========');
     const email = Session.getActiveUser().getEmail();
 
     // Verificar permissão
@@ -30,32 +30,10 @@ function processarNFv13Automatico(params) {
       };
     }
 
-    // Validar fornecedor ID
-    if (!params.fornecedorId) {
-      return {
-        success: false,
-        error: 'Fornecedor é obrigatório. Selecione um fornecedor antes de importar o XML.'
-      };
-    }
-
     const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    // 1. VALIDAR FORNECEDOR
-    Logger.log('1️⃣ Validando fornecedor...');
-    const fornecedorResult = buscarFornecedor(params.fornecedorId);
-
-    if (!fornecedorResult.success) {
-      return {
-        success: false,
-        error: 'Fornecedor não encontrado. Cadastre o fornecedor primeiro.'
-      };
-    }
-
-    const fornecedor = fornecedorResult.fornecedor;
-    Logger.log(`✅ Fornecedor: ${fornecedor.nome} - ID: ${params.fornecedorId}`);
-
-    // 2. PARSE DO XML
-    Logger.log('2️⃣ Fazendo parse do XML...');
+    // 1. PARSE DO XML PRIMEIRO (para extrair dados do fornecedor)
+    Logger.log('1️⃣ Fazendo parse do XML...');
     const resultadoXML = uploadEProcessarXMLNF(params.xmlBase64, 'nf.xml');
 
     if (!resultadoXML.success) {
@@ -68,8 +46,61 @@ function processarNFv13Automatico(params) {
     const dadosNF = resultadoXML.dadosNF;
     Logger.log(`✅ XML processado: NF ${dadosNF.numeroNF} com ${dadosNF.produtos.length} produtos`);
 
-    // 2.1. VALIDAR SE NF JÁ FOI IMPORTADA (evitar duplicação)
-    Logger.log('2️⃣.1 Verificando se NF já foi importada...');
+    // 2. BUSCAR OU CRIAR FORNECEDOR AUTOMATICAMENTE
+    Logger.log('2️⃣ Buscando ou criando fornecedor...');
+    let fornecedorId = params.fornecedorId;
+    let fornecedor;
+
+    if (!fornecedorId) {
+      // Auto-cadastro: Buscar fornecedor por CNPJ do XML
+      Logger.log(`🔍 Buscando fornecedor por CNPJ: ${dadosNF.cnpjFornecedor}`);
+      const resultadoBusca = buscarFornecedorPorCNPJ(dadosNF.cnpjFornecedor);
+
+      if (resultadoBusca.success && resultadoBusca.fornecedor) {
+        // Fornecedor encontrado
+        fornecedor = resultadoBusca.fornecedor;
+        fornecedorId = fornecedor.id;
+        Logger.log(`✅ Fornecedor encontrado: ${fornecedor.nome} - ID: ${fornecedorId}`);
+      } else {
+        // Fornecedor não existe, criar automaticamente
+        Logger.log(`➕ Fornecedor não encontrado, criando automaticamente...`);
+        const resultadoCadastro = cadastrarFornecedor({
+          nome: dadosNF.fornecedor,
+          cnpj: dadosNF.cnpjFornecedor,
+          tipoProdutos: params.tipoProdutos || 'Ambos',
+          observacoes: `Cadastrado automaticamente via importação de NF ${dadosNF.numeroNF}`
+        });
+
+        if (!resultadoCadastro.success) {
+          return {
+            success: false,
+            error: 'Erro ao cadastrar fornecedor automaticamente: ' + resultadoCadastro.error
+          };
+        }
+
+        fornecedorId = resultadoCadastro.fornecedorId;
+        const fornecedorBuscado = buscarFornecedor(fornecedorId);
+        fornecedor = fornecedorBuscado.fornecedor;
+        Logger.log(`✅ Fornecedor criado: ${fornecedor.nome} - ID: ${fornecedorId}`);
+      }
+    } else {
+      // Fornecedor foi pré-selecionado
+      Logger.log(`✅ Fornecedor pré-selecionado: ID ${fornecedorId}`);
+      const fornecedorResult = buscarFornecedor(fornecedorId);
+
+      if (!fornecedorResult.success) {
+        return {
+          success: false,
+          error: 'Fornecedor não encontrado.'
+        };
+      }
+
+      fornecedor = fornecedorResult.fornecedor;
+      Logger.log(`✅ Fornecedor: ${fornecedor.nome} - ID: ${fornecedorId}`);
+    }
+
+    // 3. VALIDAR SE NF JÁ FOI IMPORTADA (evitar duplicação)
+    Logger.log('3️⃣ Verificando se NF já foi importada...');
     const abaNF = ss.getSheetByName(CONFIG.ABAS.NOTAS_FISCAIS);
     if (!abaNF) {
       return { success: false, error: 'Aba Notas Fiscais não encontrada' };
@@ -89,11 +120,11 @@ function processarNFv13Automatico(params) {
     }
     Logger.log('✅ NF não está duplicada, prosseguindo...');
 
-    // 3. PROCESSAR PRODUTOS (CRUZAMENTO + CADASTRO)
-    Logger.log('3️⃣ Processando produtos da NF...');
+    // 4. PROCESSAR PRODUTOS (CRUZAMENTO + CADASTRO)
+    Logger.log('4️⃣ Processando produtos da NF...');
     const resultadoProdutos = processarProdutosNF({
       produtos: dadosNF.produtos,
-      fornecedorId: params.fornecedorId,
+      fornecedorId: fornecedorId,
       tipoProdutos: params.tipoProdutos,
       email: email
     });
@@ -107,8 +138,8 @@ function processarNFv13Automatico(params) {
 
     Logger.log(`✅ Produtos processados: ${resultadoProdutos.produtosCriados} novos, ${resultadoProdutos.produtosEncontrados} existentes`);
 
-    // 4. REGISTRAR NOTA FISCAL
-    Logger.log('4️⃣ Registrando Nota Fiscal...');
+    // 5. REGISTRAR NOTA FISCAL
+    Logger.log('5️⃣ Registrando Nota Fiscal...');
     const nfId = Utilities.getUuid();
 
     // Aba já foi carregada na validação de duplicação

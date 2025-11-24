@@ -18,28 +18,34 @@ function getEstoqueAtual(filtros) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
-    
+
     if (!abaEstoque) {
       return { success: false, error: 'Aba de estoque não encontrada' };
     }
-    
+
     const dados = abaEstoque.getDataRange().getValues();
     const estoque = [];
-    
+
     for (let i = 1; i < dados.length; i++) {
       if (!dados[i][0]) continue;
-      
+
+      const produtoId = dados[i][1];
+
+      // v13.1.3: Buscar nome do produto usando buscarProduto() para obter o nome computado (Neoformula || Fornecedor)
+      const resultadoProduto = buscarProduto(produtoId);
+      const produtoNome = resultadoProduto.success ? (resultadoProduto.produto.nome || dados[i][2]) : dados[i][2];
+
       const item = {
         id: dados[i][0],
-        produtoId: dados[i][1],
-        produtoNome: dados[i][2],
+        produtoId: produtoId,
+        produtoNome: produtoNome,
         quantidadeAtual: dados[i][3] || 0,
         quantidadeReservada: dados[i][4] || 0,
         estoqueDisponivel: dados[i][5] || 0,
         ultimaAtualizacao: dados[i][6],
         responsavel: dados[i][7]
       };
-      
+
       // Aplicar filtros
       if (filtros) {
         if (filtros.produtoId && item.produtoId !== filtros.produtoId) continue;
@@ -51,15 +57,15 @@ function getEstoqueAtual(filtros) {
           }
         }
       }
-      
+
       estoque.push(item);
     }
-    
+
     return {
       success: true,
       estoque: estoque
     };
-    
+
   } catch (error) {
     Logger.log('❌ Erro ao obter estoque: ' + error.message);
     return {
@@ -381,12 +387,16 @@ function getHistoricoMovimentacoes(filtros) {
       const produtoId = dados[i][3];
       const tipoProduto = mapaProdutos[produtoId] || 'Não definido';
 
+      // v13.1.3: Buscar nome do produto usando buscarProduto() para obter o nome computado (Neoformula || Fornecedor)
+      const resultadoProduto = buscarProduto(produtoId);
+      const produtoNome = resultadoProduto.success ? (resultadoProduto.produto.nome || dados[i][4]) : dados[i][4];
+
       const movimentacao = {
         id: dados[i][0],
         dataHora: dados[i][1],
         tipo: dados[i][2],
         produtoId: produtoId,
-        produtoNome: dados[i][4],
+        produtoNome: produtoNome,
         tipoProduto: tipoProduto,
         quantidade: dados[i][5],
         estoqueAnterior: dados[i][6],
@@ -454,9 +464,13 @@ function getProdutosEstoqueBaixo() {
     
     for (let i = 1; i < dadosProdutos.length; i++) {
       if (!dadosProdutos[i][0]) continue;
-      
+
       const produtoId = dadosProdutos[i][0];
-      const produtoNome = dadosProdutos[i][2];
+
+      // v13.1.3: Buscar nome do produto usando buscarProduto() para obter o nome computado (Neoformula || Fornecedor)
+      const resultadoProduto = buscarProduto(produtoId);
+      const produtoNome = resultadoProduto.success ? (resultadoProduto.produto.nome || dadosProdutos[i][2]) : dadosProdutos[i][2];
+
       const estoqueMinimo = dadosProdutos[i][7] || 0;
       const pontoPedido = dadosProdutos[i][8] || 0;
       

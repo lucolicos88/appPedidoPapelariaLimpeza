@@ -54,13 +54,15 @@ function getDashboardAvancado(filtros) {
     const kpisFinanceiros = calcularKPIsFinanceiros(pedidosFiltrados, dadosProdutos, dadosUsuarios);
     const kpisLogisticos = calcularKPIsLogisticos(pedidosFiltrados);
     const kpisEstoque = calcularKPIsEstoque(dadosProdutos, dadosEstoque, dadosMovimentacoes, pedidosFiltrados);
+    const kpisFornecedores = calcularKPIsFornecedores();
 
     return {
       success: true,
       kpis: {
         financeiros: kpisFinanceiros,
         logisticos: kpisLogisticos,
-        estoque: kpisEstoque
+        estoque: kpisEstoque,
+        fornecedores: kpisFornecedores
       }
     };
 
@@ -630,4 +632,90 @@ function calcularPrevisaoReposicao(dadosProdutos, dadosEstoque, consumoPorProdut
   });
 
   return previsoes.sort((a, b) => a.diasAteRuptura - b.diasAteRuptura).slice(0, 10);
+}
+
+/**
+ * 🏢 KPIs FORNECEDORES (v13.1.3)
+ */
+function calcularKPIsFornecedores() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaFornecedores = ss.getSheetByName(CONFIG.ABAS.FORNECEDORES);
+    const abaNF = ss.getSheetByName(CONFIG.ABAS.NOTAS_FISCAIS);
+
+    if (!abaFornecedores) {
+      return {
+        totalFornecedores: 0,
+        fornecedoresAtivos: 0,
+        fornecedoresInativos: 0,
+        fornecedoresPapelaria: 0,
+        fornecedoresLimpeza: 0,
+        fornecedoresAmbos: 0,
+        totalNotasFiscais: 0
+      };
+    }
+
+    const lastRowFornecedores = abaFornecedores.getLastRow();
+    const dadosFornecedores = lastRowFornecedores > 1 ? abaFornecedores.getRange(2, 1, lastRowFornecedores - 1, 14).getValues() : [];
+
+    let totalFornecedores = 0;
+    let fornecedoresAtivos = 0;
+    let fornecedoresInativos = 0;
+    let fornecedoresPapelaria = 0;
+    let fornecedoresLimpeza = 0;
+    let fornecedoresAmbos = 0;
+
+    for (let i = 0; i < dadosFornecedores.length; i++) {
+      if (!dadosFornecedores[i][0]) continue; // Skip empty rows
+
+      totalFornecedores++;
+
+      // Status (coluna 11 - ATIVO)
+      const ativo = dadosFornecedores[i][CONFIG.COLUNAS_FORNECEDORES.ATIVO - 1];
+      if (ativo === 'Sim') {
+        fornecedoresAtivos++;
+      } else {
+        fornecedoresInativos++;
+      }
+
+      // Tipo de Produtos (coluna 10 - TIPO_PRODUTOS)
+      const tipoProdutos = dadosFornecedores[i][CONFIG.COLUNAS_FORNECEDORES.TIPO_PRODUTOS - 1];
+      if (tipoProdutos === 'Papelaria') {
+        fornecedoresPapelaria++;
+      } else if (tipoProdutos === 'Limpeza') {
+        fornecedoresLimpeza++;
+      } else if (tipoProdutos === 'Ambos') {
+        fornecedoresAmbos++;
+      }
+    }
+
+    // Contar notas fiscais
+    let totalNotasFiscais = 0;
+    if (abaNF) {
+      const lastRowNF = abaNF.getLastRow();
+      totalNotasFiscais = lastRowNF > 1 ? lastRowNF - 1 : 0;
+    }
+
+    return {
+      totalFornecedores: totalFornecedores,
+      fornecedoresAtivos: fornecedoresAtivos,
+      fornecedoresInativos: fornecedoresInativos,
+      fornecedoresPapelaria: fornecedoresPapelaria,
+      fornecedoresLimpeza: fornecedoresLimpeza,
+      fornecedoresAmbos: fornecedoresAmbos,
+      totalNotasFiscais: totalNotasFiscais
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao calcular KPIs de fornecedores: ' + error.message);
+    return {
+      totalFornecedores: 0,
+      fornecedoresAtivos: 0,
+      fornecedoresInativos: 0,
+      fornecedoresPapelaria: 0,
+      fornecedoresLimpeza: 0,
+      fornecedoresAmbos: 0,
+      totalNotasFiscais: 0
+    };
+  }
 }
