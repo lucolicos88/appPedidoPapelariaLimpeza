@@ -731,36 +731,151 @@ function enviarNotificacaoPedido(destinatario, dadosPedido) {
 
     const assunto = `🛒 Novo Pedido: ${dadosPedido.numeroPedido}`;
 
+    // Template de email profissional com mais informações (v13.1.8)
     let corpo = `
-      <h2 style="color: #00A651;">Sistema Neoformula - Novo Pedido</h2>
-      <p><strong>Número do Pedido:</strong> ${dadosPedido.numeroPedido}</p>
-      <p><strong>Solicitante:</strong> ${dadosPedido.solicitante}</p>
-      <p><strong>Tipo:</strong> ${dadosPedido.tipo}</p>
-      <p><strong>Valor Total:</strong> R$ ${dadosPedido.valorTotal.toFixed(2)}</p>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #00A651 0%, #008542 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #fff; padding: 30px; border: 1px solid #e0e0e0; }
+          .info-box { background: #f5f5f5; padding: 15px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #00A651; }
+          .info-row { display: flex; justify-content: space-between; margin: 8px 0; }
+          .info-label { font-weight: bold; color: #555; }
+          .info-value { color: #333; }
+          .products-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          .products-table th { background: #00A651; color: white; padding: 12px; text-align: left; }
+          .products-table td { padding: 10px; border-bottom: 1px solid #e0e0e0; }
+          .products-table tr:hover { background: #f9f9f9; }
+          .total-box { background: #e8f5e9; padding: 15px; margin: 20px 0; border-radius: 5px; text-align: right; }
+          .total-value { font-size: 24px; font-weight: bold; color: #00A651; }
+          .btn { display: inline-block; background: #00A651; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          .footer { text-align: center; color: #999; font-size: 12px; margin-top: 30px; padding: 20px; border-top: 1px solid #e0e0e0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1 style="margin: 0;">🛒 Novo Pedido Recebido</h1>
+            <p style="margin: 10px 0 0 0; font-size: 18px;">${dadosPedido.numeroPedido}</p>
+          </div>
 
-      <h3>Produtos:</h3>
-      <ul>
+          <div class="content">
+            <div class="info-box">
+              <div class="info-row">
+                <span class="info-label">📋 Número do Pedido:</span>
+                <span class="info-value">${dadosPedido.numeroPedido}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">👤 Solicitante:</span>
+                <span class="info-value">${dadosPedido.solicitante}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">🏷️ Tipo:</span>
+                <span class="info-value">${dadosPedido.tipo}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">📅 Setor:</span>
+                <span class="info-value">${dadosPedido.setor || 'Administração'}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">⏱️ Prazo de Entrega:</span>
+                <span class="info-value">${dadosPedido.prazoEntrega || 'Não informado'}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">🔔 Status:</span>
+                <span class="info-value" style="color: #ff9800; font-weight: bold;">⏳ Pendente</span>
+              </div>
+            </div>
+
+            <h3 style="color: #00A651; margin-top: 30px;">📦 Produtos Solicitados:</h3>
+            <table class="products-table">
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th style="text-align: center;">Quantidade</th>
+                  <th style="text-align: center;">Unidade</th>
+                  <th style="text-align: right;">Valor Unit.</th>
+                  <th style="text-align: right;">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
     `;
 
-    dadosPedido.produtos.forEach(produto => {
-      corpo += `<li>${produto}</li>`;
-    });
+    // Adicionar produtos com detalhes
+    if (dadosPedido.produtosDetalhados && dadosPedido.produtosDetalhados.length > 0) {
+      dadosPedido.produtosDetalhados.forEach(prod => {
+        const subtotal = (parseFloat(prod.quantidade) || 0) * (parseFloat(prod.valorUnitario) || 0);
+        corpo += `
+          <tr>
+            <td><strong>${prod.nome}</strong></td>
+            <td style="text-align: center;">${prod.quantidade}</td>
+            <td style="text-align: center;">${prod.unidade || 'UN'}</td>
+            <td style="text-align: right;">R$ ${(parseFloat(prod.valorUnitario) || 0).toFixed(2)}</td>
+            <td style="text-align: right;"><strong>R$ ${subtotal.toFixed(2)}</strong></td>
+          </tr>
+        `;
+      });
+    } else {
+      // Fallback para formato antigo
+      dadosPedido.produtos.forEach(produto => {
+        corpo += `
+          <tr>
+            <td colspan="5">${produto}</td>
+          </tr>
+        `;
+      });
+    }
 
     corpo += `
-      </ul>
+              </tbody>
+            </table>
 
-      <p style="margin-top: 20px;">
-        <a href="${ScriptApp.getService().getUrl()}"
-           style="background-color: #00A651; color: white; padding: 10px 20px;
-                  text-decoration: none; border-radius: 5px;">
-          Acessar Sistema
-        </a>
-      </p>
+            <div class="total-box">
+              <div style="font-size: 14px; color: #666; margin-bottom: 5px;">Valor Total do Pedido</div>
+              <div class="total-value">R$ ${(parseFloat(dadosPedido.valorTotal) || 0).toFixed(2)}</div>
+            </div>
+    `;
 
-      <hr>
-      <p style="color: #666; font-size: 12px;">
-        Sistema de Controle de Pedidos Neoformula v6.0.1
-      </p>
+    // Adicionar observações se houver
+    if (dadosPedido.observacoes) {
+      corpo += `
+            <div style="background: #fff3cd; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #ffc107;">
+              <strong style="color: #856404;">📝 Observações:</strong>
+              <p style="margin: 5px 0 0 0; color: #856404;">${dadosPedido.observacoes}</p>
+            </div>
+      `;
+    }
+
+    corpo += `
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${ScriptApp.getService().getUrl()}" class="btn">
+                Acessar Sistema
+              </a>
+            </div>
+
+            <div style="background: #e3f2fd; padding: 15px; border-radius: 5px; border-left: 4px solid #2196f3;">
+              <p style="margin: 0; color: #1976d2; font-size: 14px;">
+                💡 <strong>Próximos Passos:</strong>
+              </p>
+              <ul style="margin: 10px 0 0 20px; color: #1976d2; font-size: 14px;">
+                <li>Acesse o sistema para revisar o pedido</li>
+                <li>Confirme a disponibilidade dos produtos</li>
+                <li>Atualize o status do pedido</li>
+                <li>Notifique o solicitante sobre o andamento</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p style="margin: 0;">Sistema de Controle de Pedidos Neoformula</p>
+            <p style="margin: 5px 0 0 0;">Versão 13.1.8 | © ${new Date().getFullYear()} TI Neoformula</p>
+          </div>
+        </div>
+      </body>
+      </html>
     `;
 
     MailApp.sendEmail({

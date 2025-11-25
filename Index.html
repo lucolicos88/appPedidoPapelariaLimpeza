@@ -2212,8 +2212,17 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Prazo de Entrega</label>
-          <input type="date" class="form-control" id="editPedidoPrazo">
+          <label class="form-label">Prazo de Entrega *</label>
+          <select class="form-control" id="editPedidoPrazo" required>
+            <option value="">Selecione o prazo...</option>
+            <option value="Imediato">Imediato (mesmo dia)</option>
+            <option value="3 dias úteis">3 dias úteis</option>
+            <option value="5 dias úteis">5 dias úteis</option>
+            <option value="7 dias úteis">7 dias úteis</option>
+            <option value="10 dias úteis">10 dias úteis</option>
+            <option value="15 dias úteis">15 dias úteis</option>
+            <option value="30 dias">30 dias</option>
+          </select>
         </div>
 
         <div class="form-group">
