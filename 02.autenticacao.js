@@ -609,3 +609,146 @@ function obterTodasConfiguracoes() {
     };
   }
 }
+
+/**
+ * ========================================
+ * GERENCIAMENTO DE USUÁRIOS (v14.0.2)
+ * ========================================
+ */
+
+/**
+ * Busca usuário por email
+ */
+function buscarUsuario(email) {
+  try {
+    if (!email) {
+      return { success: false, error: 'Email é obrigatório' };
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaUsers = ss.getSheetByName(CONFIG.ABAS.USERS);
+
+    if (!abaUsers) {
+      return { success: false, error: 'Aba de usuários não encontrada' };
+    }
+
+    const dados = abaUsers.getDataRange().getValues();
+
+    for (let i = 1; i < dados.length; i++) {
+      if (dados[i][CONFIG.COLUNAS_USUARIOS.EMAIL - 1] === email) {
+        const usuario = {
+          email: String(dados[i][CONFIG.COLUNAS_USUARIOS.EMAIL - 1] || ''),
+          nome: String(dados[i][CONFIG.COLUNAS_USUARIOS.NOME - 1] || ''),
+          perfil: String(dados[i][CONFIG.COLUNAS_USUARIOS.PERFIL - 1] || 'USUARIO'),
+          setor: String(dados[i][CONFIG.COLUNAS_USUARIOS.SETOR - 1] || ''),
+          status: String(dados[i][CONFIG.COLUNAS_USUARIOS.STATUS - 1] || 'Ativo')
+        };
+
+        return { success: true, usuario: usuario };
+      }
+    }
+
+    return { success: false, error: 'Usuário não encontrado' };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao buscar usuário: ' + error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Cadastra novo usuário
+ */
+function cadastrarUsuario(dadosUsuario) {
+  try {
+    // Validações
+    if (!dadosUsuario || !dadosUsuario.email || !dadosUsuario.nome) {
+      return { success: false, error: 'Email e nome são obrigatórios' };
+    }
+
+    if (!validarEmail(dadosUsuario.email)) {
+      return { success: false, error: 'Email inválido' };
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaUsers = ss.getSheetByName(CONFIG.ABAS.USERS);
+
+    if (!abaUsers) {
+      return { success: false, error: 'Aba de usuários não encontrada' };
+    }
+
+    // Verificar se email já existe
+    const dados = abaUsers.getDataRange().getValues();
+    for (let i = 1; i < dados.length; i++) {
+      if (dados[i][CONFIG.COLUNAS_USUARIOS.EMAIL - 1] === dadosUsuario.email) {
+        return { success: false, error: 'Email já cadastrado' };
+      }
+    }
+
+    // Adicionar novo usuário
+    const novaLinha = [
+      dadosUsuario.email,
+      dadosUsuario.nome,
+      dadosUsuario.perfil || 'USUARIO',
+      dadosUsuario.setor || 'Administração',
+      dadosUsuario.status || 'Ativo',
+      new Date() // Data cadastro
+    ];
+
+    abaUsers.appendRow(novaLinha);
+
+    // Limpar cache
+    delete CACHE_USUARIOS[dadosUsuario.email];
+
+    Logger.log(`✅ Usuário cadastrado: ${dadosUsuario.email}`);
+
+    return { success: true, message: 'Usuário cadastrado com sucesso' };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao cadastrar usuário: ' + error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Atualiza usuário existente
+ */
+function atualizarUsuario(dadosUsuario) {
+  try {
+    if (!dadosUsuario || !dadosUsuario.email) {
+      return { success: false, error: 'Email é obrigatório' };
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaUsers = ss.getSheetByName(CONFIG.ABAS.USERS);
+
+    if (!abaUsers) {
+      return { success: false, error: 'Aba de usuários não encontrada' };
+    }
+
+    const dados = abaUsers.getDataRange().getValues();
+
+    for (let i = 1; i < dados.length; i++) {
+      if (dados[i][CONFIG.COLUNAS_USUARIOS.EMAIL - 1] === dadosUsuario.email) {
+        // Atualizar dados
+        abaUsers.getRange(i + 1, CONFIG.COLUNAS_USUARIOS.NOME).setValue(dadosUsuario.nome || dados[i][CONFIG.COLUNAS_USUARIOS.NOME - 1]);
+        abaUsers.getRange(i + 1, CONFIG.COLUNAS_USUARIOS.PERFIL).setValue(dadosUsuario.perfil || dados[i][CONFIG.COLUNAS_USUARIOS.PERFIL - 1]);
+        abaUsers.getRange(i + 1, CONFIG.COLUNAS_USUARIOS.SETOR).setValue(dadosUsuario.setor || dados[i][CONFIG.COLUNAS_USUARIOS.SETOR - 1]);
+        abaUsers.getRange(i + 1, CONFIG.COLUNAS_USUARIOS.STATUS).setValue(dadosUsuario.status || dados[i][CONFIG.COLUNAS_USUARIOS.STATUS - 1]);
+
+        // Limpar cache
+        delete CACHE_USUARIOS[dadosUsuario.email];
+
+        Logger.log(`✅ Usuário atualizado: ${dadosUsuario.email}`);
+
+        return { success: true, message: 'Usuário atualizado com sucesso' };
+      }
+    }
+
+    return { success: false, error: 'Usuário não encontrado' };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao atualizar usuário: ' + error.message);
+    return { success: false, error: error.message };
+  }
+}

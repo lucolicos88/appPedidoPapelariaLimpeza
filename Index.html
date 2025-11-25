@@ -2507,6 +2507,114 @@
     </div>
   </div>
 
+  <!-- Modal: Novo Usuário (v14.0.2) -->
+  <div id="modalNovoUsuario" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>➕ Novo Usuário</h3>
+        <span class="close" onclick="closeModal('modalNovoUsuario')">&times;</span>
+      </div>
+      <form id="formNovoUsuario" onsubmit="submitNovoUsuario(event)">
+        <div class="form-group">
+          <label class="form-label">Nome Completo *</label>
+          <input type="text" class="form-control" id="novoUsuarioNome" required placeholder="Ex: João Silva">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email *</label>
+          <input type="email" class="form-control" id="novoUsuarioEmail" required placeholder="Ex: joao@neoformula.com.br">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Perfil *</label>
+          <select class="form-control" id="novoUsuarioPerfil" required>
+            <option value="">Selecione...</option>
+            <option value="ADMIN">Admin - Acesso Total</option>
+            <option value="GESTOR">Gestor - Aprovar Pedidos</option>
+            <option value="USUARIO">Usuário - Criar Pedidos</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Setor *</label>
+          <input type="text" class="form-control" id="novoUsuarioSetor" required placeholder="Ex: Administração">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Status *</label>
+          <select class="form-control" id="novoUsuarioStatus" required>
+            <option value="Ativo">Ativo</option>
+            <option value="Inativo">Inativo</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modalNovoUsuario')" style="flex: 1;">
+            ❌ Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary" style="flex: 1;">
+            ✅ Cadastrar Usuário
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Editar Usuário (v14.0.2) -->
+  <div id="modalEditarUsuario" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>✏️ Editar Usuário</h3>
+        <span class="close" onclick="closeModal('modalEditarUsuario')">&times;</span>
+      </div>
+      <form id="formEditarUsuario" onsubmit="submitEditarUsuario(event)">
+        <input type="hidden" id="editUsuarioEmail">
+
+        <div class="form-group">
+          <label class="form-label">Nome Completo *</label>
+          <input type="text" class="form-control" id="editUsuarioNome" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control" id="editUsuarioEmailDisplay" disabled>
+          <small style="color: #666;">Email não pode ser alterado</small>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Perfil *</label>
+          <select class="form-control" id="editUsuarioPerfil" required>
+            <option value="ADMIN">Admin - Acesso Total</option>
+            <option value="GESTOR">Gestor - Aprovar Pedidos</option>
+            <option value="USUARIO">Usuário - Criar Pedidos</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Setor *</label>
+          <input type="text" class="form-control" id="editUsuarioSetor" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Status *</label>
+          <select class="form-control" id="editUsuarioStatus" required>
+            <option value="Ativo">Ativo</option>
+            <option value="Inativo">Inativo</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modalEditarUsuario')" style="flex: 1;">
+            ❌ Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary" style="flex: 1;">
+            ✅ Salvar Alterações
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- JavaScript -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
@@ -7300,6 +7408,124 @@ function renderMovimentacoesTable(movimentacoes) {
         }
       );
     }
+
+    /**
+     * ========================================
+     * FUNÇÕES DE USUÁRIOS (v14.0.2)
+     * ========================================
+     */
+
+    /**
+     * Abre modal de novo usuário
+     */
+    function abrirModalNovoUsuario() {
+      document.getElementById('formNovoUsuario').reset();
+      openModal('modalNovoUsuario');
+    }
+
+    /**
+     * Abre modal de editar usuário
+     */
+    function abrirModalEditarUsuario(email) {
+      showLoading();
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+          if (response && response.success && response.usuario) {
+            const user = response.usuario;
+
+            // Preencher formulário
+            document.getElementById('editUsuarioEmail').value = user.email;
+            document.getElementById('editUsuarioEmailDisplay').value = user.email;
+            document.getElementById('editUsuarioNome').value = user.nome || '';
+            document.getElementById('editUsuarioPerfil').value = user.perfil || 'USUARIO';
+            document.getElementById('editUsuarioSetor').value = user.setor || '';
+            document.getElementById('editUsuarioStatus').value = user.status || 'Ativo';
+
+            openModal('modalEditarUsuario');
+          } else {
+            showError('Erro ao carregar usuário: ' + (response ? response.error : 'Erro desconhecido'));
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .buscarUsuario(email);
+    }
+
+    /**
+     * Submete novo usuário
+     */
+    function submitNovoUsuario(event) {
+      event.preventDefault();
+      showLoading();
+
+      const dadosUsuario = {
+        email: document.getElementById('novoUsuarioEmail').value.trim(),
+        nome: document.getElementById('novoUsuarioNome').value.trim(),
+        perfil: document.getElementById('novoUsuarioPerfil').value,
+        setor: document.getElementById('novoUsuarioSetor').value.trim(),
+        status: document.getElementById('novoUsuarioStatus').value
+      };
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+          if (response && response.success) {
+            showSuccess('Usuário cadastrado com sucesso!');
+            closeModal('modalNovoUsuario');
+            loadConfiguracao(); // Recarrega a página de configurações
+          } else {
+            showError('Erro ao cadastrar usuário: ' + (response ? response.error : 'Erro desconhecido'));
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .cadastrarUsuario(dadosUsuario);
+    }
+
+    /**
+     * Submete edição de usuário
+     */
+    function submitEditarUsuario(event) {
+      event.preventDefault();
+      showLoading();
+
+      const dadosUsuario = {
+        email: document.getElementById('editUsuarioEmail').value.trim(),
+        nome: document.getElementById('editUsuarioNome').value.trim(),
+        perfil: document.getElementById('editUsuarioPerfil').value,
+        setor: document.getElementById('editUsuarioSetor').value.trim(),
+        status: document.getElementById('editUsuarioStatus').value
+      };
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+          if (response && response.success) {
+            showSuccess('Usuário atualizado com sucesso!');
+            closeModal('modalEditarUsuario');
+            loadConfiguracao(); // Recarrega a página de configurações
+          } else {
+            showError('Erro ao atualizar usuário: ' + (response ? response.error : 'Erro desconhecido'));
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro: ' + error.message);
+        })
+        .atualizarUsuario(dadosUsuario);
+    }
+
+    /**
+     * ========================================
+     * FUNÇÕES DE RELATÓRIOS
+     * ========================================
+     */
 
     /**
      * Exporta relatório de pedidos

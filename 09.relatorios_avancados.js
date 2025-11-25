@@ -16,6 +16,93 @@
  */
 
 /**
+ * Exporta relatório em formato CSV (v14.0.2)
+ */
+function exportarRelatorioCSV(tipo, filtros) {
+  try {
+    Logger.log(`📥 Exportando relatório CSV: ${tipo}`);
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let dados = [];
+    let headers = [];
+    let fileName = '';
+
+    switch (tipo) {
+      case 'pedidos':
+        const abaPedidos = ss.getSheetByName(CONFIG.ABAS.ORDERS);
+        if (!abaPedidos) {
+          return { success: false, error: 'Aba de pedidos não encontrada' };
+        }
+
+        headers = ['Número Pedido', 'Data', 'Solicitante', 'Tipo', 'Produtos', 'Valor Total', 'Status'];
+        const dadosPedidos = abaPedidos.getDataRange().getValues();
+
+        for (let i = 1; i < dadosPedidos.length; i++) {
+          dados.push([
+            dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.NUMERO_PEDIDO - 1],
+            Utilities.formatDate(new Date(dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.DATA_CRIACAO - 1]), Session.getScriptTimeZone(), 'dd/MM/yyyy'),
+            dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.SOLICITANTE_NOME - 1],
+            dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.TIPO - 1],
+            dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.PRODUTOS - 1],
+            dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.VALOR_TOTAL - 1],
+            dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.STATUS - 1]
+          ]);
+        }
+
+        fileName = `relatorio_pedidos_${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd')}.csv`;
+        break;
+
+      case 'estoque':
+        const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
+        if (!abaEstoque) {
+          return { success: false, error: 'Aba de estoque não encontrada' };
+        }
+
+        headers = ['Produto', 'Tipo', 'Quantidade Disponível', 'Quantidade Mínima', 'Unidade', 'Última Atualização'];
+        const dadosEstoque = abaEstoque.getDataRange().getValues();
+
+        for (let i = 1; i < dadosEstoque.length; i++) {
+          dados.push([
+            dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.PRODUTO_ID - 1],
+            dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.TIPO - 1],
+            dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.QTD_DISPONIVEL - 1],
+            dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.QTD_MINIMA - 1],
+            dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.UNIDADE - 1],
+            Utilities.formatDate(new Date(dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.ULTIMA_ATUALIZACAO - 1]), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
+          ]);
+        }
+
+        fileName = `relatorio_estoque_${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd')}.csv`;
+        break;
+
+      default:
+        return { success: false, error: 'Tipo de relatório inválido' };
+    }
+
+    // Montar CSV
+    let csv = headers.join(',') + '\n';
+    dados.forEach(linha => {
+      csv += linha.map(campo => `"${campo}"`).join(',') + '\n';
+    });
+
+    Logger.log(`✅ Relatório CSV gerado: ${dados.length} linhas`);
+
+    return {
+      success: true,
+      csv: csv,
+      fileName: fileName
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao exportar relatório CSV: ' + error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
  * Função principal que roteia para o relatório específico
  */
 function getRelatorio(tipo, periodo) {
