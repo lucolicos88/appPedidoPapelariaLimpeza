@@ -1,13 +1,14 @@
 /**
  * ========================================
- * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v6.0
+ * SISTEMA DE PEDIDOS NEO v14.0.0
  * Módulo: Gerenciamento de Pedidos
  * ========================================
- * 
- * NOVIDADES v6.0:
- * - Suporte a múltiplos produtos em um único pedido
- * - Cálculo automático de prazos por tipo
- * - Melhor organização de dados
+ *
+ * NOVIDADES v14.0.0:
+ * - Unidade de produto exibida no catálogo
+ * - Email profissional com logo e tabela completa
+ * - Produtos detalhados no email (quantidade, unidade, valor)
+ * - Remetente personalizado
  */
 
 /**
@@ -198,8 +199,12 @@ function criarPedido(dadosPedido) {
         numeroPedido: numeroPedido,
         solicitante: usuario.nome,
         tipo: dadosPedido.tipo,
+        setor: usuario.setor || 'Administração',
+        prazoEntrega: prazoEntrega || 'Não informado',
         valorTotal: valorTotal,
-        produtos: produtosNomes
+        produtos: produtosNomes,
+        produtosDetalhados: dadosPedido.produtosDetalhados || [], // v14.0.0 - dados completos para email
+        observacoes: dadosPedido.observacoes || ''
       });
     }
     
@@ -712,7 +717,7 @@ function registrarEnvioEmail(destinatario) {
 }
 
 /**
- * Envia notificação de pedido por email (v6.0.1 - COM RATE LIMITING)
+ * Envia notificação de pedido por email (v14.0.0 - EMAIL PROFISSIONAL)
  */
 function enviarNotificacaoPedido(destinatario, dadosPedido) {
   try {
@@ -731,35 +736,40 @@ function enviarNotificacaoPedido(destinatario, dadosPedido) {
 
     const assunto = `🛒 Novo Pedido: ${dadosPedido.numeroPedido}`;
 
-    // Template de email profissional com mais informações (v13.1.8)
+    // Template de email profissional com mais informações (v14.0.0)
     let corpo = `
       <!DOCTYPE html>
       <html>
       <head>
         <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; margin: 0; padding: 0; }
+          .container { max-width: 600px; margin: 0 auto; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
           .header { background: linear-gradient(135deg, #00A651 0%, #008542 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .logo { max-width: 180px; margin-bottom: 15px; }
           .content { background: #fff; padding: 30px; border: 1px solid #e0e0e0; }
-          .info-box { background: #f5f5f5; padding: 15px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #00A651; }
-          .info-row { display: flex; justify-content: space-between; margin: 8px 0; }
+          .info-box { background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #00A651; }
+          .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e0e0e0; }
+          .info-row:last-child { border-bottom: none; }
           .info-label { font-weight: bold; color: #555; }
           .info-value { color: #333; }
-          .products-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          .products-table th { background: #00A651; color: white; padding: 12px; text-align: left; }
+          .products-table { width: 100%; border-collapse: collapse; margin: 20px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+          .products-table th { background: #00A651; color: white; padding: 12px; text-align: left; font-weight: bold; }
           .products-table td { padding: 10px; border-bottom: 1px solid #e0e0e0; }
-          .products-table tr:hover { background: #f9f9f9; }
-          .total-box { background: #e8f5e9; padding: 15px; margin: 20px 0; border-radius: 5px; text-align: right; }
-          .total-value { font-size: 24px; font-weight: bold; color: #00A651; }
-          .btn { display: inline-block; background: #00A651; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-          .footer { text-align: center; color: #999; font-size: 12px; margin-top: 30px; padding: 20px; border-top: 1px solid #e0e0e0; }
+          .products-table tr:last-child td { border-bottom: none; }
+          .products-table tr:hover { background: #f5f5f5; }
+          .total-box { background: #e8f5e9; padding: 15px; margin: 20px 0; border-radius: 5px; text-align: right; border: 1px solid #c8e6c9; }
+          .total-value { font-size: 24px; font-weight: bold; color: #00A651; margin-top: 5px; }
+          .btn { display: inline-block; background: #00A651; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; }
+          .btn:hover { background: #008542; }
+          .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #e0e0e0; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h1 style="margin: 0;">🛒 Novo Pedido Recebido</h1>
-            <p style="margin: 10px 0 0 0; font-size: 18px;">${dadosPedido.numeroPedido}</p>
+            <img src="https://www.neoformula.com.br/assets/images/logo-neoformula.png" alt="Neoformula" class="logo" />
+            <h1 style="margin: 10px 0;">🛒 Novo Pedido Recebido</h1>
+            <p style="margin: 10px 0 0 0; font-size: 18px; opacity: 0.9;">${dadosPedido.numeroPedido}</p>
           </div>
 
           <div class="content">
@@ -870,8 +880,8 @@ function enviarNotificacaoPedido(destinatario, dadosPedido) {
           </div>
 
           <div class="footer">
-            <p style="margin: 0;">Sistema de Controle de Pedidos Neoformula</p>
-            <p style="margin: 5px 0 0 0;">Versão 13.1.8 | © ${new Date().getFullYear()} TI Neoformula</p>
+            <p style="margin: 0; font-weight: bold;">Sistema de Pedidos Neo - Papelaria / Limpeza</p>
+            <p style="margin: 5px 0 0 0;">Versão 14.0.0 | © ${new Date().getFullYear()} TI Neoformula</p>
           </div>
         </div>
       </body>
@@ -881,7 +891,8 @@ function enviarNotificacaoPedido(destinatario, dadosPedido) {
     MailApp.sendEmail({
       to: destinatario,
       subject: assunto,
-      htmlBody: corpo
+      htmlBody: corpo,
+      name: 'Sistema de Pedidos - Papelaria / Limpeza' // v14.0.0 - Nome do remetente
     });
 
     // Registrar envio

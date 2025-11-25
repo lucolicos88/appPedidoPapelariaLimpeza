@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema de Controle de Pedidos - Neoformula</title>
+  <title>Sistema de Pedidos Neo - Papelaria / Limpeza</title>
 
   <style>
     /* ========================================
-     * SISTEMA DE CONTROLE DE PEDIDOS NEOFORMULA v10.0
+     * SISTEMA DE PEDIDOS NEO - PAPELARIA / LIMPEZA v14.0.0
      * Estilos CSS
      * ======================================== */
     
@@ -1825,7 +1825,7 @@
   <!-- Rodapé -->
   <footer style="background: #f5f5f5; border-top: 1px solid #e0e0e0; padding: 20px; text-align: center; color: #666; font-size: 0.9rem; margin-top: 40px;">
     <p style="margin: 0;">
-      <strong>Sistema de Controle de Pedidos</strong> - Versão 9.0
+      <strong>Sistema de Pedidos Neo - Papelaria / Limpeza</strong> - Versão 14.0.0
     </p>
     <p style="margin: 5px 0 0 0;">
       Elaborado por <strong style="color: var(--primary);">TI Neoformula</strong>
@@ -2513,7 +2513,7 @@
   <script>
     /**
      * ========================================
-     * SISTEMA NEOFORMULA v10.0 - JavaScript
+     * SISTEMA DE PEDIDOS NEO v14.0.0 - JavaScript
      * ========================================
      */
 
@@ -2529,7 +2529,7 @@
 
     // Inicialização
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('🚀 Iniciando Sistema Neoformula v9.1...');
+      console.log('🚀 Iniciando Sistema de Pedidos Neo v14.0.0...');
       initializeSystem();
     });
     
@@ -4372,7 +4372,8 @@ function loadPedidos() {
             </div>
 
             <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 4px; min-height: 36px;">${produto.nome}</div>
-            <div style="color: #666; font-size: 0.8rem; margin-bottom: 8px;">${produto.tipo}</div>
+            <div style="color: #666; font-size: 0.8rem; margin-bottom: 4px;">${produto.tipo}</div>
+            <div style="color: #00A651; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">📦 Unidade: ${produto.unidade || 'UN'}</div>
 
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding: 8px; background: ${emEstoque ? '#e8f5e9' : '#ffebee'}; border-radius: 4px;">
               <span style="font-size: 0.75rem; font-weight: bold; color: ${emEstoque ? '#2e7d32' : '#c62828'};">
@@ -4403,6 +4404,13 @@ function loadPedidos() {
       if (qtdAtual < estoqueMax) {
         carrinhoPedido[produtoId] = qtdAtual + 1;
         document.getElementById(`qtd-${produtoId}`).value = carrinhoPedido[produtoId];
+
+        // Atualizar botão menos (sempre habilitado quando qtd > 0)
+        const btnMenos = document.querySelector(`button[onclick="diminuirQtdCarrinho('${produtoId}')"]`);
+        if (btnMenos) {
+          btnMenos.disabled = false;
+        }
+
         atualizarResumoCarrinho();
       }
     }
@@ -4417,7 +4425,16 @@ function loadPedidos() {
         if (carrinhoPedido[produtoId] === 0) {
           delete carrinhoPedido[produtoId];
         }
+
+        // Atualizar input
         document.getElementById(`qtd-${produtoId}`).value = carrinhoPedido[produtoId] || 0;
+
+        // Atualizar botão menos (habilitar/desabilitar)
+        const btnMenos = document.querySelector(`button[onclick="diminuirQtdCarrinho('${produtoId}')"]`);
+        if (btnMenos) {
+          btnMenos.disabled = (carrinhoPedido[produtoId] || 0) === 0;
+        }
+
         atualizarResumoCarrinho();
       }
     }
@@ -4638,6 +4655,7 @@ function loadPedidos() {
 
       // Converter carrinho para formato do backend
       const produtosPedido = [];
+      const produtosDetalhados = []; // v14.0.0 - para email profissional
       const tiposProdutos = new Set();
 
       Object.keys(carrinhoPedido).forEach(produtoId => {
@@ -4647,6 +4665,15 @@ function loadPedidos() {
             produtoId: produtoId,
             quantidade: carrinhoPedido[produtoId]
           });
+
+          // Adicionar dados completos para o email (v14.0.0)
+          produtosDetalhados.push({
+            nome: produto.nome,
+            quantidade: carrinhoPedido[produtoId],
+            unidade: produto.unidade || 'UN',
+            valorUnitario: produto.valorUnitario || 0
+          });
+
           tiposProdutos.add(produto.tipo);
         }
       });
@@ -4659,6 +4686,7 @@ function loadPedidos() {
       const dadosPedido = {
         tipo: tipoPedido,
         produtos: produtosPedido,
+        produtosDetalhados: produtosDetalhados, // v14.0.0
         observacoes: observacoes
       };
 
