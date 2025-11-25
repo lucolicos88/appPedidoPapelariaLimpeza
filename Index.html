@@ -6831,14 +6831,20 @@ function renderMovimentacoesTable(movimentacoes) {
     function loadFornecedores() {
       showLoading();
 
-      const filtros = {
-        busca: document.getElementById('fornecedorFilterBusca')?.value || null,
-        tipoProdutos: document.getElementById('fornecedorFilterTipo')?.value || null,
-        ativo: document.getElementById('fornecedorFilterAtivo')?.value || null
-      };
+      const buscaValue = document.getElementById('fornecedorFilterBusca')?.value?.trim();
+      const tipoValue = document.getElementById('fornecedorFilterTipo')?.value;
+      const ativoValue = document.getElementById('fornecedorFilterAtivo')?.value;
+
+      const filtros = {};
+      if (buscaValue) filtros.busca = buscaValue;
+      if (tipoValue) filtros.tipoProdutos = tipoValue;
+      if (ativoValue) filtros.ativo = ativoValue;
+
+      console.log('🔍 Filtros de fornecedores:', filtros);
 
       google.script.run
         .withSuccessHandler(function(response) {
+          console.log('📦 Resposta fornecedores:', response);
           if (response && response.success) {
             renderFornecedoresTable(response.fornecedores || []);
           } else {

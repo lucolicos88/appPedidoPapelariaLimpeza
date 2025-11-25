@@ -633,27 +633,28 @@ function getNotaFiscal(nfId) {
     for (let i = 1; i < dados.length; i++) {
       if (dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.ID - 1] === nfId) {
         const nf = {
-          id: dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.ID - 1],
-          numeroNF: dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.NUMERO_NF - 1],
+          id: String(dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.ID - 1] || ''),
+          numeroNF: String(dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.NUMERO_NF - 1] || ''),
           dataEmissao: dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.DATA_EMISSAO - 1],
           dataEntrada: dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.DATA_ENTRADA - 1],
-          fornecedor: dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.FORNECEDOR - 1],
-          cnpjFornecedor: dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.CNPJ_FORNECEDOR - 1],
-          valorTotal: dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.VALOR_TOTAL - 1],
+          fornecedor: String(dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.FORNECEDOR - 1] || ''),
+          cnpjFornecedor: String(dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.CNPJ_FORNECEDOR - 1] || ''),
+          valorTotal: parseFloat(dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.VALOR_TOTAL - 1]) || 0,
           produtos: JSON.parse(dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.PRODUTOS - 1] || '[]'),
           quantidades: JSON.parse(dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.QUANTIDADE - 1] || '[]'),
           valoresUnitarios: JSON.parse(dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.VALORES_UNITARIOS - 1] || '[]'),
-          tipoProdutos: dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.TIPO_PRODUTOS - 1],
-          status: dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.STATUS - 1],
-          responsavel: dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.RESPONSAVEL - 1],
-          observacoes: dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.OBSERVACOES - 1],
+          tipoProdutos: String(dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.TIPO_PRODUTOS - 1] || ''),
+          status: String(dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.STATUS - 1] || ''),
+          responsavel: String(dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.RESPONSAVEL - 1] || ''),
+          observacoes: String(dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.OBSERVACOES - 1] || ''),
           dataCadastro: dados[i][CONFIG.COLUNAS_NOTAS_FISCAIS.DATA_CADASTRO - 1]
         };
 
-        return {
+        // Serializar para evitar erros de transferência
+        return serializarParaFrontend({
           success: true,
           notaFiscal: nf
-        };
+        });
       }
     }
 

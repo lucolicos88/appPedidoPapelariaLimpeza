@@ -108,10 +108,15 @@ function processarNFv13Automatico(params) {
 
     const dadosNFExistentes = abaNF.getDataRange().getValues();
     for (let i = 1; i < dadosNFExistentes.length; i++) {
-      const numeroNFExistente = dadosNFExistentes[i][CONFIG.COLUNAS_NOTAS_FISCAIS.NUMERO_NF - 1];
-      const cnpjExistente = dadosNFExistentes[i][CONFIG.COLUNAS_NOTAS_FISCAIS.CNPJ_FORNECEDOR - 1];
+      const numeroNFExistente = String(dadosNFExistentes[i][CONFIG.COLUNAS_NOTAS_FISCAIS.NUMERO_NF - 1] || '').trim();
+      const cnpjExistente = String(dadosNFExistentes[i][CONFIG.COLUNAS_NOTAS_FISCAIS.CNPJ_FORNECEDOR - 1] || '').trim();
+      const numeroNFNovo = String(dadosNF.numeroNF || '').trim();
+      const cnpjNovo = String(dadosNF.cnpjFornecedor || '').trim();
 
-      if (numeroNFExistente == dadosNF.numeroNF && cnpjExistente === dadosNF.cnpjFornecedor) {
+      Logger.log(`Comparando NF: "${numeroNFExistente}" === "${numeroNFNovo}" && "${cnpjExistente}" === "${cnpjNovo}"`);
+
+      if (numeroNFExistente === numeroNFNovo && cnpjExistente === cnpjNovo && numeroNFExistente !== '' && cnpjExistente !== '') {
+        Logger.log(`⚠️ NF DUPLICADA ENCONTRADA!`);
         return {
           success: false,
           error: `❌ NOTA FISCAL DUPLICADA!\n\nA NF ${dadosNF.numeroNF} do fornecedor ${dadosNF.fornecedor} (CNPJ: ${dadosNF.cnpjFornecedor}) já foi importada anteriormente.\n\nVerifique a aba "Notas Fiscais" para confirmar.`

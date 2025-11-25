@@ -63,10 +63,12 @@ function listarFornecedores(filtros) {
       fornecedores.push(fornecedor);
     }
 
-    return {
+    Logger.log(`✅ ${fornecedores.length} fornecedores encontrados`);
+
+    return serializarParaFrontend({
       success: true,
       fornecedores: fornecedores
-    };
+    });
 
   } catch (error) {
     Logger.log('❌ Erro ao listar fornecedores: ' + error.message);
