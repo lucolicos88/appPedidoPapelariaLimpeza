@@ -196,26 +196,26 @@ function buscarFornecedor(fornecedorId) {
     for (let i = 1; i < dados.length; i++) {
       if (dados[i][CONFIG.COLUNAS_FORNECEDORES.ID - 1] === fornecedorId) {
         const fornecedor = {
-          id: dados[i][CONFIG.COLUNAS_FORNECEDORES.ID - 1],
-          nome: dados[i][CONFIG.COLUNAS_FORNECEDORES.NOME - 1],
-          nomeFantasia: dados[i][CONFIG.COLUNAS_FORNECEDORES.NOME_FANTASIA - 1] || '',
-          cnpj: dados[i][CONFIG.COLUNAS_FORNECEDORES.CNPJ - 1] || '',
-          telefone: dados[i][CONFIG.COLUNAS_FORNECEDORES.TELEFONE - 1] || '',
-          email: dados[i][CONFIG.COLUNAS_FORNECEDORES.EMAIL - 1] || '',
-          endereco: dados[i][CONFIG.COLUNAS_FORNECEDORES.ENDERECO - 1] || '',
-          cidade: dados[i][CONFIG.COLUNAS_FORNECEDORES.CIDADE - 1] || '',
-          estado: dados[i][CONFIG.COLUNAS_FORNECEDORES.ESTADO - 1] || '',
-          cep: dados[i][CONFIG.COLUNAS_FORNECEDORES.CEP - 1] || '',
-          tipoProdutos: dados[i][CONFIG.COLUNAS_FORNECEDORES.TIPO_PRODUTOS - 1] || '',
-          ativo: dados[i][CONFIG.COLUNAS_FORNECEDORES.ATIVO - 1],
+          id: String(dados[i][CONFIG.COLUNAS_FORNECEDORES.ID - 1] || ''),
+          nome: String(dados[i][CONFIG.COLUNAS_FORNECEDORES.NOME - 1] || ''),
+          nomeFantasia: String(dados[i][CONFIG.COLUNAS_FORNECEDORES.NOME_FANTASIA - 1] || ''),
+          cnpj: String(dados[i][CONFIG.COLUNAS_FORNECEDORES.CNPJ - 1] || ''),
+          telefone: String(dados[i][CONFIG.COLUNAS_FORNECEDORES.TELEFONE - 1] || ''),
+          email: String(dados[i][CONFIG.COLUNAS_FORNECEDORES.EMAIL - 1] || ''),
+          endereco: String(dados[i][CONFIG.COLUNAS_FORNECEDORES.ENDERECO - 1] || ''),
+          cidade: String(dados[i][CONFIG.COLUNAS_FORNECEDORES.CIDADE - 1] || ''),
+          estado: String(dados[i][CONFIG.COLUNAS_FORNECEDORES.ESTADO - 1] || ''),
+          cep: String(dados[i][CONFIG.COLUNAS_FORNECEDORES.CEP - 1] || ''),
+          tipoProdutos: String(dados[i][CONFIG.COLUNAS_FORNECEDORES.TIPO_PRODUTOS - 1] || ''),
+          ativo: String(dados[i][CONFIG.COLUNAS_FORNECEDORES.ATIVO - 1] || 'Sim'),
           dataCadastro: dados[i][CONFIG.COLUNAS_FORNECEDORES.DATA_CADASTRO - 1],
-          observacoes: dados[i][CONFIG.COLUNAS_FORNECEDORES.OBSERVACOES - 1] || ''
+          observacoes: String(dados[i][CONFIG.COLUNAS_FORNECEDORES.OBSERVACOES - 1] || '')
         };
 
-        return {
+        return serializarParaFrontend({
           success: true,
           fornecedor: fornecedor
-        };
+        });
       }
     }
 

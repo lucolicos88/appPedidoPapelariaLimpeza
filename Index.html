@@ -7590,6 +7590,70 @@ function renderMovimentacoesTable(movimentacoes) {
     }
 
     /**
+     * Mostra modal customizado com HTML (v13.1.6)
+     * @param {string} title - Título do modal
+     * @param {string} htmlContent - Conteúdo HTML do modal
+     */
+    function showCustomModal(title, htmlContent) {
+      // Criar overlay
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+      `;
+
+      // Criar modal
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        max-width: 700px;
+        max-height: 80vh;
+        overflow-y: auto;
+        animation: slideDown 0.3s ease;
+      `;
+
+      modal.innerHTML = `
+        <div style="margin-bottom: 20px;">
+          <h2 style="color: var(--primary); margin: 0;">${title}</h2>
+        </div>
+        <div>${htmlContent}</div>
+      `;
+
+      overlay.setAttribute('data-custom-overlay', 'true');
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+
+      // Fechar com ESC
+      const handleEsc = function(e) {
+        if (e.key === 'Escape') {
+          overlay.remove();
+          document.removeEventListener('keydown', handleEsc);
+        }
+      };
+      document.addEventListener('keydown', handleEsc);
+    }
+
+    /**
+     * Fecha todos os modais customizados
+     */
+    function closeAllModals() {
+      const modals = document.querySelectorAll('[data-custom-overlay]');
+      modals.forEach(modal => modal.remove());
+    }
+
+    /**
      * Mostra modal de prompt (v13.1.4 - Modal estilizado)
      * @param {string} title - Título do modal
      * @param {string} message - Mensagem do prompt
