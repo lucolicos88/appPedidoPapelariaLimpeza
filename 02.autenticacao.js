@@ -685,14 +685,14 @@ function cadastrarUsuario(dadosUsuario) {
       }
     }
 
-    // Adicionar novo usuário
+    // Adicionar novo usuário (v14.0.4 - ORDEM CORRIGIDA)
     const novaLinha = [
-      dadosUsuario.email,
-      dadosUsuario.nome,
-      dadosUsuario.perfil || 'USUARIO',
-      dadosUsuario.setor || 'Administração',
-      dadosUsuario.status || 'Ativo',
-      new Date() // Data cadastro
+      dadosUsuario.email,                    // A - Email
+      dadosUsuario.nome,                     // B - Nome
+      dadosUsuario.setor || 'Administração', // C - Setor
+      dadosUsuario.perfil || 'USUARIO',      // D - Permissao
+      dadosUsuario.status || 'Ativo',        // E - Ativo
+      new Date()                             // F - Data Cadastro
     ];
 
     abaUsers.appendRow(novaLinha);
