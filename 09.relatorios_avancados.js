@@ -34,16 +34,16 @@ function exportarRelatorioCSV(tipo, filtros) {
           return { success: false, error: 'Aba de pedidos não encontrada' };
         }
 
-        headers = ['Número Pedido', 'Data', 'Solicitante', 'Tipo', 'Produtos', 'Valor Total', 'Status'];
+        headers = ['Número Pedido', 'Data Solicitação', 'Solicitante', 'Setor', 'Tipo', 'Valor Total', 'Status'];
         const dadosPedidos = abaPedidos.getDataRange().getValues();
 
         for (let i = 1; i < dadosPedidos.length; i++) {
           dados.push([
             dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.NUMERO_PEDIDO - 1],
-            Utilities.formatDate(new Date(dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.DATA_CRIACAO - 1]), Session.getScriptTimeZone(), 'dd/MM/yyyy'),
+            Utilities.formatDate(new Date(dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.DATA_SOLICITACAO - 1]), Session.getScriptTimeZone(), 'dd/MM/yyyy'),
             dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.SOLICITANTE_NOME - 1],
+            dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.SETOR - 1],
             dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.TIPO - 1],
-            dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.PRODUTOS - 1],
             dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.VALOR_TOTAL - 1],
             dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.STATUS - 1]
           ]);
@@ -58,17 +58,17 @@ function exportarRelatorioCSV(tipo, filtros) {
           return { success: false, error: 'Aba de estoque não encontrada' };
         }
 
-        headers = ['Produto', 'Tipo', 'Quantidade Disponível', 'Quantidade Mínima', 'Unidade', 'Última Atualização'];
+        headers = ['Produto', 'Quantidade Atual', 'Quantidade Reservada', 'Estoque Disponível', 'Última Atualização', 'Responsável'];
         const dadosEstoque = abaEstoque.getDataRange().getValues();
 
         for (let i = 1; i < dadosEstoque.length; i++) {
           dados.push([
-            dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.PRODUTO_ID - 1],
-            dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.TIPO - 1],
-            dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.QTD_DISPONIVEL - 1],
-            dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.QTD_MINIMA - 1],
-            dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.UNIDADE - 1],
-            Utilities.formatDate(new Date(dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.ULTIMA_ATUALIZACAO - 1]), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
+            dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.PRODUTO_NOME - 1],
+            dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL - 1],
+            dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_RESERVADA - 1],
+            dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.ESTOQUE_DISPONIVEL - 1],
+            Utilities.formatDate(new Date(dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.ULTIMA_ATUALIZACAO - 1]), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm'),
+            dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.RESPONSAVEL - 1]
           ]);
         }
 
@@ -79,10 +79,20 @@ function exportarRelatorioCSV(tipo, filtros) {
         return { success: false, error: 'Tipo de relatório inválido' };
     }
 
-    // Montar CSV
-    let csv = headers.join(',') + '\n';
+    // Montar CSV com UTF-8 BOM e delimiter ponto-e-vírgula (v14.0.3)
+    // BOM (\uFEFF) garante que Excel reconheça acentuação corretamente
+    // Ponto-e-vírgula (;) é o padrão para CSV em português no Excel
+    let csv = '\uFEFF'; // UTF-8 BOM
+    csv += headers.join(';') + '\n';
+
     dados.forEach(linha => {
-      csv += linha.map(campo => `"${campo}"`).join(',') + '\n';
+      const linhaFormatada = linha.map(campo => {
+        // Converter para string e escapar aspas duplas
+        let valor = String(campo || '');
+        valor = valor.replace(/"/g, '""'); // Escapar aspas duplas
+        return `"${valor}"`;
+      });
+      csv += linhaFormatada.join(';') + '\n';
     });
 
     Logger.log(`✅ Relatório CSV gerado: ${dados.length} linhas`);

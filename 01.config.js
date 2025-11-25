@@ -165,6 +165,16 @@ const CONFIG = {
     OBSERVACOES: 14           // N - Observações
   },
 
+  // Mapeamento de colunas - ABA USUÁRIOS (v14.0.2)
+  COLUNAS_USUARIOS: {
+    EMAIL: 1,                 // A - Email (PK)
+    NOME: 2,                  // B - Nome Completo
+    PERFIL: 3,                // C - Perfil (ADMIN/GESTOR/USUARIO)
+    SETOR: 4,                 // D - Setor
+    STATUS: 5,                // E - Status (Ativo/Inativo)
+    DATA_CADASTRO: 6          // F - Data de Cadastro
+  },
+
   // Status de pedidos permitidos
   STATUS_PEDIDOS: {
     SOLICITADO: 'Solicitado',
