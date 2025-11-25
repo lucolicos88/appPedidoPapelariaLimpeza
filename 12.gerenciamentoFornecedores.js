@@ -109,17 +109,33 @@ function cadastrarFornecedor(dadosFornecedor) {
       return { success: false, error: 'Aba Fornecedores não encontrada' };
     }
 
-    // Verificar se CNPJ já existe (se fornecido)
+    // Verificar se CNPJ já existe (se fornecido) - v13.1.6: com normalização
     if (dadosFornecedor.cnpj) {
-      const dados = abaFornecedores.getDataRange().getValues();
-      for (let i = 1; i < dados.length; i++) {
-        const cnpjExistente = dados[i][CONFIG.COLUNAS_FORNECEDORES.CNPJ - 1];
-        if (cnpjExistente && cnpjExistente === dadosFornecedor.cnpj) {
-          return {
-            success: false,
-            error: 'CNPJ já cadastrado'
-          };
+      const cnpjNovo = String(dadosFornecedor.cnpj).replace(/[^\d]/g, '').trim();
+
+      if (cnpjNovo) {
+        Logger.log(`🔍 Verificando se CNPJ ${cnpjNovo} já existe...`);
+
+        const dados = abaFornecedores.getDataRange().getValues();
+        for (let i = 1; i < dados.length; i++) {
+          const cnpjExistente = dados[i][CONFIG.COLUNAS_FORNECEDORES.CNPJ - 1];
+
+          if (cnpjExistente) {
+            const cnpjExistenteNormalizado = String(cnpjExistente).replace(/[^\d]/g, '').trim();
+
+            if (cnpjExistenteNormalizado === cnpjNovo) {
+              const nomeExistente = dados[i][CONFIG.COLUNAS_FORNECEDORES.NOME - 1];
+              Logger.log(`❌ CNPJ ${cnpjNovo} já cadastrado para: ${nomeExistente}`);
+
+              return {
+                success: false,
+                error: `CNPJ já cadastrado para o fornecedor: ${nomeExistente}`
+              };
+            }
+          }
         }
+
+        Logger.log(`✅ CNPJ ${cnpjNovo} disponível para cadastro`);
       }
     }
 
@@ -260,36 +276,56 @@ function buscarFornecedorPorCNPJ(cnpj) {
       return { success: false, error: 'Aba Fornecedores não encontrada' };
     }
 
+    // Normalizar CNPJ buscado (remover formatação)
+    const cnpjNormalizado = String(cnpj || '').replace(/[^\d]/g, '').trim();
+
+    if (!cnpjNormalizado) {
+      Logger.log('⚠️ CNPJ vazio ou inválido fornecido para busca');
+      return { success: false, error: 'CNPJ vazio ou inválido' };
+    }
+
+    Logger.log(`🔍 Buscando fornecedor com CNPJ normalizado: ${cnpjNormalizado}`);
+
     const dados = abaFornecedores.getDataRange().getValues();
 
     for (let i = 1; i < dados.length; i++) {
       const cnpjFornecedor = dados[i][CONFIG.COLUNAS_FORNECEDORES.CNPJ - 1];
 
-      if (cnpjFornecedor && cnpjFornecedor === cnpj) {
-        const fornecedor = {
-          id: dados[i][CONFIG.COLUNAS_FORNECEDORES.ID - 1],
-          nome: dados[i][CONFIG.COLUNAS_FORNECEDORES.NOME - 1],
-          nomeFantasia: dados[i][CONFIG.COLUNAS_FORNECEDORES.NOME_FANTASIA - 1] || '',
-          cnpj: cnpjFornecedor,
-          telefone: dados[i][CONFIG.COLUNAS_FORNECEDORES.TELEFONE - 1] || '',
-          email: dados[i][CONFIG.COLUNAS_FORNECEDORES.EMAIL - 1] || '',
-          endereco: dados[i][CONFIG.COLUNAS_FORNECEDORES.ENDERECO - 1] || '',
-          cidade: dados[i][CONFIG.COLUNAS_FORNECEDORES.CIDADE - 1] || '',
-          estado: dados[i][CONFIG.COLUNAS_FORNECEDORES.ESTADO - 1] || '',
-          cep: dados[i][CONFIG.COLUNAS_FORNECEDORES.CEP - 1] || '',
-          tipoProdutos: dados[i][CONFIG.COLUNAS_FORNECEDORES.TIPO_PRODUTOS - 1] || '',
-          ativo: dados[i][CONFIG.COLUNAS_FORNECEDORES.ATIVO - 1],
-          dataCadastro: dados[i][CONFIG.COLUNAS_FORNECEDORES.DATA_CADASTRO - 1],
-          observacoes: dados[i][CONFIG.COLUNAS_FORNECEDORES.OBSERVACOES - 1] || ''
-        };
+      if (cnpjFornecedor) {
+        // Normalizar CNPJ do banco (remover formatação)
+        const cnpjFornecedorNormalizado = String(cnpjFornecedor).replace(/[^\d]/g, '').trim();
 
-        return {
-          success: true,
-          fornecedor: fornecedor
-        };
+        Logger.log(`   Comparando: "${cnpjFornecedorNormalizado}" === "${cnpjNormalizado}"`);
+
+        if (cnpjFornecedorNormalizado === cnpjNormalizado) {
+          Logger.log(`✅ FORNECEDOR ENCONTRADO! Nome: ${dados[i][CONFIG.COLUNAS_FORNECEDORES.NOME - 1]}`);
+
+          const fornecedor = {
+            id: dados[i][CONFIG.COLUNAS_FORNECEDORES.ID - 1],
+            nome: dados[i][CONFIG.COLUNAS_FORNECEDORES.NOME - 1],
+            nomeFantasia: dados[i][CONFIG.COLUNAS_FORNECEDORES.NOME_FANTASIA - 1] || '',
+            cnpj: cnpjFornecedor,
+            telefone: dados[i][CONFIG.COLUNAS_FORNECEDORES.TELEFONE - 1] || '',
+            email: dados[i][CONFIG.COLUNAS_FORNECEDORES.EMAIL - 1] || '',
+            endereco: dados[i][CONFIG.COLUNAS_FORNECEDORES.ENDERECO - 1] || '',
+            cidade: dados[i][CONFIG.COLUNAS_FORNECEDORES.CIDADE - 1] || '',
+            estado: dados[i][CONFIG.COLUNAS_FORNECEDORES.ESTADO - 1] || '',
+            cep: dados[i][CONFIG.COLUNAS_FORNECEDORES.CEP - 1] || '',
+            tipoProdutos: dados[i][CONFIG.COLUNAS_FORNECEDORES.TIPO_PRODUTOS - 1] || '',
+            ativo: dados[i][CONFIG.COLUNAS_FORNECEDORES.ATIVO - 1],
+            dataCadastro: dados[i][CONFIG.COLUNAS_FORNECEDORES.DATA_CADASTRO - 1],
+            observacoes: dados[i][CONFIG.COLUNAS_FORNECEDORES.OBSERVACOES - 1] || ''
+          };
+
+          return {
+            success: true,
+            fornecedor: fornecedor
+          };
+        }
       }
     }
 
+    Logger.log(`❌ Fornecedor NÃO encontrado com CNPJ: ${cnpjNormalizado}`);
     return {
       success: false,
       error: 'Fornecedor não encontrado com este CNPJ'
