@@ -767,7 +767,7 @@ function enviarNotificacaoPedido(destinatario, dadosPedido) {
       <body>
         <div class="container">
           <div class="header">
-            <img src="https://www.neoformula.com.br/assets/images/logo-neoformula.png" alt="Neoformula" class="logo" />
+            <img src="https://neoformula.com.br/cdn/shop/files/Logotipo-NeoFormula-Manipulacao-Homeopatia_76b2fa98-5ffa-4cc3-ac0a-6d41e1bc8810.png?height=100&v=1677088468" alt="Neoformula" class="logo" />
             <h1 style="margin: 10px 0;">🛒 Novo Pedido Recebido</h1>
             <p style="margin: 10px 0 0 0; font-size: 18px; opacity: 0.9;">${dadosPedido.numeroPedido}</p>
           </div>
