@@ -114,6 +114,65 @@ function exportarRelatorioCSV(tipo, filtros) {
         fileName = `relatorio_estoque_${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd')}.csv`;
         break;
 
+      case 'produtos':
+        // v14.0.10: Adicionar suporte para produtos
+        const resultadoProdutos = listarProdutos({});
+        if (!resultadoProdutos.success) {
+          return { success: false, error: resultadoProdutos.error };
+        }
+
+        headers = ['ID', 'Código', 'Nome', 'Tipo', 'Categoria', 'Unidade', 'Preço Unitário', 'Estoque Mínimo', 'Ponto de Pedido', 'Fornecedor', 'Ativo', 'Data Cadastro'];
+
+        // Buscar nomes de fornecedores
+        const abaFornecedoresCSV = ss.getSheetByName(CONFIG.ABAS.SUPPLIERS);
+        const mapaFornecedoresCSV = {};
+        if (abaFornecedoresCSV) {
+          const dadosFornecedoresCSV = abaFornecedoresCSV.getDataRange().getValues();
+          for (let i = 1; i < dadosFornecedoresCSV.length; i++) {
+            const fornecedorId = String(dadosFornecedoresCSV[i][CONFIG.COLUNAS_FORNECEDORES.ID - 1] || '').trim();
+            const fornecedorNome = String(dadosFornecedoresCSV[i][CONFIG.COLUNAS_FORNECEDORES.NOME - 1] || '').trim();
+            if (fornecedorId && fornecedorNome) {
+              mapaFornecedoresCSV[fornecedorId] = fornecedorNome;
+            }
+          }
+        }
+
+        resultadoProdutos.produtos.forEach(produto => {
+          const fornecedorIdStr = String(produto.fornecedorId || '').trim();
+          const fornecedorNome = mapaFornecedoresCSV[fornecedorIdStr] || fornecedorIdStr || '';
+
+          let dataFormatada = '';
+          try {
+            if (produto.dataCadastro) {
+              if (produto.dataCadastro instanceof Date) {
+                dataFormatada = Utilities.formatDate(produto.dataCadastro, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+              } else {
+                dataFormatada = String(produto.dataCadastro);
+              }
+            }
+          } catch (e) {
+            dataFormatada = '';
+          }
+
+          dados.push([
+            String(produto.id || ''),
+            String(produto.codigo || ''),
+            String(produto.nome || ''),
+            String(produto.tipo || ''),
+            String(produto.categoria || ''),
+            String(produto.unidade || ''),
+            formatarValorNumerico(produto.precoUnitario || 0),
+            String(produto.estoqueMinimo || 0),
+            String(produto.pontoPedido || 0),
+            fornecedorNome,
+            String(produto.ativo || 'Sim'),
+            dataFormatada
+          ]);
+        });
+
+        fileName = `relatorio_produtos_${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd')}.csv`;
+        break;
+
       default:
         return { success: false, error: 'Tipo de relatório inválido' };
     }
@@ -891,22 +950,27 @@ function exportarRelatorioTabela(tipo, filtros) {
         titulo = 'Relatório de Produtos';
         headers = ['ID', 'Código', 'Nome', 'Tipo', 'Categoria', 'Unidade', 'Preço Unitário', 'Estoque Mínimo', 'Ponto de Pedido', 'Fornecedor', 'Ativo', 'Data Cadastro'];
 
-        // Buscar nomes de fornecedores (v14.0.9)
+        // Buscar nomes de fornecedores (v14.0.10)
         const abaFornecedores = ss.getSheetByName(CONFIG.ABAS.SUPPLIERS);
         const mapaFornecedores = {};
         if (abaFornecedores) {
           const dadosFornecedores = abaFornecedores.getDataRange().getValues();
+          Logger.log('📦 Total de fornecedores na planilha: ' + (dadosFornecedores.length - 1));
           for (let i = 1; i < dadosFornecedores.length; i++) {
-            const fornecedorId = dadosFornecedores[i][CONFIG.COLUNAS_FORNECEDORES.ID - 1];
-            const fornecedorNome = dadosFornecedores[i][CONFIG.COLUNAS_FORNECEDORES.NOME - 1];
-            if (fornecedorId) {
+            const fornecedorId = String(dadosFornecedores[i][CONFIG.COLUNAS_FORNECEDORES.ID - 1] || '').trim();
+            const fornecedorNome = String(dadosFornecedores[i][CONFIG.COLUNAS_FORNECEDORES.NOME - 1] || '').trim();
+            if (fornecedorId && fornecedorNome) {
               mapaFornecedores[fornecedorId] = fornecedorNome;
             }
           }
+          Logger.log('📦 Fornecedores mapeados: ' + Object.keys(mapaFornecedores).length);
+        } else {
+          Logger.log('⚠️ Aba de fornecedores não encontrada');
         }
 
         resultado.produtos.forEach(produto => {
-          const fornecedorNome = mapaFornecedores[produto.fornecedorId] || produto.fornecedorId || '';
+          const fornecedorIdStr = String(produto.fornecedorId || '').trim();
+          const fornecedorNome = mapaFornecedores[fornecedorIdStr] || fornecedorIdStr || '';
 
           // Formatar preço unitário com segurança (v14.0.10)
           let precoFormatado = 'R$ 0,00';
