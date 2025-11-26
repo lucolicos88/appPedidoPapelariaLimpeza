@@ -16,18 +16,19 @@
  */
 
 /**
- * Formata valor monetário para CSV (v14.0.4)
+ * Formata valor numérico com 2 casas decimais para CSV (v14.0.5)
+ * Formato: 1234,56 (vírgula decimal, sem separador de milhares)
  */
-function formatarValorMonetario(valor) {
+function formatarValorNumerico(valor) {
   if (!valor || valor === '' || isNaN(valor)) {
-    return 'R$ 0,00';
+    return '0,00';
   }
   const num = parseFloat(valor);
-  return 'R$ ' + num.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return num.toFixed(2).replace('.', ',');
 }
 
 /**
- * Formata número para CSV (v14.0.4)
+ * Formata número inteiro para CSV (v14.0.5)
  */
 function formatarNumero(valor) {
   if (!valor || valor === '' || isNaN(valor)) {
@@ -37,7 +38,7 @@ function formatarNumero(valor) {
 }
 
 /**
- * Exporta relatório em formato CSV (v14.0.4)
+ * Exporta relatório em formato CSV (v14.0.5)
  */
 function exportarRelatorioCSV(tipo, filtros) {
   try {
@@ -67,7 +68,7 @@ function exportarRelatorioCSV(tipo, filtros) {
             String(dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.SOLICITANTE_NOME - 1] || ''),
             String(dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.SETOR - 1] || ''),
             String(dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.TIPO - 1] || ''),
-            formatarValorMonetario(valorTotal),
+            formatarValorNumerico(valorTotal), // v14.0.5: Sem R$, apenas número com 2 casas
             String(dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.STATUS - 1] || '')
           ]);
         }
