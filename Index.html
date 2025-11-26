@@ -2030,9 +2030,9 @@
     </div>
   </div>
 
-  <!-- Modal: Editar Produto (v10.1) -->
+  <!-- Modal: Editar Produto (v15.0 - Múltiplos Fornecedores) -->
   <div class="modal" id="modalEditarProduto">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 800px;">
       <div class="modal-header">
         <h3 class="modal-title">✏️ Editar Produto</h3>
         <button class="modal-close" onclick="closeModal('modalEditarProduto')">&times;</button>
@@ -2041,76 +2041,130 @@
       <form id="formEditarProduto" onsubmit="submitEditarProduto(event)">
         <input type="hidden" id="editProdutoId">
 
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Código *</label>
-            <input type="text" class="form-control" id="editProdutoCodigo" required>
+        <!-- SEÇÃO 1: DADOS DO FORNECEDOR (Original da NF) -->
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #2196F3;">
+          <h4 style="margin: 0 0 15px 0; color: #2196F3; font-size: 14px; font-weight: 600;">📦 DADOS DO FORNECEDOR (Original)</h4>
+          <p style="margin: 0 0 15px 0; font-size: 12px; color: #666;">
+            ℹ️ Informações vindas da Nota Fiscal do fornecedor
+          </p>
+
+          <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label">Código Fornecedor *</label>
+              <input type="text" class="form-control" id="editProdutoCodigoFornecedor" required
+                     placeholder="Ex: 11708794">
+            </div>
+
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label">Fornecedor</label>
+              <select class="form-control" id="editProdutoFornecedorId">
+                <option value="">Carregando...</option>
+              </select>
+            </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Nome *</label>
-            <input type="text" class="form-control" id="editProdutoNome" required>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Tipo *</label>
-            <select class="form-control" id="editProdutoTipo" required>
-              <option value="">Selecione...</option>
-              <option value="Papelaria">Papelaria</option>
-              <option value="Limpeza">Limpeza</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Categoria</label>
-            <input type="text" class="form-control" id="editProdutoCategoria">
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Unidade</label>
-            <select class="form-control" id="editProdutoUnidade">
-              <option value="UN">Unidade (UN)</option>
-              <option value="CX">Caixa (CX)</option>
-              <option value="PCT">Pacote (PCT)</option>
-              <option value="KG">Quilograma (KG)</option>
-              <option value="L">Litro (L)</option>
-              <option value="RESMA">Resma</option>
-              <option value="PAR">Par</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Preço Unitário (R$)</label>
-            <input type="number" class="form-control" id="editProdutoPreco" step="0.01" min="0">
+            <label class="form-label">Descrição Fornecedor *</label>
+            <input type="text" class="form-control" id="editProdutoDescricaoFornecedor" required
+                   placeholder="Ex: BL ADES 38X50 AMARELO C/4 10157">
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Estoque Mínimo</label>
-            <input type="number" class="form-control" id="editProdutoEstoqueMin" min="0">
+        <!-- SEÇÃO 2: DADOS NEOFORMULA (Padronizado) -->
+        <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #4CAF50;">
+          <h4 style="margin: 0 0 15px 0; color: #4CAF50; font-size: 14px; font-weight: 600;">🏢 DADOS NEOFORMULA (Padronizado)</h4>
+          <p style="margin: 0 0 15px 0; font-size: 12px; color: #666;">
+            ℹ️ Códigos e descrições internas para agrupar produtos de diferentes fornecedores
+          </p>
+
+          <div class="form-row">
+            <div class="form-group" style="flex: 1; position: relative;">
+              <label class="form-label">Código NEO</label>
+              <input type="text" class="form-control" id="editProdutoCodigoNeo"
+                     placeholder="Ex: PAP-001 (ou deixe vazio)"
+                     oninput="filtrarCodigosNeo(this.value)"
+                     onfocus="mostrarListaCodigosNeo()"
+                     onblur="setTimeout(() => ocultarListaCodigosNeo(), 200)"
+                     autocomplete="off">
+              <div id="listaCodigosNeo" style="display: none; position: absolute; z-index: 1000; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 200px; overflow-y: auto; width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
+            </div>
+
+            <div class="form-group" style="flex: 2; position: relative;">
+              <label class="form-label">Descrição NEO</label>
+              <input type="text" class="form-control" id="editProdutoDescricaoNeo"
+                     placeholder="Ex: Papel A4 500 folhas (ou deixe vazio)"
+                     oninput="filtrarDescricoesNeo(this.value)"
+                     onfocus="mostrarListaDescricoesNeo()"
+                     onblur="setTimeout(() => ocultarListaDescricoesNeo(), 200)"
+                     autocomplete="off">
+              <div id="listaDescricoesNeo" style="display: none; position: absolute; z-index: 1000; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 200px; overflow-y: auto; width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Ponto de Pedido</label>
-            <input type="number" class="form-control" id="editProdutoPontoPedido" min="0">
+          <div style="background: #fff3cd; padding: 10px; border-radius: 4px; font-size: 11px; color: #856404;">
+            💡 <strong>Dica:</strong> Preencha ambos os campos (Código e Descrição NEO) para que o produto apareça em Pedidos e Estoque.
+            Use os códigos existentes para agrupar produtos de diferentes fornecedores.
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Fornecedor</label>
-          <input type="text" class="form-control" id="editProdutoFornecedor">
-        </div>
+        <!-- SEÇÃO 3: DADOS GERAIS -->
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #FF9800;">
+          <h4 style="margin: 0 0 15px 0; color: #FF9800; font-size: 14px; font-weight: 600;">📋 DADOS GERAIS</h4>
 
-        <div class="form-group">
-          <label class="form-label">Imagem do Produto</label>
-          <input type="file" class="form-control" id="editProdutoImagem" accept="image/*" onchange="previewImage(event, 'previewEditProduto')">
-          <div class="image-preview" id="previewEditProduto">
-            <div class="image-preview-placeholder">Imagem atual será mantida se não selecionar nova</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Tipo *</label>
+              <select class="form-control" id="editProdutoTipo" required>
+                <option value="">Selecione...</option>
+                <option value="Papelaria">Papelaria</option>
+                <option value="Limpeza">Limpeza</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Categoria</label>
+              <input type="text" class="form-control" id="editProdutoCategoria" placeholder="Ex: Papel">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Unidade</label>
+              <select class="form-control" id="editProdutoUnidade">
+                <option value="UN">Unidade (UN)</option>
+                <option value="CX">Caixa (CX)</option>
+                <option value="PCT">Pacote (PCT)</option>
+                <option value="KG">Quilograma (KG)</option>
+                <option value="L">Litro (L)</option>
+                <option value="RESMA">Resma</option>
+                <option value="PAR">Par</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Preço Unitário (R$)</label>
+              <input type="number" class="form-control" id="editProdutoPreco" step="0.01" min="0" placeholder="0,00">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Estoque Mínimo</label>
+              <input type="number" class="form-control" id="editProdutoEstoqueMin" min="0" placeholder="0">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Ponto de Pedido</label>
+              <input type="number" class="form-control" id="editProdutoPontoPedido" min="0" placeholder="0">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Imagem do Produto</label>
+            <input type="file" class="form-control" id="editProdutoImagem" accept="image/*" onchange="previewImage(event, 'previewEditProduto')">
+            <div class="image-preview" id="previewEditProduto">
+              <div class="image-preview-placeholder">Imagem atual será mantida se não selecionar nova</div>
+            </div>
           </div>
         </div>
 
@@ -5132,42 +5186,105 @@ function loadProdutos() {
     /**
      * Abre modal de editar produto (v10.1)
      */
+    // Variáveis globais para autocomplete (v15.0)
+    let codigosNeoDisponiveis = [];
+    let descricoesNeoDisponiveis = [];
+    let fornecedoresDisponiveis = [];
+
+    /**
+     * Abre modal de editar produto (v15.0 - com autocomplete)
+     */
     function abrirModalEditarProduto(produtoId) {
       showLoading();
 
-      google.script.run
-        .withSuccessHandler(function(response) {
-          hideLoading();
-          if (response && response.success) {
-            preencherFormEditarProduto(response.produto);
-            document.getElementById('modalEditarProduto').classList.add('active');
-          } else {
-            showError('Erro ao carregar produto: ' + (response ? response.error : 'Resposta vazia'));
-          }
+      // Carregar dados do produto + listas para autocomplete
+      Promise.all([
+        new Promise((resolve, reject) => {
+          google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(reject)
+            .__buscarProduto(produtoId);
+        }),
+        new Promise((resolve, reject) => {
+          google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(reject)
+            .listarCodigosNeoUnicos();
+        }),
+        new Promise((resolve, reject) => {
+          google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(reject)
+            .listarDescricoesNeoUnicas();
+        }),
+        new Promise((resolve, reject) => {
+          google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(reject)
+            .listarFornecedores({});
         })
-        .withFailureHandler(function(error) {
-          hideLoading();
-          showError('Erro: ' + error.message);
-        })
-        .__buscarProduto(produtoId);
+      ])
+      .then(([produtoResponse, codigos, descricoes, fornecedoresResponse]) => {
+        hideLoading();
+
+        if (produtoResponse && produtoResponse.success) {
+          // Armazenar dados para autocomplete
+          codigosNeoDisponiveis = codigos || [];
+          descricoesNeoDisponiveis = descricoes || [];
+          fornecedoresDisponiveis = fornecedoresResponse.fornecedores || [];
+
+          // Preencher formulário
+          preencherFormEditarProduto(produtoResponse.produto);
+
+          // Abrir modal
+          document.getElementById('modalEditarProduto').classList.add('active');
+        } else {
+          showError('Erro ao carregar produto: ' + (produtoResponse ? produtoResponse.error : 'Resposta vazia'));
+        }
+      })
+      .catch(error => {
+        hideLoading();
+        showError('Erro ao carregar dados: ' + error.message);
+      });
     }
 
     /**
-     * Preenche form de editar produto (v10.1)
+     * Preenche form de editar produto (v15.0)
      */
     function preencherFormEditarProduto(produto) {
+      // ID (hidden)
       document.getElementById('editProdutoId').value = produto.id;
-      document.getElementById('editProdutoCodigo').value = produto.codigo;
-      document.getElementById('editProdutoNome').value = produto.nome;
-      document.getElementById('editProdutoTipo').value = produto.tipo;
+
+      // SEÇÃO 1: Dados do Fornecedor
+      document.getElementById('editProdutoCodigoFornecedor').value = produto.codigo || '';
+      document.getElementById('editProdutoDescricaoFornecedor').value = produto.nome || '';
+
+      // Preencher select de fornecedores
+      const selectFornecedor = document.getElementById('editProdutoFornecedorId');
+      selectFornecedor.innerHTML = '<option value="">Selecione...</option>';
+      fornecedoresDisponiveis.forEach(forn => {
+        const option = document.createElement('option');
+        option.value = forn.id;
+        option.textContent = forn.nome;
+        if (forn.id === produto.fornecedorId) {
+          option.selected = true;
+        }
+        selectFornecedor.appendChild(option);
+      });
+
+      // SEÇÃO 2: Dados Neoformula
+      document.getElementById('editProdutoCodigoNeo').value = produto.codigoNeoformula || '';
+      document.getElementById('editProdutoDescricaoNeo').value = produto.descricaoNeoformula || '';
+
+      // SEÇÃO 3: Dados Gerais
+      document.getElementById('editProdutoTipo').value = produto.tipo || '';
       document.getElementById('editProdutoCategoria').value = produto.categoria || '';
       document.getElementById('editProdutoUnidade').value = produto.unidade || 'UN';
       document.getElementById('editProdutoPreco').value = produto.precoUnitario || 0;
       document.getElementById('editProdutoEstoqueMin').value = produto.estoqueMinimo || 0;
       document.getElementById('editProdutoPontoPedido').value = produto.pontoPedido || 0;
-      document.getElementById('editProdutoFornecedor').value = produto.fornecedor || '';
 
-      // Preview da imagem atual (v10.1 - Maior)
+      // Preview da imagem atual
       const preview = document.getElementById('previewEditProduto');
       if (produto.imagemURL) {
         preview.innerHTML = `
@@ -5185,7 +5302,7 @@ function loadProdutos() {
     }
 
     /**
-     * Submete edição de produto (v10.1)
+     * Submete edição de produto (v15.0)
      */
     function submitEditarProduto(event) {
       event.preventDefault();
@@ -5194,15 +5311,23 @@ function loadProdutos() {
 
       const dadosProduto = {
         id: document.getElementById('editProdutoId').value,
-        codigo: document.getElementById('editProdutoCodigo').value,
-        nome: document.getElementById('editProdutoNome').value,
+
+        // Dados do Fornecedor
+        codigo: document.getElementById('editProdutoCodigoFornecedor').value,
+        nome: document.getElementById('editProdutoDescricaoFornecedor').value,
+        fornecedorId: document.getElementById('editProdutoFornecedorId').value,
+
+        // Dados Neoformula
+        codigoNeoformula: document.getElementById('editProdutoCodigoNeo').value,
+        descricaoNeoformula: document.getElementById('editProdutoDescricaoNeo').value,
+
+        // Dados Gerais
         tipo: document.getElementById('editProdutoTipo').value,
         categoria: document.getElementById('editProdutoCategoria').value,
         unidade: document.getElementById('editProdutoUnidade').value,
         precoUnitario: parseFloat(document.getElementById('editProdutoPreco').value) || 0,
         estoqueMinimo: parseInt(document.getElementById('editProdutoEstoqueMin').value) || 0,
-        pontoPedido: parseInt(document.getElementById('editProdutoPontoPedido').value) || 0,
-        fornecedor: document.getElementById('editProdutoFornecedor').value
+        pontoPedido: parseInt(document.getElementById('editProdutoPontoPedido').value) || 0
       };
 
       // Processar imagem se houver
@@ -5245,6 +5370,114 @@ function loadProdutos() {
           showError('Erro: ' + error.message);
         })
         .atualizarProduto(dadosProduto);
+    }
+
+    // ============================================
+    // FUNÇÕES DE AUTOCOMPLETE (v15.0)
+    // ============================================
+
+    /**
+     * Mostra lista de códigos NEO disponíveis
+     */
+    function mostrarListaCodigosNeo() {
+      const input = document.getElementById('editProdutoCodigoNeo');
+      filtrarCodigosNeo(input.value);
+    }
+
+    /**
+     * Filtra códigos NEO conforme o usuário digita
+     */
+    function filtrarCodigosNeo(termo) {
+      const lista = document.getElementById('listaCodigosNeo');
+      const termoLower = (termo || '').toLowerCase();
+
+      const codigosFiltrados = codigosNeoDisponiveis.filter(item =>
+        item.codigo.toLowerCase().includes(termoLower) ||
+        item.descricao.toLowerCase().includes(termoLower)
+      );
+
+      if (codigosFiltrados.length === 0) {
+        lista.innerHTML = '<div style="padding: 10px; color: #999; font-size: 12px;">Nenhum código encontrado. Digite um novo código.</div>';
+      } else {
+        lista.innerHTML = codigosFiltrados.map(item => `
+          <div style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 13px;"
+               onmouseover="this.style.background='#f5f5f5'"
+               onmouseout="this.style.background='white'"
+               onclick="selecionarCodigoNeo('${item.codigo.replace(/'/g, "\\'")}', '${item.descricao.replace(/'/g, "\\'")}')">
+            <strong>${item.codigo}</strong> - ${item.descricao}
+          </div>
+        `).join('');
+      }
+
+      lista.style.display = 'block';
+    }
+
+    /**
+     * Seleciona um código NEO da lista
+     */
+    function selecionarCodigoNeo(codigo, descricao) {
+      document.getElementById('editProdutoCodigoNeo').value = codigo;
+      document.getElementById('editProdutoDescricaoNeo').value = descricao;
+      ocultarListaCodigosNeo();
+    }
+
+    /**
+     * Oculta lista de códigos NEO
+     */
+    function ocultarListaCodigosNeo() {
+      document.getElementById('listaCodigosNeo').style.display = 'none';
+    }
+
+    /**
+     * Mostra lista de descrições NEO disponíveis
+     */
+    function mostrarListaDescricoesNeo() {
+      const input = document.getElementById('editProdutoDescricaoNeo');
+      filtrarDescricoesNeo(input.value);
+    }
+
+    /**
+     * Filtra descrições NEO conforme o usuário digita
+     */
+    function filtrarDescricoesNeo(termo) {
+      const lista = document.getElementById('listaDescricoesNeo');
+      const termoLower = (termo || '').toLowerCase();
+
+      const descricoesFiltradas = descricoesNeoDisponiveis.filter(item =>
+        item.descricao.toLowerCase().includes(termoLower) ||
+        item.codigo.toLowerCase().includes(termoLower)
+      );
+
+      if (descricoesFiltradas.length === 0) {
+        lista.innerHTML = '<div style="padding: 10px; color: #999; font-size: 12px;">Nenhuma descrição encontrada. Digite uma nova descrição.</div>';
+      } else {
+        lista.innerHTML = descricoesFiltradas.map(item => `
+          <div style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 13px;"
+               onmouseover="this.style.background='#f5f5f5'"
+               onmouseout="this.style.background='white'"
+               onclick="selecionarDescricaoNeo('${item.codigo.replace(/'/g, "\\'")}', '${item.descricao.replace(/'/g, "\\'")}')">
+            <strong>${item.descricao}</strong> - ${item.codigo}
+          </div>
+        `).join('');
+      }
+
+      lista.style.display = 'block';
+    }
+
+    /**
+     * Seleciona uma descrição NEO da lista
+     */
+    function selecionarDescricaoNeo(codigo, descricao) {
+      document.getElementById('editProdutoCodigoNeo').value = codigo;
+      document.getElementById('editProdutoDescricaoNeo').value = descricao;
+      ocultarListaDescricoesNeo();
+    }
+
+    /**
+     * Oculta lista de descrições NEO
+     */
+    function ocultarListaDescricoesNeo() {
+      document.getElementById('listaDescricoesNeo').style.display = 'none';
     }
 
     /**
