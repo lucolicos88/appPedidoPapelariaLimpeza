@@ -778,3 +778,278 @@ function getProdutosEmAlerta() {
  *
  * A v13 usa um fluxo completamente novo de cadastro automático via NF.
  */
+
+/**
+ * ========================================
+ * FUNÇÕES v15.0 - MÚLTIPLOS FORNECEDORES
+ * ========================================
+ */
+
+/**
+ * Lista códigos Neoformula únicos já cadastrados (v15.0)
+ * Para autocomplete no modal de edição
+ */
+function listarCodigosNeoUnicos() {
+  try {
+    Logger.log('📋 Listando códigos NEO únicos...');
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+
+    if (!abaProdutos) {
+      return { success: false, error: 'Aba de produtos não encontrada' };
+    }
+
+    const dados = abaProdutos.getDataRange().getValues();
+    const codigos = {};
+
+    // Usar objeto para garantir unicidade por código
+    for (let i = 1; i < dados.length; i++) {
+      const codigoNeo = String(dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] || '').trim();
+      const descricaoNeo = String(dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] || '').trim();
+
+      if (codigoNeo) {
+        // Se código já existe, mantém a primeira descrição encontrada
+        if (!codigos[codigoNeo]) {
+          codigos[codigoNeo] = descricaoNeo;
+        }
+      }
+    }
+
+    // Converter para array de objetos
+    const lista = Object.keys(codigos).map(codigo => ({
+      codigo: codigo,
+      descricao: codigos[codigo]
+    }));
+
+    // Ordenar por código
+    lista.sort((a, b) => a.codigo.localeCompare(b.codigo));
+
+    Logger.log(`✅ Encontrados ${lista.length} códigos NEO únicos`);
+
+    return {
+      success: true,
+      codigos: lista
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao listar códigos NEO: ' + error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Lista descrições Neoformula únicas já cadastradas (v15.0)
+ * Para autocomplete no modal de edição
+ */
+function listarDescricoesNeoUnicas() {
+  try {
+    Logger.log('📋 Listando descrições NEO únicas...');
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+
+    if (!abaProdutos) {
+      return { success: false, error: 'Aba de produtos não encontrada' };
+    }
+
+    const dados = abaProdutos.getDataRange().getValues();
+    const descricoes = {};
+
+    // Usar objeto para garantir unicidade por descrição
+    for (let i = 1; i < dados.length; i++) {
+      const codigoNeo = String(dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] || '').trim();
+      const descricaoNeo = String(dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] || '').trim();
+
+      if (descricaoNeo) {
+        // Se descrição já existe, mantém o primeiro código encontrado
+        if (!descricoes[descricaoNeo]) {
+          descricoes[descricaoNeo] = codigoNeo;
+        }
+      }
+    }
+
+    // Converter para array de objetos
+    const lista = Object.keys(descricoes).map(descricao => ({
+      descricao: descricao,
+      codigo: descricoes[descricao]
+    }));
+
+    // Ordenar por descrição
+    lista.sort((a, b) => a.descricao.localeCompare(b.descricao));
+
+    Logger.log(`✅ Encontradas ${lista.length} descrições NEO únicas`);
+
+    return {
+      success: true,
+      descricoes: lista
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao listar descrições NEO: ' + error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Lista produtos agrupados por código Neoformula (v15.0)
+ * Retorna cada produto NEO com todos os seus fornecedores
+ */
+function listarProdutosAgrupadosPorNeo() {
+  try {
+    Logger.log('📋 Listando produtos agrupados por código NEO...');
+
+    const resultado = listarProdutos({});
+
+    if (!resultado.success) {
+      return resultado;
+    }
+
+    const agrupados = {};
+
+    // Agrupar produtos por código NEO
+    resultado.produtos.forEach(produto => {
+      // Usar código NEO como chave, ou ID do produto se não tiver NEO
+      const chave = produto.codigoNeoformula || produto.id;
+
+      if (!agrupados[chave]) {
+        agrupados[chave] = {
+          codigoNeo: produto.codigoNeoformula,
+          descricaoNeo: produto.descricaoNeoformula,
+          tipo: produto.tipo,
+          categoria: produto.categoria,
+          unidade: produto.unidade,
+          ativo: produto.ativo,
+          cadastroCompleto: produto.codigoNeoformula && produto.descricaoNeoformula,
+          fornecedores: []
+        };
+      }
+
+      // Adicionar fornecedor
+      agrupados[chave].fornecedores.push({
+        id: produto.id,
+        fornecedorId: produto.fornecedorId,
+        codigoFornecedor: produto.codigoFornecedor,
+        descricaoFornecedor: produto.descricaoFornecedor,
+        precoUnitario: produto.precoUnitario,
+        estoqueMinimo: produto.estoqueMinimo,
+        pontoPedido: produto.pontoPedido,
+        ativo: produto.ativo,
+        dataCadastro: produto.dataCadastro
+      });
+    });
+
+    // Converter para array
+    const lista = Object.values(agrupados);
+
+    // Ordenar por código NEO
+    lista.sort((a, b) => {
+      if (a.codigoNeo && b.codigoNeo) {
+        return a.codigoNeo.localeCompare(b.codigoNeo);
+      }
+      return 0;
+    });
+
+    Logger.log(`✅ ${lista.length} produtos agrupados, ${resultado.produtos.length} fornecedores total`);
+
+    return {
+      success: true,
+      produtos: lista
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao agrupar produtos: ' + error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Lista apenas produtos com cadastro completo (v15.0)
+ * Cadastro completo = Código NEO + Descrição NEO preenchidos
+ */
+function listarProdutosCompletos(filtros) {
+  try {
+    Logger.log('📋 Listando apenas produtos com cadastro completo...');
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+
+    if (!abaProdutos) {
+      return { success: false, error: 'Aba de produtos não encontrada' };
+    }
+
+    const dados = abaProdutos.getDataRange().getValues();
+    const produtos = [];
+
+    for (let i = 1; i < dados.length; i++) {
+      if (!dados[i][0]) continue; // Pular linhas vazias
+
+      const codigoNeo = String(dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_NEOFORMULA - 1] || '').trim();
+      const descricaoNeo = String(dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] || '').trim();
+      const ativo = String(dados[i][CONFIG.COLUNAS_PRODUTOS.ATIVO - 1] || 'Sim');
+
+      // Verificar se cadastro está completo
+      const cadastroCompleto = codigoNeo !== '' && descricaoNeo !== '';
+
+      if (!cadastroCompleto || ativo !== 'Sim') {
+        continue; // Pular produtos incompletos ou inativos
+      }
+
+      // Montar objeto produto (mesma estrutura de listarProdutos)
+      const produto = {
+        id: dados[i][CONFIG.COLUNAS_PRODUTOS.ID - 1],
+        codigoFornecedor: dados[i][CONFIG.COLUNAS_PRODUTOS.CODIGO_FORNECEDOR - 1] || '',
+        descricaoFornecedor: dados[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1] || '',
+        fornecedorId: dados[i][CONFIG.COLUNAS_PRODUTOS.FORNECEDOR_ID - 1] || '',
+        codigoNeoformula: codigoNeo,
+        descricaoNeoformula: descricaoNeo,
+        tipo: dados[i][CONFIG.COLUNAS_PRODUTOS.TIPO - 1],
+        categoria: dados[i][CONFIG.COLUNAS_PRODUTOS.CATEGORIA - 1] || '',
+        unidade: dados[i][CONFIG.COLUNAS_PRODUTOS.UNIDADE - 1],
+        precoUnitario: dados[i][CONFIG.COLUNAS_PRODUTOS.PRECO_UNITARIO - 1] || 0,
+        estoqueMinimo: dados[i][CONFIG.COLUNAS_PRODUTOS.ESTOQUE_MINIMO - 1] || 0,
+        pontoPedido: dados[i][CONFIG.COLUNAS_PRODUTOS.PONTO_PEDIDO - 1] || 0,
+        imagemURL: dados[i][CONFIG.COLUNAS_PRODUTOS.IMAGEM_URL - 1] || '',
+        ncm: dados[i][CONFIG.COLUNAS_PRODUTOS.NCM - 1] || '',
+        ativo: ativo,
+        dataCadastro: dados[i][CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO - 1],
+        origem: dados[i][CONFIG.COLUNAS_PRODUTOS.ORIGEM - 1] || 'MANUAL',
+        dadosCompletos: 'SIM',
+        // Campos computados
+        codigo: codigoNeo,
+        nome: descricaoNeo
+      };
+
+      // Aplicar filtros adicionais se fornecidos
+      if (filtros) {
+        if (filtros.tipo && produto.tipo !== filtros.tipo) continue;
+        if (filtros.categoria && produto.categoria !== filtros.categoria) continue;
+      }
+
+      produtos.push(produto);
+    }
+
+    Logger.log(`✅ ${produtos.length} produtos com cadastro completo`);
+
+    return {
+      success: true,
+      produtos: produtos
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao listar produtos completos: ' + error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
