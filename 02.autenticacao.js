@@ -274,47 +274,54 @@ function verificarPermissao(email, permissaoRequerida) {
 }
 
 /**
- * Lista todos os usuários (v6.0)
+ * Lista todos os usuários (v14.0.7)
  */
 function listarUsuarios(filtros) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaUsers = ss.getSheetByName(CONFIG.ABAS.USERS);
-    
+
     if (!abaUsers) {
       return { success: false, error: 'Aba de usuários não encontrada' };
     }
-    
+
     const dados = abaUsers.getDataRange().getValues();
     const usuarios = [];
-    
+
     for (let i = 1; i < dados.length; i++) {
-      if (!dados[i][0]) continue; // Pular linhas vazias
-      
+      if (!dados[i][CONFIG.COLUNAS_USUARIOS.EMAIL - 1]) continue; // Pular linhas vazias
+
+      // v14.0.7: Normalizar status (Sim/Não/Ativo/Inativo → Ativo/Inativo)
+      let statusRaw = String(dados[i][CONFIG.COLUNAS_USUARIOS.STATUS - 1] || 'Ativo');
+      let status = 'Inativo'; // Padrão
+      if (statusRaw === 'Sim' || statusRaw === 'Ativo' || statusRaw === 'ATIVO' || statusRaw === 'SIM') {
+        status = 'Ativo';
+      }
+
       const usuario = {
-        email: dados[i][0],
-        nome: dados[i][1] || '',
-        setor: dados[i][2] || '',
-        permissao: dados[i][3] || CONFIG.PERMISSOES.USUARIO,
-        ativo: dados[i][4] !== undefined ? dados[i][4] : 'Sim',
-        dataCadastro: dados[i][5] || ''
+        email: dados[i][CONFIG.COLUNAS_USUARIOS.EMAIL - 1],
+        nome: dados[i][CONFIG.COLUNAS_USUARIOS.NOME - 1] || '',
+        setor: dados[i][CONFIG.COLUNAS_USUARIOS.SETOR - 1] || '',
+        permissao: dados[i][CONFIG.COLUNAS_USUARIOS.PERFIL - 1] || CONFIG.PERMISSOES.USUARIO,
+        ativo: status, // v14.0.7: Sempre "Ativo" ou "Inativo"
+        dataCadastro: dados[i][CONFIG.COLUNAS_USUARIOS.DATA_CADASTRO - 1] || ''
       };
-      
+
       // Aplicar filtros
       if (filtros) {
         if (filtros.setor && usuario.setor !== filtros.setor) continue;
         if (filtros.permissao && usuario.permissao !== filtros.permissao) continue;
         if (filtros.ativo !== undefined && usuario.ativo !== filtros.ativo) continue;
       }
-      
+
       usuarios.push(usuario);
     }
-    
+
     return {
       success: true,
       usuarios: usuarios
     };
-    
+
   } catch (error) {
     Logger.log('❌ Erro ao listar usuários: ' + error.message);
     return {

@@ -7476,7 +7476,7 @@ function renderMovimentacoesTable(movimentacoes) {
           if (response && response.success) {
             showSuccess('Usuário cadastrado com sucesso!');
             closeModal('modalNovoUsuario');
-            loadConfiguracao(); // Recarrega a página de configurações
+            loadConfiguracoes(); // v14.0.7: Nome correto da função
           } else {
             showError('Erro ao cadastrar usuário: ' + (response ? response.error : 'Erro desconhecido'));
           }
@@ -7489,7 +7489,7 @@ function renderMovimentacoesTable(movimentacoes) {
     }
 
     /**
-     * Submete edição de usuário
+     * Submete edição de usuário (v14.0.7)
      */
     function submitEditarUsuario(event) {
       event.preventDefault();
@@ -7509,7 +7509,7 @@ function renderMovimentacoesTable(movimentacoes) {
           if (response && response.success) {
             showSuccess('Usuário atualizado com sucesso!');
             closeModal('modalEditarUsuario');
-            loadConfiguracao(); // Recarrega a página de configurações
+            loadConfiguracoes(); // v14.0.7: Nome correto da função
           } else {
             showError('Erro ao atualizar usuário: ' + (response ? response.error : 'Erro desconhecido'));
           }
