@@ -275,7 +275,7 @@ function __buscarProdutos(termo, tipo) {
  */
 function __obterCatalogoProdutosComEstoque() {
   try {
-    Logger.log('🔄 __obterCatalogoProdutosComEstoque chamado (v9.0)');
+    Logger.log('🔄 __obterCatalogoProdutosComEstoque chamado (v15.0 - com agrupamento)');
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
@@ -290,11 +290,20 @@ function __obterCatalogoProdutosComEstoque() {
       };
     }
 
-    // Listar produtos ativos
-    const resultadoProdutos = listarProdutos({ ativo: 'Sim' });
+    // v15.0: Listar apenas produtos completos (com código e descrição NEO)
+    const filtros = {
+      ativo: 'Sim',
+      codigoNeoPreenchido: true,
+      descricaoNeoPreenchida: true
+    };
+
+    const resultadoProdutos = listarProdutos(filtros);
     if (!resultadoProdutos.success) {
       return resultadoProdutos;
     }
+
+    // v15.0: Agrupar produtos por código NEO
+    const produtosAgrupados = listarProdutosAgrupadosPorNeo();
 
     // Obter dados de estoque
     const estoqueMap = {};
@@ -316,11 +325,12 @@ function __obterCatalogoProdutosComEstoque() {
       }
     }
 
-    Logger.log(`✅ Catálogo carregado: ${resultadoProdutos.produtos.length} produtos, ${Object.keys(estoqueMap).length} com estoque`);
+    Logger.log(`✅ Catálogo v15.0 carregado: ${produtosAgrupados.length} produtos únicos, ${resultadoProdutos.produtos.length} variações de fornecedores`);
 
     return serializarParaFrontend({
       success: true,
-      produtos: resultadoProdutos.produtos,
+      produtos: resultadoProdutos.produtos,  // Lista completa para compatibilidade
+      produtosAgrupados: produtosAgrupados,  // v15.0: Produtos agrupados por NEO
       estoque: estoqueMap
     });
 
@@ -331,6 +341,7 @@ function __obterCatalogoProdutosComEstoque() {
       success: false,
       error: e.message,
       produtos: [],
+      produtosAgrupados: [],
       estoque: {}
     };
   }
