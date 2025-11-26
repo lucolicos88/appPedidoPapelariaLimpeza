@@ -78,16 +78,31 @@ function exportarRelatorioCSV(tipo, filtros) {
 
       case 'estoque':
         const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
-        if (!abaEstoque) {
-          return { success: false, error: 'Aba de estoque não encontrada' };
+        const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+        if (!abaEstoque || !abaProdutos) {
+          return { success: false, error: 'Abas não encontradas' };
         }
 
         headers = ['Produto', 'Quantidade Atual', 'Quantidade Reservada', 'Estoque Disponível', 'Última Atualização', 'Responsável'];
         const dadosEstoque = abaEstoque.getDataRange().getValues();
+        const dadosProdutos = abaProdutos.getDataRange().getValues();
+
+        // Criar mapa de produtos por ID (v14.0.6)
+        const mapaProdutos = {};
+        for (let i = 1; i < dadosProdutos.length; i++) {
+          const produtoId = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ID - 1];
+          const nomeNeoformula = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1];
+          const nomeFornecedor = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1];
+          // Prioridade: Neoformula > Fornecedor
+          mapaProdutos[produtoId] = nomeNeoformula || nomeFornecedor || produtoId;
+        }
 
         for (let i = 1; i < dadosEstoque.length; i++) {
+          const produtoId = dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.PRODUTO_ID - 1];
+          const nomeProduto = mapaProdutos[produtoId] || String(dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.PRODUTO_NOME - 1] || produtoId);
+
           dados.push([
-            String(dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.PRODUTO_NOME - 1] || ''),
+            nomeProduto,
             formatarNumero(dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL - 1]),
             formatarNumero(dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_RESERVADA - 1]),
             formatarNumero(dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.ESTOQUE_DISPONIVEL - 1]),

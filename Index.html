@@ -7551,7 +7551,7 @@ function renderMovimentacoesTable(movimentacoes) {
     }
     
     /**
-     * Exporta relatório de produtos em CSV (v10.0)
+     * Exporta relatório de produtos em CSV (v14.0.6)
      */
     function exportarRelatorioProdutos() {
       console.log('📥 Exportando relatório de produtos...');
@@ -7561,12 +7561,8 @@ function renderMovimentacoesTable(movimentacoes) {
         .withSuccessHandler(function(response) {
           hideLoading();
           if (response && response.success) {
-            // Criar link de download
-            const blob = new Blob([response.csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `produtos_${new Date().toISOString().split('T')[0]}.csv`;
-            link.click();
+            // v14.0.6: downloadCSV já lida com UTF-8 corretamente
+            downloadCSV(response.csv, response.fileName);
             showSuccess('Relatório exportado com sucesso!');
           } else {
             showError('Erro ao exportar relatório: ' + (response ? response.error : 'Erro desconhecido'));
