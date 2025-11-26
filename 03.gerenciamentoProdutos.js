@@ -537,28 +537,49 @@ function removerProduto(produtoId) {
 }
 
 /**
- * Exporta produtos para CSV
+ * Exporta produtos para CSV (v14.0.5)
  */
 function exportarProdutosCSV() {
   try {
     const resultado = listarProdutos();
-    
+
     if (!resultado.success) {
       return resultado;
     }
-    
-    let csv = 'ID,Código,Nome,Tipo,Categoria,Unidade,Preço Unitário,Estoque Mínimo,Ponto de Pedido,Fornecedor,Ativo,Data Cadastro\n';
-    
+
+    // UTF-8 BOM para garantir acentuação correta + delimitador ; (PT-BR)
+    let csv = '\uFEFF'; // UTF-8 BOM
+    csv += 'ID;Código;Nome;Tipo;Categoria;Unidade;Preço Unitário;Estoque Mínimo;Ponto de Pedido;Fornecedor;Ativo;Data Cadastro\n';
+
     resultado.produtos.forEach(produto => {
-      csv += `"${produto.id}","${produto.codigo}","${produto.nome}","${produto.tipo}","${produto.categoria}","${produto.unidade}",${produto.precoUnitario},${produto.estoqueMinimo},${produto.pontoPedido},"${produto.fornecedor}","${produto.ativo}","${produto.dataCadastro}"\n`;
+      // Escapar aspas duplas e usar delimitador ;
+      const linha = [
+        produto.id,
+        produto.codigo,
+        produto.nome,
+        produto.tipo,
+        produto.categoria,
+        produto.unidade,
+        produto.precoUnitario,
+        produto.estoqueMinimo,
+        produto.pontoPedido,
+        produto.fornecedor,
+        produto.ativo,
+        produto.dataCadastro
+      ].map(campo => {
+        let valor = String(campo || '');
+        valor = valor.replace(/"/g, '""'); // Escapar aspas duplas
+        return `"${valor}"`;
+      });
+      csv += linha.join(';') + '\n';
     });
-    
+
     return {
       success: true,
       csv: csv,
       fileName: `produtos_${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd')}.csv`
     };
-    
+
   } catch (error) {
     Logger.log('❌ Erro ao exportar produtos: ' + error.message);
     return {
