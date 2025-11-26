@@ -123,8 +123,8 @@ function exportarRelatorioCSV(tipo, filtros) {
 
         headers = ['ID', 'Código', 'Nome', 'Tipo', 'Categoria', 'Unidade', 'Preço Unitário', 'Estoque Mínimo', 'Ponto de Pedido', 'Fornecedor', 'Ativo', 'Data Cadastro'];
 
-        // Buscar nomes de fornecedores
-        const abaFornecedoresCSV = ss.getSheetByName(CONFIG.ABAS.SUPPLIERS);
+        // Buscar nomes de fornecedores (v14.0.11 - CORRIGIDO)
+        const abaFornecedoresCSV = ss.getSheetByName(CONFIG.ABAS.FORNECEDORES);
         const mapaFornecedoresCSV = {};
         if (abaFornecedoresCSV) {
           const dadosFornecedoresCSV = abaFornecedoresCSV.getDataRange().getValues();
@@ -955,8 +955,8 @@ function exportarRelatorioTabela(tipo, filtros) {
         titulo = 'Relatório de Produtos';
         headers = ['ID', 'Código', 'Nome', 'Tipo', 'Categoria', 'Unidade', 'Preço Unitário', 'Estoque Mínimo', 'Ponto de Pedido', 'Fornecedor', 'Ativo', 'Data Cadastro'];
 
-        // Buscar nomes de fornecedores (v14.0.10)
-        const abaFornecedores = ss.getSheetByName(CONFIG.ABAS.SUPPLIERS);
+        // Buscar nomes de fornecedores (v14.0.11 - CORRIGIDO)
+        const abaFornecedores = ss.getSheetByName(CONFIG.ABAS.FORNECEDORES);
         const mapaFornecedores = {};
         if (abaFornecedores) {
           const dadosFornecedores = abaFornecedores.getDataRange().getValues();
