@@ -891,7 +891,23 @@ function exportarRelatorioTabela(tipo, filtros) {
         titulo = 'Relatório de Produtos';
         headers = ['ID', 'Código', 'Nome', 'Tipo', 'Categoria', 'Unidade', 'Preço Unitário', 'Estoque Mínimo', 'Ponto de Pedido', 'Fornecedor', 'Ativo', 'Data Cadastro'];
 
+        // Buscar nomes de fornecedores (v14.0.9)
+        const abaFornecedores = ss.getSheetByName(CONFIG.ABAS.SUPPLIERS);
+        const mapaFornecedores = {};
+        if (abaFornecedores) {
+          const dadosFornecedores = abaFornecedores.getDataRange().getValues();
+          for (let i = 1; i < dadosFornecedores.length; i++) {
+            const fornecedorId = dadosFornecedores[i][CONFIG.COLUNAS_FORNECEDORES.ID - 1];
+            const fornecedorNome = dadosFornecedores[i][CONFIG.COLUNAS_FORNECEDORES.NOME - 1];
+            if (fornecedorId) {
+              mapaFornecedores[fornecedorId] = fornecedorNome;
+            }
+          }
+        }
+
         resultado.produtos.forEach(produto => {
+          const fornecedorNome = mapaFornecedores[produto.fornecedorId] || produto.fornecedorId || '';
+
           dados.push([
             produto.id || '',
             produto.codigo || '',
@@ -902,7 +918,7 @@ function exportarRelatorioTabela(tipo, filtros) {
             'R$ ' + (produto.precoUnitario || 0).toString().replace('.', ','),
             produto.estoqueMinimo || 0,
             produto.pontoPedido || 0,
-            produto.fornecedor || '',
+            fornecedorNome,
             produto.ativo || 'Sim',
             produto.dataCadastro || ''
           ]);
