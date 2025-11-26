@@ -1695,23 +1695,23 @@
             <h3>📊 Relatório de Pedidos</h3>
             <p>Gere relatórios detalhados de pedidos com filtros personalizados.</p>
             <button class="btn btn-primary" onclick="exportarRelatorioPedidos()" style="width: 100%; margin-top: 15px;">
-              📥 Exportar CSV
+              📊 Exportar Tabela
             </button>
           </div>
-          
+
           <div class="card" style="background: var(--light);">
             <h3>📦 Relatório de Produtos</h3>
             <p>Liste todos os produtos cadastrados no sistema.</p>
             <button class="btn btn-primary" onclick="exportarRelatorioProdutos()" style="width: 100%; margin-top: 15px;">
-              📥 Exportar CSV
+              📊 Exportar Tabela
             </button>
           </div>
-          
+
           <div class="card" style="background: var(--light);">
             <h3>📊 Relatório de Estoque</h3>
             <p>Visualize o estoque atual de todos os produtos.</p>
             <button class="btn btn-primary" onclick="exportarRelatorioEstoque()" style="width: 100%; margin-top: 15px;">
-              📥 Exportar CSV
+              📊 Exportar Tabela
             </button>
           </div>
         </div>
@@ -2612,6 +2612,29 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal: Visualizar Relatório (v14.0.8) -->
+  <div id="modalRelatorio" class="modal">
+    <div class="modal-content" style="max-width: 95%; max-height: 90vh;">
+      <div class="modal-header">
+        <h3 id="tituloRelatorio">📊 Relatório</h3>
+        <span class="close" onclick="closeModal('modalRelatorio')">&times;</span>
+      </div>
+      <div style="padding: 20px; overflow: auto; max-height: 70vh;">
+        <div style="margin-bottom: 15px; display: flex; justify-content: flex-end; gap: 10px;">
+          <button class="btn btn-secondary" onclick="exportarRelatorioAtualCSV()">
+            📥 Baixar CSV
+          </button>
+          <button class="btn btn-secondary" onclick="imprimirRelatorio()">
+            🖨️ Imprimir
+          </button>
+        </div>
+        <div id="conteudoRelatorio" style="overflow-x: auto;">
+          <!-- Tabela será inserida aqui dinamicamente -->
+        </div>
+      </div>
     </div>
   </div>
 
@@ -7523,79 +7546,177 @@ function renderMovimentacoesTable(movimentacoes) {
 
     /**
      * ========================================
-     * FUNÇÕES DE RELATÓRIOS
+     * FUNÇÕES DE RELATÓRIOS (v14.0.8)
      * ========================================
      */
 
+    // Variável global para armazenar dados do relatório atual
+    let relatorioAtual = null;
+
     /**
-     * Exporta relatório de pedidos
+     * Exporta relatório de pedidos como tabela HTML
      */
     function exportarRelatorioPedidos() {
       showLoading();
-      
+
       google.script.run
         .withSuccessHandler(function(response) {
-          if (response.success) {
-            downloadCSV(response.csv, response.fileName);
-            showSuccess('Relatório exportado com sucesso!');
-          } else {
-            showError('Erro ao exportar: ' + response.error);
-          }
           hideLoading();
+          if (response.success) {
+            exibirRelatorioTabela(response, 'pedidos');
+          } else {
+            showError('Erro ao gerar relatório: ' + response.error);
+          }
         })
         .withFailureHandler(function(error) {
           hideLoading();
           showError('Erro: ' + error.message);
         })
-        .exportarRelatorioCSV('pedidos', {});
+        .exportarRelatorioTabela('pedidos', {});
     }
-    
+
     /**
-     * Exporta relatório de produtos em CSV (v14.0.6)
+     * Exporta relatório de produtos como tabela HTML
      */
     function exportarRelatorioProdutos() {
-      console.log('📥 Exportando relatório de produtos...');
       showLoading();
 
       google.script.run
         .withSuccessHandler(function(response) {
           hideLoading();
           if (response && response.success) {
-            // v14.0.6: downloadCSV já lida com UTF-8 corretamente
-            downloadCSV(response.csv, response.fileName);
-            showSuccess('Relatório exportado com sucesso!');
+            exibirRelatorioTabela(response, 'produtos');
           } else {
-            showError('Erro ao exportar relatório: ' + (response ? response.error : 'Erro desconhecido'));
+            showError('Erro ao gerar relatório: ' + (response ? response.error : 'Erro desconhecido'));
           }
         })
         .withFailureHandler(function(error) {
           hideLoading();
-          showError('Erro ao exportar relatório: ' + error.message);
+          showError('Erro ao gerar relatório: ' + error.message);
         })
-        .__exportarProdutosCSV();
+        .exportarRelatorioTabela('produtos', {});
     }
-    
+
     /**
-     * Exporta relatório de estoque
+     * Exporta relatório de estoque como tabela HTML
      */
     function exportarRelatorioEstoque() {
       showLoading();
-      
+
       google.script.run
         .withSuccessHandler(function(response) {
-          if (response.success) {
-            downloadCSV(response.csv, response.fileName);
-            showSuccess('Relatório exportado com sucesso!');
-          } else {
-            showError('Erro ao exportar: ' + response.error);
-          }
           hideLoading();
+          if (response.success) {
+            exibirRelatorioTabela(response, 'estoque');
+          } else {
+            showError('Erro ao gerar relatório: ' + response.error);
+          }
         })
         .withFailureHandler(function(error) {
           hideLoading();
           showError('Erro: ' + error.message);
         })
-        .exportarRelatorioCSV('estoque', {});
+        .exportarRelatorioTabela('estoque', {});
+    }
+
+    /**
+     * Exibe relatório em modal como tabela HTML (v14.0.8)
+     */
+    function exibirRelatorioTabela(dados, tipo) {
+      // Armazenar dados para exportação CSV posterior
+      relatorioAtual = { dados: dados, tipo: tipo };
+
+      // Atualizar título do modal
+      document.getElementById('tituloRelatorio').innerHTML = '📊 ' + dados.titulo;
+
+      // Construir tabela HTML
+      let html = '<table class="table">';
+      html += '<thead><tr>';
+
+      // Cabeçalhos
+      dados.headers.forEach(header => {
+        html += '<th>' + header + '</th>';
+      });
+      html += '</tr></thead>';
+
+      // Dados
+      html += '<tbody>';
+      dados.dados.forEach(linha => {
+        html += '<tr>';
+        linha.forEach(celula => {
+          html += '<td>' + celula + '</td>';
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+
+      // Inserir tabela no modal
+      document.getElementById('conteudoRelatorio').innerHTML = html;
+
+      // Abrir modal
+      openModal('modalRelatorio');
+    }
+
+    /**
+     * Exporta relatório atual como CSV (v14.0.8)
+     */
+    function exportarRelatorioAtualCSV() {
+      if (!relatorioAtual) {
+        showError('Nenhum relatório carregado');
+        return;
+      }
+
+      showLoading();
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          hideLoading();
+          if (response.success) {
+            downloadCSV(response.csv, response.fileName);
+            showSuccess('Relatório CSV exportado com sucesso!');
+          } else {
+            showError('Erro ao exportar CSV: ' + response.error);
+          }
+        })
+        .withFailureHandler(function(error) {
+          hideLoading();
+          showError('Erro ao exportar CSV: ' + error.message);
+        })
+        .exportarRelatorioCSV(relatorioAtual.tipo, {});
+    }
+
+    /**
+     * Imprime o relatório atual (v14.0.8)
+     */
+    function imprimirRelatorio() {
+      const conteudo = document.getElementById('conteudoRelatorio').innerHTML;
+      const titulo = document.getElementById('tituloRelatorio').innerText;
+
+      const janelaImpressao = window.open('', '_blank');
+      janelaImpressao.document.write(`
+        <html>
+          <head>
+            <title>${titulo}</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              h1 { text-align: center; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #4CAF50; color: white; }
+              tr:nth-child(even) { background-color: #f2f2f2; }
+              @media print {
+                body { margin: 0; }
+              }
+            </style>
+          </head>
+          <body>
+            <h1>${titulo}</h1>
+            ${conteudo}
+          </body>
+        </html>
+      `);
+      janelaImpressao.document.close();
+      janelaImpressao.print();
     }
     
     /**

@@ -843,3 +843,127 @@ function getPedidosFiltrados(filtros) {
   // Caso não exista, implementar aqui
   return getAllPedidos(filtros);
 }
+
+/**
+ * Exporta relatórios como dados de tabela HTML (v14.0.8)
+ */
+function exportarRelatorioTabela(tipo, filtros) {
+  try {
+    Logger.log(`📥 Exportando relatório tabela: ${tipo}`);
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let dados = [];
+    let headers = [];
+    let titulo = '';
+
+    switch (tipo) {
+      case 'pedidos':
+        const abaPedidos = ss.getSheetByName(CONFIG.ABAS.ORDERS);
+        if (!abaPedidos) {
+          return { success: false, error: 'Aba de pedidos não encontrada' };
+        }
+
+        titulo = 'Relatório de Pedidos';
+        headers = ['Número Pedido', 'Data Solicitação', 'Solicitante', 'Setor', 'Tipo', 'Valor Total', 'Status'];
+        const dadosPedidos = abaPedidos.getDataRange().getValues();
+
+        for (let i = 1; i < dadosPedidos.length; i++) {
+          const valorTotal = dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.VALOR_TOTAL - 1];
+
+          dados.push([
+            String(dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.NUMERO_PEDIDO - 1] || ''),
+            Utilities.formatDate(new Date(dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.DATA_SOLICITACAO - 1]), Session.getScriptTimeZone(), 'dd/MM/yyyy'),
+            String(dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.SOLICITANTE_NOME - 1] || ''),
+            String(dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.SETOR - 1] || ''),
+            String(dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.TIPO - 1] || ''),
+            'R$ ' + formatarValorNumerico(valorTotal),
+            String(dadosPedidos[i][CONFIG.COLUNAS_PEDIDOS.STATUS - 1] || '')
+          ]);
+        }
+        break;
+
+      case 'produtos':
+        const resultado = listarProdutos({});
+        if (!resultado.success) {
+          return { success: false, error: resultado.error };
+        }
+
+        titulo = 'Relatório de Produtos';
+        headers = ['ID', 'Código', 'Nome', 'Tipo', 'Categoria', 'Unidade', 'Preço Unitário', 'Estoque Mínimo', 'Ponto de Pedido', 'Fornecedor', 'Ativo', 'Data Cadastro'];
+
+        resultado.produtos.forEach(produto => {
+          dados.push([
+            produto.id || '',
+            produto.codigo || '',
+            produto.nome || '',
+            produto.tipo || '',
+            produto.categoria || '',
+            produto.unidade || '',
+            'R$ ' + (produto.precoUnitario || 0).toString().replace('.', ','),
+            produto.estoqueMinimo || 0,
+            produto.pontoPedido || 0,
+            produto.fornecedor || '',
+            produto.ativo || 'Sim',
+            produto.dataCadastro || ''
+          ]);
+        });
+        break;
+
+      case 'estoque':
+        const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
+        const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+        if (!abaEstoque || !abaProdutos) {
+          return { success: false, error: 'Abas não encontradas' };
+        }
+
+        titulo = 'Relatório de Estoque';
+        headers = ['Produto', 'Quantidade Atual', 'Quantidade Reservada', 'Estoque Disponível', 'Última Atualização', 'Responsável'];
+        const dadosEstoque = abaEstoque.getDataRange().getValues();
+        const dadosProdutos = abaProdutos.getDataRange().getValues();
+
+        // Criar mapa de produtos por ID (v14.0.6 - mesma lógica)
+        const mapaProdutos = {};
+        for (let i = 1; i < dadosProdutos.length; i++) {
+          const produtoId = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.ID - 1];
+          const nomeNeoformula = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1];
+          const nomeFornecedor = dadosProdutos[i][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1];
+          // Prioridade: Neoformula > Fornecedor
+          mapaProdutos[produtoId] = nomeNeoformula || nomeFornecedor || produtoId;
+        }
+
+        for (let i = 1; i < dadosEstoque.length; i++) {
+          const produtoId = dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.PRODUTO_ID - 1];
+          const nomeProduto = mapaProdutos[produtoId] || String(dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.PRODUTO_NOME - 1] || produtoId);
+
+          dados.push([
+            nomeProduto,
+            formatarNumero(dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL - 1]),
+            formatarNumero(dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_RESERVADA - 1]),
+            formatarNumero(dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.ESTOQUE_DISPONIVEL - 1]),
+            Utilities.formatDate(new Date(dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.ULTIMA_ATUALIZACAO - 1]), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm'),
+            String(dadosEstoque[i][CONFIG.COLUNAS_ESTOQUE.RESPONSAVEL - 1] || '')
+          ]);
+        }
+        break;
+
+      default:
+        return { success: false, error: 'Tipo de relatório inválido' };
+    }
+
+    Logger.log(`✅ Relatório tabela gerado: ${dados.length} linhas`);
+
+    return {
+      success: true,
+      titulo: titulo,
+      headers: headers,
+      dados: dados
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao exportar relatório tabela: ' + error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}

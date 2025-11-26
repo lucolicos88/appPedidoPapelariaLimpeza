@@ -1055,31 +1055,43 @@ function __exportarProdutosCSV() {
       };
     }
 
-    // Cabeçalho CSV
-    let csv = 'ID,Código,Nome,Tipo,Categoria,Unidade,Preço Unitário,Estoque Mínimo,Ponto de Pedido,Fornecedor,Ativo\n';
+    // v14.0.8: UTF-8 BOM + delimitador ; (PT-BR)
+    let csv = '\uFEFF'; // UTF-8 BOM para garantir acentuação correta
+    csv += 'ID;Código;Nome;Tipo;Categoria;Unidade;Preço Unitário;Estoque Mínimo;Ponto de Pedido;Fornecedor;Ativo;Data Cadastro\n';
 
     // Linhas de dados
     produtos.forEach(function(produto) {
-      csv += [
+      const linha = [
         produto.id || '',
         produto.codigo || '',
-        '"' + (produto.nome || '').replace(/"/g, '""') + '"', // Escapar aspas
+        produto.nome || '',
         produto.tipo || '',
         produto.categoria || '',
         produto.unidade || '',
         (produto.precoUnitario || 0).toString().replace('.', ','),
         produto.estoqueMinimo || 0,
         produto.pontoPedido || 0,
-        '"' + (produto.fornecedor || '').replace(/"/g, '""') + '"',
-        produto.ativo || 'Sim'
-      ].join(',') + '\n';
+        produto.fornecedor || '',
+        produto.ativo || 'Sim',
+        produto.dataCadastro || ''
+      ].map(campo => {
+        // Escapar aspas duplas e envolver em aspas
+        let valor = String(campo || '');
+        valor = valor.replace(/"/g, '""');
+        return `"${valor}"`;
+      });
+      csv += linha.join(';') + '\n';
     });
 
     Logger.log(`✅ CSV gerado com ${produtos.length} produtos`);
 
+    // v14.0.8: Adicionar fileName ao retorno
+    const fileName = `produtos_${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd')}.csv`;
+
     return {
       success: true,
       csv: csv,
+      fileName: fileName,
       totalProdutos: produtos.length
     };
 
