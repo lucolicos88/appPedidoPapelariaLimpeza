@@ -137,9 +137,14 @@ function exportarRelatorioCSV(tipo, filtros) {
           }
         }
 
-        resultadoProdutos.produtos.forEach(produto => {
+        resultadoProdutos.produtos.forEach((produto, index) => {
           const fornecedorIdStr = String(produto.fornecedorId || '').trim();
           const fornecedorNome = mapaFornecedoresCSV[fornecedorIdStr] || fornecedorIdStr || '';
+
+          // Debug: Log os primeiros 3 produtos (v14.0.11)
+          if (index < 3) {
+            Logger.log(`[CSV DEBUG] Produto ${index}: fornecedorId="${fornecedorIdStr}", fornecedorNome="${fornecedorNome}"`);
+          }
 
           let dataFormatada = '';
           try {
@@ -968,9 +973,15 @@ function exportarRelatorioTabela(tipo, filtros) {
           Logger.log('⚠️ Aba de fornecedores não encontrada');
         }
 
-        resultado.produtos.forEach(produto => {
+        resultado.produtos.forEach((produto, index) => {
           const fornecedorIdStr = String(produto.fornecedorId || '').trim();
           const fornecedorNome = mapaFornecedores[fornecedorIdStr] || fornecedorIdStr || '';
+
+          // Debug: Log os primeiros 3 produtos (v14.0.11)
+          if (index < 3) {
+            Logger.log(`[DEBUG] Produto ${index}: fornecedorId="${fornecedorIdStr}", fornecedorNome="${fornecedorNome}"`);
+            Logger.log(`[DEBUG] Chaves disponíveis no mapa: ${JSON.stringify(Object.keys(mapaFornecedores).slice(0, 5))}`);
+          }
 
           // Formatar preço unitário com segurança (v14.0.10)
           let precoFormatado = 'R$ 0,00';
