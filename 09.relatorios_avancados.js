@@ -908,19 +908,43 @@ function exportarRelatorioTabela(tipo, filtros) {
         resultado.produtos.forEach(produto => {
           const fornecedorNome = mapaFornecedores[produto.fornecedorId] || produto.fornecedorId || '';
 
+          // Formatar preço unitário com segurança (v14.0.10)
+          let precoFormatado = 'R$ 0,00';
+          try {
+            const preco = parseFloat(produto.precoUnitario || 0);
+            precoFormatado = 'R$ ' + preco.toFixed(2).replace('.', ',');
+          } catch (e) {
+            Logger.log('Erro ao formatar preço: ' + e.message);
+          }
+
+          // Formatar data com segurança (v14.0.10)
+          let dataFormatada = '';
+          try {
+            if (produto.dataCadastro) {
+              if (produto.dataCadastro instanceof Date) {
+                dataFormatada = Utilities.formatDate(produto.dataCadastro, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+              } else {
+                dataFormatada = String(produto.dataCadastro);
+              }
+            }
+          } catch (e) {
+            Logger.log('Erro ao formatar data: ' + e.message);
+            dataFormatada = '';
+          }
+
           dados.push([
-            produto.id || '',
-            produto.codigo || '',
-            produto.nome || '',
-            produto.tipo || '',
-            produto.categoria || '',
-            produto.unidade || '',
-            'R$ ' + (produto.precoUnitario || 0).toString().replace('.', ','),
-            produto.estoqueMinimo || 0,
-            produto.pontoPedido || 0,
-            fornecedorNome,
-            produto.ativo || 'Sim',
-            produto.dataCadastro || ''
+            String(produto.id || ''),
+            String(produto.codigo || ''),
+            String(produto.nome || ''),
+            String(produto.tipo || ''),
+            String(produto.categoria || ''),
+            String(produto.unidade || ''),
+            precoFormatado,
+            String(produto.estoqueMinimo || 0),
+            String(produto.pontoPedido || 0),
+            String(fornecedorNome),
+            String(produto.ativo || 'Sim'),
+            dataFormatada
           ]);
         });
         break;
@@ -977,9 +1001,10 @@ function exportarRelatorioTabela(tipo, filtros) {
 
   } catch (error) {
     Logger.log('❌ Erro ao exportar relatório tabela: ' + error.message);
+    Logger.log('Stack trace: ' + error.stack);
     return {
       success: false,
-      error: error.message
+      error: 'Erro ao gerar relatório: ' + error.message + ' (Tipo: ' + tipo + ')'
     };
   }
 }
