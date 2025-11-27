@@ -5227,10 +5227,10 @@ function loadProdutos() {
     /**
      * Abre modal de editar produto (v10.1)
      */
-    // Variáveis globais para autocomplete (v15.0)
-    let codigosNeoDisponiveis = [];
-    let descricoesNeoDisponiveis = [];
-    let fornecedoresDisponiveis = [];
+    // Variáveis globais para autocomplete (v15.0) - WINDOW para acesso global
+    window.codigosNeoDisponiveis = [];
+    window.descricoesNeoDisponiveis = [];
+    window.fornecedoresDisponiveis = [];
 
     /**
      * Abre modal de editar produto (v15.0 - com autocomplete)
@@ -5270,9 +5270,9 @@ function loadProdutos() {
 
         if (produtoResponse && produtoResponse.success) {
           // Armazenar dados para autocomplete
-          codigosNeoDisponiveis = codigos || [];
-          descricoesNeoDisponiveis = descricoes || [];
-          fornecedoresDisponiveis = fornecedoresResponse.fornecedores || [];
+          window.codigosNeoDisponiveis = codigos || [];
+          window.descricoesNeoDisponiveis = descricoes || [];
+          window.fornecedoresDisponiveis = fornecedoresResponse.fornecedores || [];
 
           // Preencher formulário
           preencherFormEditarProduto(produtoResponse.produto);
@@ -5303,7 +5303,7 @@ function loadProdutos() {
       // Preencher select de fornecedores
       const selectFornecedor = document.getElementById('editProdutoFornecedorId');
       selectFornecedor.innerHTML = '<option value="">Selecione...</option>';
-      fornecedoresDisponiveis.forEach(forn => {
+      (window.fornecedoresDisponiveis || []).forEach(forn => {
         const option = document.createElement('option');
         option.value = forn.id;
         option.textContent = forn.nome;
@@ -5432,7 +5432,7 @@ function loadProdutos() {
       const lista = document.getElementById('listaCodigosNeo');
       const termoLower = (termo || '').toLowerCase();
 
-      const codigosFiltrados = codigosNeoDisponiveis.filter(item =>
+      const codigosFiltrados = (window.codigosNeoDisponiveis || []).filter(item =>
         item.codigo.toLowerCase().includes(termoLower) ||
         item.descricao.toLowerCase().includes(termoLower)
       );
@@ -5484,7 +5484,7 @@ function loadProdutos() {
       const lista = document.getElementById('listaDescricoesNeo');
       const termoLower = (termo || '').toLowerCase();
 
-      const descricoesFiltradas = descricoesNeoDisponiveis.filter(item =>
+      const descricoesFiltradas = (window.descricoesNeoDisponiveis || []).filter(item =>
         item.descricao.toLowerCase().includes(termoLower) ||
         item.codigo.toLowerCase().includes(termoLower)
       );
