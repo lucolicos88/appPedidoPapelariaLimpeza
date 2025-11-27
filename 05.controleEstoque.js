@@ -31,8 +31,21 @@ function getEstoqueAtual(filtros) {
 
       const produtoId = dados[i][1];
 
-      // v13.1.3: Buscar nome do produto usando buscarProduto() para obter o nome computado (Neoformula || Fornecedor)
+      // v15.0: Buscar produto completo para verificar se tem cadastro completo
       const resultadoProduto = buscarProduto(produtoId);
+
+      // v15.0: Filtrar apenas produtos com cadastro completo (código + descrição NEO)
+      if (resultadoProduto.success) {
+        const produto = resultadoProduto.produto;
+        const temCodigoNeo = produto.codigoNeoformula && produto.codigoNeoformula.trim() !== '';
+        const temDescricaoNeo = produto.descricaoNeoformula && produto.descricaoNeoformula.trim() !== '';
+
+        // Se produto não tem cadastro completo, pular
+        if (!temCodigoNeo || !temDescricaoNeo) {
+          continue;
+        }
+      }
+
       const produtoNome = resultadoProduto.success ? (resultadoProduto.produto.nome || dados[i][2]) : dados[i][2];
 
       const item = {
@@ -46,7 +59,7 @@ function getEstoqueAtual(filtros) {
         responsavel: dados[i][7]
       };
 
-      // Aplicar filtros
+      // Aplicar filtros adicionais
       if (filtros) {
         if (filtros.produtoId && item.produtoId !== filtros.produtoId) continue;
         if (filtros.estoqueBaixo) {

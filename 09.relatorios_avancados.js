@@ -115,63 +115,34 @@ function exportarRelatorioCSV(tipo, filtros) {
         break;
 
       case 'produtos':
-        // v14.0.10: Adicionar suporte para produtos
-        const resultadoProdutos = listarProdutos({});
-        if (!resultadoProdutos.success) {
-          return { success: false, error: resultadoProdutos.error };
+        // v15.0: Usar produtos agrupados por código NEO
+        const produtosAgrupadosCSV = listarProdutosAgrupadosPorNeo();
+        if (!produtosAgrupadosCSV || produtosAgrupadosCSV.length === 0) {
+          return { success: false, error: 'Nenhum produto completo encontrado' };
         }
 
-        headers = ['ID', 'Código', 'Nome', 'Tipo', 'Categoria', 'Unidade', 'Preço Unitário', 'Estoque Mínimo', 'Ponto de Pedido', 'Fornecedor', 'Ativo', 'Data Cadastro'];
+        headers = ['Código NEO', 'Descrição NEO', 'Tipo', 'Fornecedores', 'Preço Mínimo', 'Preço Máximo', 'Qtd Fornecedores'];
 
-        // Buscar nomes de fornecedores (v14.0.11 - CORRIGIDO)
-        const abaFornecedoresCSV = ss.getSheetByName(CONFIG.ABAS.FORNECEDORES);
-        const mapaFornecedoresCSV = {};
-        if (abaFornecedoresCSV) {
-          const dadosFornecedoresCSV = abaFornecedoresCSV.getDataRange().getValues();
-          for (let i = 1; i < dadosFornecedoresCSV.length; i++) {
-            const fornecedorId = String(dadosFornecedoresCSV[i][CONFIG.COLUNAS_FORNECEDORES.ID - 1] || '').trim();
-            const fornecedorNome = String(dadosFornecedoresCSV[i][CONFIG.COLUNAS_FORNECEDORES.NOME - 1] || '').trim();
-            if (fornecedorId && fornecedorNome) {
-              mapaFornecedoresCSV[fornecedorId] = fornecedorNome;
-            }
-          }
-        }
+        produtosAgrupadosCSV.forEach(produtoAgrupado => {
+          const fornecedores = produtoAgrupado.fornecedores || [];
+          if (fornecedores.length === 0) return;
 
-        resultadoProdutos.produtos.forEach((produto, index) => {
-          const fornecedorIdStr = String(produto.fornecedorId || '').trim();
-          const fornecedorNome = mapaFornecedoresCSV[fornecedorIdStr] || fornecedorIdStr || '';
+          // Coletar preços
+          const precos = fornecedores.map(f => f.precoUnitario || 0).filter(p => p > 0);
+          const precoMin = precos.length > 0 ? Math.min(...precos) : 0;
+          const precoMax = precos.length > 0 ? Math.max(...precos) : 0;
 
-          // Debug: Log os primeiros 3 produtos (v14.0.11)
-          if (index < 3) {
-            Logger.log(`[CSV DEBUG] Produto ${index}: fornecedorId="${fornecedorIdStr}", fornecedorNome="${fornecedorNome}"`);
-          }
-
-          let dataFormatada = '';
-          try {
-            if (produto.dataCadastro) {
-              if (produto.dataCadastro instanceof Date) {
-                dataFormatada = Utilities.formatDate(produto.dataCadastro, Session.getScriptTimeZone(), 'dd/MM/yyyy');
-              } else {
-                dataFormatada = String(produto.dataCadastro);
-              }
-            }
-          } catch (e) {
-            dataFormatada = '';
-          }
+          // Lista de nomes de fornecedores
+          const nomesFornecedores = fornecedores.map(f => f.fornecedorNome || 'N/A').join(', ');
 
           dados.push([
-            String(produto.id || ''),
-            String(produto.codigo || ''),
-            String(produto.nome || ''),
-            String(produto.tipo || ''),
-            String(produto.categoria || ''),
-            String(produto.unidade || ''),
-            formatarValorNumerico(produto.precoUnitario || 0),
-            String(produto.estoqueMinimo || 0),
-            String(produto.pontoPedido || 0),
-            fornecedorNome,
-            String(produto.ativo || 'Sim'),
-            dataFormatada
+            String(produtoAgrupado.codigoNeo || ''),
+            String(produtoAgrupado.descricaoNeo || ''),
+            String(produtoAgrupado.tipo || ''),
+            nomesFornecedores,
+            formatarValorNumerico(precoMin),
+            formatarValorNumerico(precoMax),
+            String(fornecedores.length)
           ]);
         });
 
@@ -947,79 +918,35 @@ function exportarRelatorioTabela(tipo, filtros) {
         break;
 
       case 'produtos':
-        const resultado = listarProdutos({});
-        if (!resultado.success) {
-          return { success: false, error: resultado.error };
+        // v15.0: Usar produtos agrupados por código NEO
+        const produtosAgrupados = listarProdutosAgrupadosPorNeo();
+        if (!produtosAgrupados || produtosAgrupados.length === 0) {
+          return { success: false, error: 'Nenhum produto completo encontrado' };
         }
 
-        titulo = 'Relatório de Produtos';
-        headers = ['ID', 'Código', 'Nome', 'Tipo', 'Categoria', 'Unidade', 'Preço Unitário', 'Estoque Mínimo', 'Ponto de Pedido', 'Fornecedor', 'Ativo', 'Data Cadastro'];
+        titulo = 'Relatório de Produtos (Agrupados por Código NEO)';
+        headers = ['Código NEO', 'Descrição NEO', 'Tipo', 'Fornecedores', 'Preço Mínimo', 'Preço Máximo', 'Qtd Fornecedores'];
 
-        // Buscar nomes de fornecedores (v14.0.11 - CORRIGIDO)
-        const abaFornecedores = ss.getSheetByName(CONFIG.ABAS.FORNECEDORES);
-        const mapaFornecedores = {};
-        if (abaFornecedores) {
-          const dadosFornecedores = abaFornecedores.getDataRange().getValues();
-          Logger.log('📦 Total de fornecedores na planilha: ' + (dadosFornecedores.length - 1));
-          for (let i = 1; i < dadosFornecedores.length; i++) {
-            const fornecedorId = String(dadosFornecedores[i][CONFIG.COLUNAS_FORNECEDORES.ID - 1] || '').trim();
-            const fornecedorNome = String(dadosFornecedores[i][CONFIG.COLUNAS_FORNECEDORES.NOME - 1] || '').trim();
-            if (fornecedorId && fornecedorNome) {
-              mapaFornecedores[fornecedorId] = fornecedorNome;
-            }
-          }
-          Logger.log('📦 Fornecedores mapeados: ' + Object.keys(mapaFornecedores).length);
-        } else {
-          Logger.log('⚠️ Aba de fornecedores não encontrada');
-        }
+        produtosAgrupados.forEach(produtoAgrupado => {
+          const fornecedores = produtoAgrupado.fornecedores || [];
+          if (fornecedores.length === 0) return;
 
-        resultado.produtos.forEach((produto, index) => {
-          const fornecedorIdStr = String(produto.fornecedorId || '').trim();
-          const fornecedorNome = mapaFornecedores[fornecedorIdStr] || fornecedorIdStr || '';
+          // Coletar preços
+          const precos = fornecedores.map(f => f.precoUnitario || 0).filter(p => p > 0);
+          const precoMin = precos.length > 0 ? Math.min(...precos) : 0;
+          const precoMax = precos.length > 0 ? Math.max(...precos) : 0;
 
-          // Debug: Log os primeiros 3 produtos (v14.0.11)
-          if (index < 3) {
-            Logger.log(`[DEBUG] Produto ${index}: fornecedorId="${fornecedorIdStr}", fornecedorNome="${fornecedorNome}"`);
-            Logger.log(`[DEBUG] Chaves disponíveis no mapa: ${JSON.stringify(Object.keys(mapaFornecedores).slice(0, 5))}`);
-          }
-
-          // Formatar preço unitário com segurança (v14.0.10)
-          let precoFormatado = 'R$ 0,00';
-          try {
-            const preco = parseFloat(produto.precoUnitario || 0);
-            precoFormatado = 'R$ ' + preco.toFixed(2).replace('.', ',');
-          } catch (e) {
-            Logger.log('Erro ao formatar preço: ' + e.message);
-          }
-
-          // Formatar data com segurança (v14.0.10)
-          let dataFormatada = '';
-          try {
-            if (produto.dataCadastro) {
-              if (produto.dataCadastro instanceof Date) {
-                dataFormatada = Utilities.formatDate(produto.dataCadastro, Session.getScriptTimeZone(), 'dd/MM/yyyy');
-              } else {
-                dataFormatada = String(produto.dataCadastro);
-              }
-            }
-          } catch (e) {
-            Logger.log('Erro ao formatar data: ' + e.message);
-            dataFormatada = '';
-          }
+          // Lista de nomes de fornecedores
+          const nomesFornecedores = fornecedores.map(f => f.fornecedorNome || 'N/A').join(', ');
 
           dados.push([
-            String(produto.id || ''),
-            String(produto.codigo || ''),
-            String(produto.nome || ''),
-            String(produto.tipo || ''),
-            String(produto.categoria || ''),
-            String(produto.unidade || ''),
-            precoFormatado,
-            String(produto.estoqueMinimo || 0),
-            String(produto.pontoPedido || 0),
-            String(fornecedorNome),
-            String(produto.ativo || 'Sim'),
-            dataFormatada
+            String(produtoAgrupado.codigoNeo || ''),
+            String(produtoAgrupado.descricaoNeo || ''),
+            String(produtoAgrupado.tipo || ''),
+            nomesFornecedores,
+            'R$ ' + precoMin.toFixed(2).replace('.', ','),
+            'R$ ' + precoMax.toFixed(2).replace('.', ','),
+            String(fornecedores.length)
           ]);
         });
         break;
