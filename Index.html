@@ -5420,15 +5420,15 @@ function loadProdutos() {
     /**
      * Mostra lista de códigos NEO disponíveis
      */
-    function mostrarListaCodigosNeo() {
+    window.mostrarListaCodigosNeo = function() {
       const input = document.getElementById('editProdutoCodigoNeo');
-      filtrarCodigosNeo(input.value);
+      window.filtrarCodigosNeo(input.value);
     }
 
     /**
      * Filtra códigos NEO conforme o usuário digita
      */
-    function filtrarCodigosNeo(termo) {
+    window.filtrarCodigosNeo = function(termo) {
       const lista = document.getElementById('listaCodigosNeo');
       const termoLower = (termo || '').toLowerCase();
 
@@ -5456,31 +5456,31 @@ function loadProdutos() {
     /**
      * Seleciona um código NEO da lista
      */
-    function selecionarCodigoNeo(codigo, descricao) {
+    window.selecionarCodigoNeo = function(codigo, descricao) {
       document.getElementById('editProdutoCodigoNeo').value = codigo;
       document.getElementById('editProdutoDescricaoNeo').value = descricao;
-      ocultarListaCodigosNeo();
+      window.ocultarListaCodigosNeo();
     }
 
     /**
      * Oculta lista de códigos NEO
      */
-    function ocultarListaCodigosNeo() {
+    window.ocultarListaCodigosNeo = function() {
       document.getElementById('listaCodigosNeo').style.display = 'none';
     }
 
     /**
      * Mostra lista de descrições NEO disponíveis
      */
-    function mostrarListaDescricoesNeo() {
+    window.mostrarListaDescricoesNeo = function() {
       const input = document.getElementById('editProdutoDescricaoNeo');
-      filtrarDescricoesNeo(input.value);
+      window.filtrarDescricoesNeo(input.value);
     }
 
     /**
      * Filtra descrições NEO conforme o usuário digita
      */
-    function filtrarDescricoesNeo(termo) {
+    window.filtrarDescricoesNeo = function(termo) {
       const lista = document.getElementById('listaDescricoesNeo');
       const termoLower = (termo || '').toLowerCase();
 
@@ -5508,16 +5508,16 @@ function loadProdutos() {
     /**
      * Seleciona uma descrição NEO da lista
      */
-    function selecionarDescricaoNeo(codigo, descricao) {
+    window.selecionarDescricaoNeo = function(codigo, descricao) {
       document.getElementById('editProdutoCodigoNeo').value = codigo;
       document.getElementById('editProdutoDescricaoNeo').value = descricao;
-      ocultarListaDescricoesNeo();
+      window.ocultarListaDescricoesNeo();
     }
 
     /**
      * Oculta lista de descrições NEO
      */
-    function ocultarListaDescricoesNeo() {
+    window.ocultarListaDescricoesNeo = function() {
       document.getElementById('listaDescricoesNeo').style.display = 'none';
     }
 
