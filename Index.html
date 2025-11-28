@@ -3067,9 +3067,19 @@ function loadDashboard() {
   google.script.run
     .withSuccessHandler(function(response) {
       try {
+        console.log('📊 Dashboard response recebido:', response);
+
         if (!response) {
           console.error('❌ Resposta vazia ao carregar dashboard');
           hideLoading();
+          showError('Dashboard retornou resposta vazia. Verifique os logs do Google Apps Script.');
+          return;
+        }
+
+        if (!response.success) {
+          console.error('❌ Dashboard retornou erro:', response.error);
+          hideLoading();
+          showError('Erro no Dashboard: ' + (response.error || 'Erro desconhecido'));
           return;
         }
 
@@ -5265,13 +5275,13 @@ function loadProdutos() {
             .listarFornecedores({});
         })
       ])
-      .then(([produtoResponse, codigos, descricoes, fornecedoresResponse]) => {
+      .then(([produtoResponse, codigosResponse, descricoesResponse, fornecedoresResponse]) => {
         hideLoading();
 
         if (produtoResponse && produtoResponse.success) {
-          // Armazenar dados para autocomplete
-          window.codigosNeoDisponiveis = Array.isArray(codigos) ? codigos : [];
-          window.descricoesNeoDisponiveis = Array.isArray(descricoes) ? descricoes : [];
+          // Armazenar dados para autocomplete (extrair arrays dos responses)
+          window.codigosNeoDisponiveis = (codigosResponse && Array.isArray(codigosResponse.codigos)) ? codigosResponse.codigos : [];
+          window.descricoesNeoDisponiveis = (descricoesResponse && Array.isArray(descricoesResponse.descricoes)) ? descricoesResponse.descricoes : [];
           window.fornecedoresDisponiveis = fornecedoresResponse && Array.isArray(fornecedoresResponse.fornecedores) ? fornecedoresResponse.fornecedores : [];
 
           console.log('Autocomplete data loaded:', {
