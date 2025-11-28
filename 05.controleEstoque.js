@@ -853,13 +853,17 @@ function reservarEstoquePedido(pedidoId, produtos) {
         abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ULTIMA_ATUALIZACAO).setValue(new Date());
 
         // Registrar movimentação
-        registrarMovimentacao({
+        const resultadoMov = registrarMovimentacao({
           tipo: 'RESERVA',
           produtoId: produtoId,
           quantidade: qtdReservarReal,
           pedidoId: pedidoId,
           observacoes: `Estoque parcialmente reservado (${qtdReservarReal} de ${qtdReservar})`
         });
+
+        if (!resultadoMov.success) {
+          Logger.log(`⚠️ Falha ao registrar movimentação RESERVA: ${resultadoMov.error}`);
+        }
 
         reservasFeitas++;
       } else {
@@ -872,13 +876,17 @@ function reservarEstoquePedido(pedidoId, produtos) {
         abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ULTIMA_ATUALIZACAO).setValue(new Date());
 
         // Registrar movimentação
-        registrarMovimentacao({
+        const resultadoMov = registrarMovimentacao({
           tipo: 'RESERVA',
           produtoId: produtoId,
           quantidade: qtdReservar,
           pedidoId: pedidoId,
           observacoes: 'Estoque reservado automaticamente'
         });
+
+        if (!resultadoMov.success) {
+          Logger.log(`⚠️ Falha ao registrar movimentação RESERVA: ${resultadoMov.error}`);
+        }
 
         reservasFeitas++;
       }
@@ -970,13 +978,17 @@ function liberarEstoquePedido(pedidoId, produtos) {
       abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ULTIMA_ATUALIZACAO).setValue(new Date());
 
       // Registrar movimentação
-      registrarMovimentacao({
+      const resultadoMov = registrarMovimentacao({
         tipo: 'LIBERACAO_RESERVA',
         produtoId: produtoId,
         quantidade: qtdLiberarReal,
         pedidoId: pedidoId,
         observacoes: 'Reserva liberada por cancelamento do pedido'
       });
+
+      if (!resultadoMov.success) {
+        Logger.log(`⚠️ Falha ao registrar movimentação LIBERACAO_RESERVA: ${resultadoMov.error}`);
+      }
 
       liberacoesFeitas++;
       Logger.log(`✅ Liberado ${qtdLiberarReal} unidades de ${produtoId}`);
@@ -1068,13 +1080,17 @@ function baixarEstoquePedido(pedidoId, produtos) {
       abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ULTIMA_ATUALIZACAO).setValue(new Date());
 
       // Registrar movimentação
-      registrarMovimentacao({
+      const resultadoMov = registrarMovimentacao({
         tipo: 'SAIDA',
         produtoId: produtoId,
         quantidade: qtdBaixarReal,
         pedidoId: pedidoId,
         observacoes: 'Saída automática por finalização do pedido'
       });
+
+      if (!resultadoMov.success) {
+        Logger.log(`⚠️ Falha ao registrar movimentação SAIDA: ${resultadoMov.error}`);
+      }
 
       baixasFeitas++;
       Logger.log(`✅ Baixado ${qtdBaixarReal} unidades de ${produtoId} do estoque`);

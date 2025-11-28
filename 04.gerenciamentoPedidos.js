@@ -558,6 +558,32 @@ function atualizarStatusPedido(pedidoId, novoStatus) {
               Logger.log(`✅ Estoque baixado: ${resultadoBaixa.message}`);
             }
           }
+        } else if (novoStatus === CONFIG.STATUS_PEDIDO.CANCELADO) {
+          // v16.0: Liberar estoque reservado automaticamente ao cancelar
+          Logger.log(`🔓 v16.0: Liberando estoque do pedido ${dados[i][1]}`);
+
+          // Extrair produtos do pedido
+          const produtosStr = String(dados[i][6] || ''); // Produtos IDs
+          const quantidadesStr = String(dados[i][7] || ''); // Quantidades
+          const produtosArray = produtosStr.split('; ').filter(p => p.trim() !== '');
+          const quantidadesArray = quantidadesStr.split('; ').filter(q => q.trim() !== '');
+
+          if (produtosArray.length > 0) {
+            const produtosParaLiberar = [];
+            for (let j = 0; j < produtosArray.length; j++) {
+              produtosParaLiberar.push({
+                produtoId: produtosArray[j].trim(),
+                quantidade: parseFloat(quantidadesArray[j]) || 0
+              });
+            }
+
+            const resultadoLiberacao = liberarEstoquePedido(pedidoId, produtosParaLiberar);
+            if (!resultadoLiberacao.success) {
+              Logger.log(`⚠️ Falha ao liberar estoque: ${resultadoLiberacao.error}`);
+            } else {
+              Logger.log(`✅ Estoque liberado: ${resultadoLiberacao.message}`);
+            }
+          }
         }
 
         // Registrar log
