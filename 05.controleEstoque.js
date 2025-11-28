@@ -763,3 +763,325 @@ function registrarMovimentacao(dados) {
     };
   }
 }
+
+/**
+ * ========================================
+ * v16.0: SISTEMA DE ESTOQUE RESERVADO
+ * ========================================
+ */
+
+/**
+ * Reserva estoque para um pedido
+ * Chamado quando pedido é criado (status: SOLICITADO)
+ *
+ * @param {string} pedidoId - ID do pedido
+ * @param {Array} produtos - Array com {produtoId, quantidade}
+ * @returns {Object} {success, message}
+ */
+function reservarEstoquePedido(pedidoId, produtos) {
+  try {
+    Logger.log(`📦 v16.0: Reservando estoque para pedido ${pedidoId}`);
+
+    if (!produtos || !Array.isArray(produtos) || produtos.length === 0) {
+      return { success: false, error: 'Lista de produtos inválida' };
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
+
+    if (!abaEstoque) {
+      return { success: false, error: 'Aba de estoque não encontrada' };
+    }
+
+    const lastRow = abaEstoque.getLastRow();
+    if (lastRow < 2) {
+      return { success: false, error: 'Estoque vazio' };
+    }
+
+    const dadosEstoque = abaEstoque.getRange(2, 1, lastRow - 1, 8).getValues();
+    let reservasFeitas = 0;
+
+    // Para cada produto do pedido
+    for (let i = 0; i < produtos.length; i++) {
+      const item = produtos[i];
+      const produtoId = item.produtoId;
+      const qtdReservar = parseFloat(item.quantidade) || 0;
+
+      if (qtdReservar <= 0) continue;
+
+      // Buscar linha do produto no estoque
+      let linhaEstoque = -1;
+      for (let j = 0; j < dadosEstoque.length; j++) {
+        if (dadosEstoque[j][CONFIG.COLUNAS_ESTOQUE.PRODUTO_ID - 1] === produtoId) {
+          linhaEstoque = j + 2; // +2 porque array começa em 0 e sheet em 2
+          break;
+        }
+      }
+
+      if (linhaEstoque === -1) {
+        Logger.log(`⚠️ Produto ${produtoId} não encontrado no estoque, pulando...`);
+        continue;
+      }
+
+      // Obter valores atuais
+      const qtdAtual = parseFloat(dadosEstoque[linhaEstoque - 2][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL - 1]) || 0;
+      const qtdReservada = parseFloat(dadosEstoque[linhaEstoque - 2][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_RESERVADA - 1]) || 0;
+      const qtdDisponivel = parseFloat(dadosEstoque[linhaEstoque - 2][CONFIG.COLUNAS_ESTOQUE.ESTOQUE_DISPONIVEL - 1]) || 0;
+
+      // Verificar se há estoque disponível
+      if (qtdDisponivel < qtdReservar) {
+        Logger.log(`⚠️ Estoque insuficiente para ${produtoId}: disponível=${qtdDisponivel}, solicitado=${qtdReservar}`);
+        // Reserva o que tiver disponível
+        const qtdReservarReal = Math.min(qtdDisponivel, qtdReservar);
+        if (qtdReservarReal <= 0) continue;
+
+        // Atualizar valores
+        const novaQtdReservada = qtdReservada + qtdReservarReal;
+        const novoQtdDisponivel = qtdAtual - novaQtdReservada;
+
+        abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_RESERVADA).setValue(novaQtdReservada);
+        abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ESTOQUE_DISPONIVEL).setValue(novoQtdDisponivel);
+        abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ULTIMA_ATUALIZACAO).setValue(new Date());
+
+        // Registrar movimentação
+        registrarMovimentacao({
+          tipo: 'RESERVA',
+          produtoId: produtoId,
+          quantidade: qtdReservarReal,
+          pedidoId: pedidoId,
+          observacoes: `Estoque parcialmente reservado (${qtdReservarReal} de ${qtdReservar})`
+        });
+
+        reservasFeitas++;
+      } else {
+        // Reserva quantidade total
+        const novaQtdReservada = qtdReservada + qtdReservar;
+        const novoQtdDisponivel = qtdAtual - novaQtdReservada;
+
+        abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_RESERVADA).setValue(novaQtdReservada);
+        abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ESTOQUE_DISPONIVEL).setValue(novoQtdDisponivel);
+        abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ULTIMA_ATUALIZACAO).setValue(new Date());
+
+        // Registrar movimentação
+        registrarMovimentacao({
+          tipo: 'RESERVA',
+          produtoId: produtoId,
+          quantidade: qtdReservar,
+          pedidoId: pedidoId,
+          observacoes: 'Estoque reservado automaticamente'
+        });
+
+        reservasFeitas++;
+      }
+
+      Logger.log(`✅ Reservado ${qtdReservar} unidades de ${produtoId}`);
+    }
+
+    return {
+      success: true,
+      message: `${reservasFeitas} produtos tiveram estoque reservado`,
+      reservasFeitas: reservasFeitas
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao reservar estoque: ' + error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Libera estoque reservado de um pedido
+ * Chamado quando pedido é cancelado
+ *
+ * @param {string} pedidoId - ID do pedido
+ * @param {Array} produtos - Array com {produtoId, quantidade}
+ * @returns {Object} {success, message}
+ */
+function liberarEstoquePedido(pedidoId, produtos) {
+  try {
+    Logger.log(`🔓 v16.0: Liberando estoque do pedido ${pedidoId}`);
+
+    if (!produtos || !Array.isArray(produtos) || produtos.length === 0) {
+      return { success: false, error: 'Lista de produtos inválida' };
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
+
+    if (!abaEstoque) {
+      return { success: false, error: 'Aba de estoque não encontrada' };
+    }
+
+    const lastRow = abaEstoque.getLastRow();
+    if (lastRow < 2) {
+      return { success: true, message: 'Estoque vazio, nada a liberar' };
+    }
+
+    const dadosEstoque = abaEstoque.getRange(2, 1, lastRow - 1, 8).getValues();
+    let liberacoesFeitas = 0;
+
+    // Para cada produto do pedido
+    for (let i = 0; i < produtos.length; i++) {
+      const item = produtos[i];
+      const produtoId = item.produtoId;
+      const qtdLiberar = parseFloat(item.quantidade) || 0;
+
+      if (qtdLiberar <= 0) continue;
+
+      // Buscar linha do produto no estoque
+      let linhaEstoque = -1;
+      for (let j = 0; j < dadosEstoque.length; j++) {
+        if (dadosEstoque[j][CONFIG.COLUNAS_ESTOQUE.PRODUTO_ID - 1] === produtoId) {
+          linhaEstoque = j + 2;
+          break;
+        }
+      }
+
+      if (linhaEstoque === -1) {
+        Logger.log(`⚠️ Produto ${produtoId} não encontrado no estoque, pulando...`);
+        continue;
+      }
+
+      // Obter valores atuais
+      const qtdAtual = parseFloat(dadosEstoque[linhaEstoque - 2][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL - 1]) || 0;
+      const qtdReservada = parseFloat(dadosEstoque[linhaEstoque - 2][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_RESERVADA - 1]) || 0;
+
+      // Liberar reserva (não pode liberar mais do que está reservado)
+      const qtdLiberarReal = Math.min(qtdReservada, qtdLiberar);
+      if (qtdLiberarReal <= 0) continue;
+
+      const novaQtdReservada = qtdReservada - qtdLiberarReal;
+      const novoQtdDisponivel = qtdAtual - novaQtdReservada;
+
+      abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_RESERVADA).setValue(novaQtdReservada);
+      abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ESTOQUE_DISPONIVEL).setValue(novoQtdDisponivel);
+      abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ULTIMA_ATUALIZACAO).setValue(new Date());
+
+      // Registrar movimentação
+      registrarMovimentacao({
+        tipo: 'LIBERACAO_RESERVA',
+        produtoId: produtoId,
+        quantidade: qtdLiberarReal,
+        pedidoId: pedidoId,
+        observacoes: 'Reserva liberada por cancelamento do pedido'
+      });
+
+      liberacoesFeitas++;
+      Logger.log(`✅ Liberado ${qtdLiberarReal} unidades de ${produtoId}`);
+    }
+
+    return {
+      success: true,
+      message: `${liberacoesFeitas} produtos tiveram estoque liberado`,
+      liberacoesFeitas: liberacoesFeitas
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao liberar estoque: ' + error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Baixa estoque reservado de um pedido
+ * Chamado quando pedido é finalizado
+ *
+ * @param {string} pedidoId - ID do pedido
+ * @param {Array} produtos - Array com {produtoId, quantidade}
+ * @returns {Object} {success, message}
+ */
+function baixarEstoquePedido(pedidoId, produtos) {
+  try {
+    Logger.log(`📤 v16.0: Baixando estoque do pedido ${pedidoId}`);
+
+    if (!produtos || !Array.isArray(produtos) || produtos.length === 0) {
+      return { success: false, error: 'Lista de produtos inválida' };
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const abaEstoque = ss.getSheetByName(CONFIG.ABAS.STOCK);
+
+    if (!abaEstoque) {
+      return { success: false, error: 'Aba de estoque não encontrada' };
+    }
+
+    const lastRow = abaEstoque.getLastRow();
+    if (lastRow < 2) {
+      return { success: false, error: 'Estoque vazio' };
+    }
+
+    const dadosEstoque = abaEstoque.getRange(2, 1, lastRow - 1, 8).getValues();
+    let baixasFeitas = 0;
+
+    // Para cada produto do pedido
+    for (let i = 0; i < produtos.length; i++) {
+      const item = produtos[i];
+      const produtoId = item.produtoId;
+      const qtdBaixar = parseFloat(item.quantidade) || 0;
+
+      if (qtdBaixar <= 0) continue;
+
+      // Buscar linha do produto no estoque
+      let linhaEstoque = -1;
+      for (let j = 0; j < dadosEstoque.length; j++) {
+        if (dadosEstoque[j][CONFIG.COLUNAS_ESTOQUE.PRODUTO_ID - 1] === produtoId) {
+          linhaEstoque = j + 2;
+          break;
+        }
+      }
+
+      if (linhaEstoque === -1) {
+        Logger.log(`⚠️ Produto ${produtoId} não encontrado no estoque, pulando...`);
+        continue;
+      }
+
+      // Obter valores atuais
+      const qtdAtual = parseFloat(dadosEstoque[linhaEstoque - 2][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL - 1]) || 0;
+      const qtdReservada = parseFloat(dadosEstoque[linhaEstoque - 2][CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_RESERVADA - 1]) || 0;
+
+      // Baixar do estoque reservado e do estoque total
+      const qtdBaixarReal = Math.min(qtdReservada, qtdBaixar);
+      if (qtdBaixarReal <= 0) continue;
+
+      const novaQtdAtual = qtdAtual - qtdBaixarReal;
+      const novaQtdReservada = qtdReservada - qtdBaixarReal;
+      const novoQtdDisponivel = novaQtdAtual - novaQtdReservada;
+
+      abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL).setValue(novaQtdAtual);
+      abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_RESERVADA).setValue(novaQtdReservada);
+      abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ESTOQUE_DISPONIVEL).setValue(novoQtdDisponivel);
+      abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ULTIMA_ATUALIZACAO).setValue(new Date());
+
+      // Registrar movimentação
+      registrarMovimentacao({
+        tipo: 'SAIDA',
+        produtoId: produtoId,
+        quantidade: qtdBaixarReal,
+        pedidoId: pedidoId,
+        observacoes: 'Saída automática por finalização do pedido'
+      });
+
+      baixasFeitas++;
+      Logger.log(`✅ Baixado ${qtdBaixarReal} unidades de ${produtoId} do estoque`);
+    }
+
+    return {
+      success: true,
+      message: `${baixasFeitas} produtos tiveram estoque baixado`,
+      baixasFeitas: baixasFeitas
+    };
+
+  } catch (error) {
+    Logger.log('❌ Erro ao baixar estoque: ' + error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}

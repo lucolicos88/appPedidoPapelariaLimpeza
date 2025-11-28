@@ -191,7 +191,17 @@ function criarPedido(dadosPedido) {
     ];
     
     abaPedidos.appendRow(novoPedido);
-    
+
+    // v16.0: Reservar estoque automaticamente
+    Logger.log(`📦 v16.0: Reservando estoque para pedido ${numeroPedido}`);
+    const resultadoReserva = reservarEstoquePedido(id, dadosPedido.produtos);
+    if (!resultadoReserva.success) {
+      Logger.log(`⚠️ Falha ao reservar estoque: ${resultadoReserva.error}`);
+      // Não bloqueia criação do pedido, apenas loga o aviso
+    } else {
+      Logger.log(`✅ Estoque reservado: ${resultadoReserva.message}`);
+    }
+
     // Enviar notificação ao gestor
     const emailGestor = obterConfiguracao('EMAIL_GESTOR');
     if (emailGestor && emailGestor.includes('@')) {
@@ -207,16 +217,17 @@ function criarPedido(dadosPedido) {
         observacoes: dadosPedido.observacoes || ''
       });
     }
-    
+
     // Registrar log
     registrarLog('PEDIDO_CRIADO', `Pedido ${numeroPedido} criado por ${usuario.nome}`, 'SUCESSO');
-    
+
     return {
       success: true,
       message: 'Pedido criado com sucesso',
       pedidoId: id,
       numeroPedido: numeroPedido,
-      valorTotal: valorTotal
+      valorTotal: valorTotal,
+      estoqueReservado: resultadoReserva.success // v16.0
     };
     
   } catch (error) {
@@ -515,17 +526,43 @@ function atualizarStatusPedido(pedidoId, novoStatus) {
       if (dados[i][0] === pedidoId) {
         // Atualizar status
         abaPedidos.getRange(i + 1, 10).setValue(novoStatus);
-        
+
         // Atualizar datas conforme status
         if (novoStatus === CONFIG.STATUS_PEDIDO.EM_COMPRA) {
           abaPedidos.getRange(i + 1, 12).setValue(new Date());
         } else if (novoStatus === CONFIG.STATUS_PEDIDO.FINALIZADO) {
           abaPedidos.getRange(i + 1, 13).setValue(new Date());
+
+          // v16.0: Baixar estoque reservado automaticamente
+          Logger.log(`📤 v16.0: Baixando estoque do pedido ${dados[i][1]}`);
+
+          // Extrair produtos do pedido
+          const produtosStr = String(dados[i][6] || ''); // Produtos IDs
+          const quantidadesStr = String(dados[i][7] || ''); // Quantidades
+          const produtosArray = produtosStr.split('; ').filter(p => p.trim() !== '');
+          const quantidadesArray = quantidadesStr.split('; ').filter(q => q.trim() !== '');
+
+          if (produtosArray.length > 0) {
+            const produtosParaBaixar = [];
+            for (let j = 0; j < produtosArray.length; j++) {
+              produtosParaBaixar.push({
+                produtoId: produtosArray[j].trim(),
+                quantidade: parseFloat(quantidadesArray[j]) || 0
+              });
+            }
+
+            const resultadoBaixa = baixarEstoquePedido(pedidoId, produtosParaBaixar);
+            if (!resultadoBaixa.success) {
+              Logger.log(`⚠️ Falha ao baixar estoque: ${resultadoBaixa.error}`);
+            } else {
+              Logger.log(`✅ Estoque baixado: ${resultadoBaixa.message}`);
+            }
+          }
         }
-        
+
         // Registrar log
         registrarLog('PEDIDO_STATUS_ATUALIZADO', `Pedido ${dados[i][1]} - Status: ${novoStatus}`, 'SUCESSO');
-        
+
         return {
           success: true,
           message: 'Status atualizado com sucesso'
@@ -576,15 +613,41 @@ function cancelarPedido(pedidoId, motivo) {
         
         // Cancelar pedido
         abaPedidos.getRange(i + 1, 10).setValue(CONFIG.STATUS_PEDIDO.CANCELADO);
-        
+
         // Adicionar motivo nas observações
         const observacoesAtuais = dados[i][14] || '';
         const novasObservacoes = observacoesAtuais + `\n[CANCELADO] ${motivo || 'Sem motivo informado'}`;
         abaPedidos.getRange(i + 1, 15).setValue(novasObservacoes);
-        
+
+        // v16.0: Liberar estoque reservado automaticamente
+        Logger.log(`🔓 v16.0: Liberando estoque do pedido ${dados[i][1]}`);
+
+        // Extrair produtos do pedido
+        const produtosStr = String(dados[i][6] || ''); // Produtos IDs
+        const quantidadesStr = String(dados[i][7] || ''); // Quantidades
+        const produtosArray = produtosStr.split('; ').filter(p => p.trim() !== '');
+        const quantidadesArray = quantidadesStr.split('; ').filter(q => q.trim() !== '');
+
+        if (produtosArray.length > 0) {
+          const produtosParaLiberar = [];
+          for (let j = 0; j < produtosArray.length; j++) {
+            produtosParaLiberar.push({
+              produtoId: produtosArray[j].trim(),
+              quantidade: parseFloat(quantidadesArray[j]) || 0
+            });
+          }
+
+          const resultadoLiberacao = liberarEstoquePedido(pedidoId, produtosParaLiberar);
+          if (!resultadoLiberacao.success) {
+            Logger.log(`⚠️ Falha ao liberar estoque: ${resultadoLiberacao.error}`);
+          } else {
+            Logger.log(`✅ Estoque liberado: ${resultadoLiberacao.message}`);
+          }
+        }
+
         // Registrar log
         registrarLog('PEDIDO_CANCELADO', `Pedido ${dados[i][1]} cancelado: ${motivo}`, 'SUCESSO');
-        
+
         return {
           success: true,
           message: 'Pedido cancelado com sucesso'
