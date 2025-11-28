@@ -35,7 +35,7 @@ function getDashboardAvancado(filtros) {
     const lastRowUsuarios = abaUsuarios ? abaUsuarios.getLastRow() : 0;
 
     const dadosPedidos = lastRowPedidos > 1 ? abaPedidos.getRange(2, 1, lastRowPedidos - 1, 15).getValues() : [];
-    const dadosProdutos = lastRowProdutos > 1 ? abaProdutos.getRange(2, 1, lastRowProdutos - 1, 13).getValues() : [];
+    const dadosProdutos = lastRowProdutos > 1 ? abaProdutos.getRange(2, 1, lastRowProdutos - 1, 18).getValues() : []; // v15.0: 18 colunas (agora com CODIGO_NEOFORMULA, DESCRICAO_NEOFORMULA, etc)
     const dadosEstoque = (abaEstoque && lastRowEstoque > 1) ? abaEstoque.getRange(2, 1, lastRowEstoque - 1, 8).getValues() : [];
     const dadosMovimentacoes = (abaMovimentacoes && lastRowMovimentacoes > 1) ? abaMovimentacoes.getRange(2, 1, lastRowMovimentacoes - 1, 10).getValues() : [];
     const dadosUsuarios = (abaUsuarios && lastRowUsuarios > 1) ? abaUsuarios.getRange(2, 1, lastRowUsuarios - 1, 5).getValues() : [];

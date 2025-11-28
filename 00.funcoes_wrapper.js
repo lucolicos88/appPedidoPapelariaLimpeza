@@ -598,6 +598,9 @@ function atualizarProduto(dadosProduto) {
       estoqueMinimo: dadosProduto.estoqueMinimo,
       pontoPedido: dadosProduto.pontoPedido,
       fornecedor: dadosProduto.fornecedor,
+      fornecedorId: dadosProduto.fornecedorId, // v15.0
+      codigoNeoformula: dadosProduto.codigoNeoformula, // v15.0
+      descricaoNeoformula: dadosProduto.descricaoNeoformula, // v15.0
       imagemBase64: dadosProduto.imagemBase64,
       imagemFileName: dadosProduto.imagemFileName,
       imagemMimeType: dadosProduto.imagemMimeType
