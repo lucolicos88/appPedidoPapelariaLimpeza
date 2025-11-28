@@ -303,7 +303,15 @@ function __obterCatalogoProdutosComEstoque() {
     }
 
     // v15.0: Agrupar produtos por código NEO
-    const produtosAgrupados = listarProdutosAgrupadosPorNeo();
+    const resultadoAgrupados = listarProdutosAgrupadosPorNeo();
+
+    // v16.0: FIX - Extrair array de produtos do resultado
+    let produtosAgrupados = [];
+    if (resultadoAgrupados && resultadoAgrupados.success && Array.isArray(resultadoAgrupados.produtos)) {
+      produtosAgrupados = resultadoAgrupados.produtos;
+    } else {
+      Logger.log('⚠️ listarProdutosAgrupadosPorNeo() não retornou array válido');
+    }
 
     // Obter dados de estoque
     const estoqueMap = {};
@@ -325,7 +333,7 @@ function __obterCatalogoProdutosComEstoque() {
       }
     }
 
-    Logger.log(`✅ Catálogo v15.0 carregado: ${produtosAgrupados.length} produtos únicos, ${resultadoProdutos.produtos.length} variações de fornecedores`);
+    Logger.log(`✅ Catálogo v16.0 carregado: ${produtosAgrupados.length} produtos únicos, ${resultadoProdutos.produtos.length} variações de fornecedores`);
 
     return serializarParaFrontend({
       success: true,

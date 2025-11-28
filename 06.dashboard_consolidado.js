@@ -447,10 +447,11 @@ function calcularKPIsEstoque(dadosProdutos, dadosEstoque, dadosMovimentacoes, pe
     totalProdutos++;
 
     const produtoId = produto[0];
-    const estoqueMinimo = parseFloat(produto[7]) || 0;
-    const pontoPedido = parseFloat(produto[8]) || 0;
-    const precoUnitario = parseFloat(produto[6]) || 0;
-    const dataCadastro = produto[12] ? new Date(produto[12]) : null;
+    // v16.0: Usar CONFIG para índices corretos (18 colunas agora)
+    const estoqueMinimo = parseFloat(produto[CONFIG.COLUNAS_PRODUTOS.ESTOQUE_MINIMO - 1]) || 0;
+    const pontoPedido = parseFloat(produto[CONFIG.COLUNAS_PRODUTOS.PONTO_PEDIDO - 1]) || 0;
+    const precoUnitario = parseFloat(produto[CONFIG.COLUNAS_PRODUTOS.PRECO_UNITARIO - 1]) || 0;
+    const dataCadastro = produto[CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO - 1] ? new Date(produto[CONFIG.COLUNAS_PRODUTOS.DATA_CADASTRO - 1]) : null;
 
     // Buscar estoque atual
     let qtdAtual = 0;
