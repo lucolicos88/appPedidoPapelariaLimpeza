@@ -452,6 +452,7 @@ function __getDashboardData(filtros) {
 
 /**
  * Wrapper para getDashboardAvancado (v7.0+)
+ * v15.1: FIX - Serializar corretamente para evitar null no frontend
  */
 function __getDashboardAvancado(filtros) {
   try {
@@ -459,19 +460,48 @@ function __getDashboardAvancado(filtros) {
     var resultado = getDashboardAvancado(filtros);
     Logger.log('📤 __getDashboardAvancado retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
 
-    // v15.0: Não usar serializarParaFrontend - causa null em objetos grandes
-    // Retornar diretamente (Google Apps Script serializa automaticamente)
-    if (resultado && resultado.success) {
-      Logger.log('✅ Retornando dashboard diretamente sem serialização customizada');
+    if (!resultado) {
+      Logger.log('⚠️ Resultado vazio de getDashboardAvancado');
+      return {
+        success: false,
+        error: 'Resultado vazio',
+        kpis: { financeiros: {}, logisticos: {}, estoque: {} }
+      };
+    }
+
+    if (!resultado.success) {
+      Logger.log('⚠️ Resultado não tem success=true, retornando erro');
       return resultado;
     }
 
-    Logger.log('⚠️ Resultado não tem success=true, retornando erro');
-    return resultado || {
-      success: false,
-      error: 'Resultado vazio',
-      kpis: { financeiros: {}, logisticos: {}, estoque: {} }
-    };
+    // v15.1: Serializar para converter Date objects antes de retornar
+    // Objetos Date causam retorno NULL no google.script.run
+    Logger.log('🔄 Serializando dashboard para frontend...');
+    try {
+      const tamanhoAntes = JSON.stringify(resultado).length;
+      Logger.log('📦 Tamanho do objeto: ' + tamanhoAntes + ' bytes');
+
+      const resultadoSerializado = serializarParaFrontend(resultado);
+
+      const tamanhoDepois = JSON.stringify(resultadoSerializado).length;
+      Logger.log('📦 Tamanho após serialização: ' + tamanhoDepois + ' bytes');
+      Logger.log('✅ Dashboard serializado com sucesso');
+
+      return resultadoSerializado;
+    } catch (serializacaoErro) {
+      Logger.log('❌ Erro ao serializar dashboard: ' + serializacaoErro.message);
+      // Tentar retornar versão simplificada
+      return {
+        success: true,
+        kpis: {
+          financeiros: simplificarObjeto(resultado.kpis.financeiros),
+          logisticos: simplificarObjeto(resultado.kpis.logisticos),
+          estoque: simplificarObjeto(resultado.kpis.estoque),
+          fornecedores: simplificarObjeto(resultado.kpis.fornecedores)
+        }
+      };
+    }
+
   } catch (e) {
     Logger.log('❌ Erro em __getDashboardAvancado: ' + e.message);
     Logger.log('Stack: ' + e.stack);
@@ -485,6 +515,45 @@ function __getDashboardAvancado(filtros) {
       }
     };
   }
+}
+
+/**
+ * Simplifica objeto removendo arrays muito grandes e Date objects
+ */
+function simplificarObjeto(obj) {
+  if (!obj || typeof obj !== 'object') {
+    return obj;
+  }
+
+  const resultado = {};
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      const valor = obj[key];
+
+      // Converter Date para string
+      if (valor instanceof Date) {
+        resultado[key] = valor.toISOString();
+      }
+      // Limitar arrays grandes (manter apenas primeiros 50 itens)
+      else if (Array.isArray(valor)) {
+        resultado[key] = valor.slice(0, 50).map(item => {
+          if (item instanceof Date) return item.toISOString();
+          if (typeof item === 'object') return simplificarObjeto(item);
+          return item;
+        });
+      }
+      // Objetos aninhados
+      else if (typeof valor === 'object' && valor !== null) {
+        resultado[key] = simplificarObjeto(valor);
+      }
+      // Valores primitivos
+      else {
+        resultado[key] = valor;
+      }
+    }
+  }
+
+  return resultado;
 }
 
 // ========================================

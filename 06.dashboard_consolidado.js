@@ -51,12 +51,24 @@ function getDashboardAvancado(filtros) {
     const pedidosFiltrados = aplicarFiltrosPedidos(dadosPedidos, filtros);
 
     // Calcular KPIs
+    Logger.log('💰 Calculando KPIs Financeiros...');
     const kpisFinanceiros = calcularKPIsFinanceiros(pedidosFiltrados, dadosProdutos, dadosUsuarios);
-    const kpisLogisticos = calcularKPIsLogisticos(pedidosFiltrados);
-    const kpisEstoque = calcularKPIsEstoque(dadosProdutos, dadosEstoque, dadosMovimentacoes, pedidosFiltrados);
-    const kpisFornecedores = calcularKPIsFornecedores();
+    Logger.log('✅ KPIs Financeiros calculados');
 
-    return {
+    Logger.log('🚚 Calculando KPIs Logísticos...');
+    const kpisLogisticos = calcularKPIsLogisticos(pedidosFiltrados);
+    Logger.log('✅ KPIs Logísticos calculados');
+
+    Logger.log('📦 Calculando KPIs Estoque...');
+    const kpisEstoque = calcularKPIsEstoque(dadosProdutos, dadosEstoque, dadosMovimentacoes, pedidosFiltrados);
+    Logger.log('✅ KPIs Estoque calculados');
+
+    Logger.log('🏢 Calculando KPIs Fornecedores...');
+    const kpisFornecedores = calcularKPIsFornecedores();
+    Logger.log('✅ KPIs Fornecedores calculados');
+
+    Logger.log('📊 Montando resposta final do dashboard...');
+    const resposta = {
       success: true,
       kpis: {
         financeiros: kpisFinanceiros,
@@ -65,6 +77,9 @@ function getDashboardAvancado(filtros) {
         fornecedores: kpisFornecedores
       }
     };
+
+    Logger.log('✅ Dashboard montado com sucesso');
+    return resposta;
 
   } catch (error) {
     Logger.log('❌ Erro ao obter dashboard avançado: ' + error.message);
