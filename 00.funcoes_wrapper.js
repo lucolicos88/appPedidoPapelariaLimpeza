@@ -290,27 +290,40 @@ function __obterCatalogoProdutosComEstoque() {
       };
     }
 
-    // v15.0: Listar apenas produtos completos (com código e descrição NEO)
+    // v16.0: Listar TODOS os produtos ativos (não filtrar por NEO aqui)
+    // O filtro de produtos completos será aplicado no frontend
+    Logger.log('🔍 v16.0: Carregando todos os produtos ativos...');
     const filtros = {
-      ativo: 'Sim',
-      codigoNeoPreenchido: true,
-      descricaoNeoPreenchida: true
+      ativo: 'Sim'
     };
 
     const resultadoProdutos = listarProdutos(filtros);
     if (!resultadoProdutos.success) {
+      Logger.log('❌ listarProdutos falhou: ' + resultadoProdutos.error);
       return resultadoProdutos;
     }
+    Logger.log(`📦 Produtos ativos carregados: ${resultadoProdutos.produtos.length}`);
 
     // v15.0: Agrupar produtos por código NEO
+    Logger.log('🔄 Agrupando produtos por código NEO...');
     const resultadoAgrupados = listarProdutosAgrupadosPorNeo();
 
     // v16.0: FIX - Extrair array de produtos do resultado
     let produtosAgrupados = [];
     if (resultadoAgrupados && resultadoAgrupados.success && Array.isArray(resultadoAgrupados.produtos)) {
       produtosAgrupados = resultadoAgrupados.produtos;
+      Logger.log(`✅ Produtos agrupados: ${produtosAgrupados.length}`);
+
+      // v16.0: DEBUG - Mostrar detalhes dos produtos agrupados
+      if (produtosAgrupados.length > 0) {
+        Logger.log('📋 Primeiro produto agrupado: ' + JSON.stringify(produtosAgrupados[0]));
+      } else {
+        Logger.log('⚠️ ATENÇÃO: Array de produtos agrupados está vazio!');
+      }
     } else {
       Logger.log('⚠️ listarProdutosAgrupadosPorNeo() não retornou array válido');
+      Logger.log('   Tipo retornado: ' + typeof resultadoAgrupados);
+      Logger.log('   Conteúdo: ' + JSON.stringify(resultadoAgrupados));
     }
 
     // Obter dados de estoque

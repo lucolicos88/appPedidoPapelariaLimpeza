@@ -172,11 +172,12 @@ function calcularKPIsFinanceiros(pedidosFiltrados, dadosProdutos, dadosUsuarios)
 
   // Processar pedidos
   pedidosFiltrados.forEach(pedido => {
-    const valor = parseFloat(pedido[8]) || 0;
-    const tipo = pedido[2];
-    const setor = pedido[5];
-    const status = pedido[9];
-    const data = new Date(pedido[10]);
+    // v16.0: Usar CONFIG para índices corretos
+    const valor = parseFloat(pedido[CONFIG.COLUNAS_PEDIDOS.VALOR_TOTAL - 1]) || 0;
+    const tipo = pedido[CONFIG.COLUNAS_PEDIDOS.TIPO - 1];
+    const setor = pedido[CONFIG.COLUNAS_PEDIDOS.SETOR - 1];
+    const status = pedido[CONFIG.COLUNAS_PEDIDOS.STATUS - 1];
+    const data = new Date(pedido[CONFIG.COLUNAS_PEDIDOS.DATA_SOLICITACAO - 1]);
     const mesAno = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
 
     // 🐛 DEBUG: Log de cada pedido
@@ -200,8 +201,8 @@ function calcularKPIsFinanceiros(pedidosFiltrados, dadosProdutos, dadosUsuarios)
       gastoPorSetor[setor] += valor;
 
       // Por produto
-      const produtos = (pedido[6] || '').toString().split('; ');
-      const quantidades = (pedido[7] || '').toString().split('; ');
+      const produtos = (pedido[CONFIG.COLUNAS_PEDIDOS.PRODUTOS - 1] || '').toString().split('; ');
+      const quantidades = (pedido[CONFIG.COLUNAS_PEDIDOS.QUANTIDADES - 1] || '').toString().split('; ');
       produtos.forEach((produto, idx) => {
         if (!gastoPorProduto[produto]) {
           gastoPorProduto[produto] = 0;
@@ -312,12 +313,13 @@ function calcularKPIsLogisticos(pedidosFiltrados) {
   const pedidosPorSolicitante = {};
 
   pedidosFiltrados.forEach(pedido => {
-    const status = pedido[9];
-    const dataSolicitacao = new Date(pedido[10]);
-    const dataCompra = pedido[11] ? new Date(pedido[11]) : null;
-    const dataFinalizacao = pedido[12] ? new Date(pedido[12]) : null;
-    const prazoEntrega = pedido[13] ? new Date(pedido[13]) : null;
-    const solicitante = pedido[3];
+    // v16.0: Usar CONFIG para índices corretos
+    const status = pedido[CONFIG.COLUNAS_PEDIDOS.STATUS - 1];
+    const dataSolicitacao = new Date(pedido[CONFIG.COLUNAS_PEDIDOS.DATA_SOLICITACAO - 1]);
+    const dataCompra = pedido[CONFIG.COLUNAS_PEDIDOS.DATA_COMPRA - 1] ? new Date(pedido[CONFIG.COLUNAS_PEDIDOS.DATA_COMPRA - 1]) : null;
+    const dataFinalizacao = pedido[CONFIG.COLUNAS_PEDIDOS.DATA_FINALIZACAO - 1] ? new Date(pedido[CONFIG.COLUNAS_PEDIDOS.DATA_FINALIZACAO - 1]) : null;
+    const prazoEntrega = pedido[CONFIG.COLUNAS_PEDIDOS.PRAZO_ENTREGA - 1] ? new Date(pedido[CONFIG.COLUNAS_PEDIDOS.PRAZO_ENTREGA - 1]) : null;
+    const solicitante = pedido[CONFIG.COLUNAS_PEDIDOS.SOLICITANTE_EMAIL - 1];
 
     // Tempo de aprovação
     if (dataCompra) {
@@ -487,8 +489,9 @@ function calcularKPIsEstoque(dadosProdutos, dadosEstoque, dadosMovimentacoes, pe
 
   // Contar solicitações por produto
   pedidosFiltrados.forEach(pedido => {
-    const produtos = (pedido[6] || '').toString().split('; ');
-    const quantidades = (pedido[7] || '').toString().split('; ');
+    // v16.0: Usar CONFIG para índices corretos
+    const produtos = (pedido[CONFIG.COLUNAS_PEDIDOS.PRODUTOS - 1] || '').toString().split('; ');
+    const quantidades = (pedido[CONFIG.COLUNAS_PEDIDOS.QUANTIDADES - 1] || '').toString().split('; ');
     produtos.forEach((produto, idx) => {
       if (!produtosSolicitacoes[produto]) {
         produtosSolicitacoes[produto] = 0;
@@ -623,8 +626,11 @@ function calcularPrevisaoReposicao(dadosProdutos, dadosEstoque, consumoPorProdut
   const previsoes = [];
 
   dadosProdutos.forEach(produto => {
-    const produtoId = produto[0];
-    const produtoNome = produto[1];
+    const produtoId = produto[CONFIG.COLUNAS_PRODUTOS.ID - 1];
+    // v16.0: Usar descrição NEO se disponível, senão descrição fornecedor
+    const descricaoNeo = produto[CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1];
+    const descricaoFornecedor = produto[CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1];
+    const produtoNome = descricaoNeo || descricaoFornecedor || 'Sem descrição';
 
     // Buscar estoque atual
     let qtdAtual = 0;
