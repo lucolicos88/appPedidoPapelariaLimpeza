@@ -617,11 +617,12 @@ function registrarMovimentacao(dados) {
       };
     }
 
-    const tiposValidos = ['ENTRADA', 'SAIDA', 'AJUSTE'];
+    // v16.0: Adicionados tipos RESERVA, LIBERACAO_RESERVA e INVENTARIO
+    const tiposValidos = ['ENTRADA', 'SAIDA', 'AJUSTE', 'RESERVA', 'LIBERACAO_RESERVA', 'INVENTARIO'];
     if (!tiposValidos.includes(dados.tipo)) {
       return {
         success: false,
-        error: 'Tipo inválido. Use: ENTRADA, SAIDA ou AJUSTE'
+        error: 'Tipo inválido. Use: ENTRADA, SAIDA, AJUSTE, RESERVA, LIBERACAO_RESERVA ou INVENTARIO'
       };
     }
 
@@ -697,6 +698,8 @@ function registrarMovimentacao(dados) {
     // 3. Calcular novo estoque
     let novoEstoque = estoqueAtualAntes;
 
+    // v16.0: RESERVA e LIBERACAO_RESERVA não alteram qtdAtual
+    // (isso é feito nas funções específicas reservarEstoquePedido/liberarEstoquePedido/baixarEstoquePedido)
     if (dados.tipo === 'ENTRADA') {
       novoEstoque += Math.abs(dados.quantidade);
     } else if (dados.tipo === 'SAIDA') {
@@ -704,10 +707,14 @@ function registrarMovimentacao(dados) {
     } else if (dados.tipo === 'AJUSTE') {
       // Para ajuste, a quantidade pode ser positiva ou negativa
       novoEstoque += dados.quantidade;
+    } else if (dados.tipo === 'INVENTARIO') {
+      // Inventário define o valor absoluto
+      novoEstoque = Math.abs(dados.quantidade);
     }
+    // RESERVA e LIBERACAO_RESERVA não alteram qtdAtual, apenas registram a movimentação
 
-    // Não permitir estoque negativo
-    if (novoEstoque < 0) {
+    // Não permitir estoque negativo (exceto para RESERVA/LIBERACAO_RESERVA que não alteram estoque)
+    if (novoEstoque < 0 && !['RESERVA', 'LIBERACAO_RESERVA'].includes(dados.tipo)) {
       Logger.log(`⚠️ Estoque ficaria negativo: ${novoEstoque}`);
       return {
         success: false,
@@ -715,9 +722,11 @@ function registrarMovimentacao(dados) {
       };
     }
 
-    // 4. Atualizar estoque
-    abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL).setValue(novoEstoque);
-    abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ESTOQUE_DISPONIVEL).setValue(novoEstoque); // Simplificado
+    // 4. Atualizar estoque (v16.0: RESERVA e LIBERACAO_RESERVA não atualizam qtdAtual)
+    if (!['RESERVA', 'LIBERACAO_RESERVA'].includes(dados.tipo)) {
+      abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.QUANTIDADE_ATUAL).setValue(novoEstoque);
+      abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ESTOQUE_DISPONIVEL).setValue(novoEstoque); // Simplificado
+    }
     abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.ULTIMA_ATUALIZACAO).setValue(new Date());
     abaEstoque.getRange(linhaEstoque, CONFIG.COLUNAS_ESTOQUE.RESPONSAVEL).setValue(dados.responsavel || Session.getActiveUser().getEmail());
 

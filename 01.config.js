@@ -182,7 +182,7 @@ const CONFIG = {
     APROVADO: 'Aprovado',
     EM_COMPRA: 'Em Compra',
     AGUARDANDO_ENTREGA: 'Aguardando Entrega',
-    FINALIZADO: 'Finalizado',
+    FINALIZADO: 'Concluído',      // v16.0: Corrigido de 'Finalizado' para 'Concluído' (status real usado na planilha)
     CANCELADO: 'Cancelado'
   },
 
@@ -193,7 +193,7 @@ const CONFIG = {
     APROVADO: 'Aprovado',
     EM_COMPRA: 'Em Compra',
     AGUARDANDO_ENTREGA: 'Aguardando Entrega',
-    FINALIZADO: 'Finalizado',
+    FINALIZADO: 'Concluído',      // v16.0: Corrigido de 'Finalizado' para 'Concluído' (status real usado na planilha)
     CANCELADO: 'Cancelado'
   },
 
