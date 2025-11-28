@@ -481,13 +481,61 @@ function __getDashboardAvancado(filtros) {
       const tamanhoAntes = JSON.stringify(resultado).length;
       Logger.log('📦 Tamanho do objeto: ' + tamanhoAntes + ' bytes');
 
-      const resultadoSerializado = serializarParaFrontend(resultado);
+      // v15.1.1: CRÍTICO - Não enviar arrays grandes! Simplificar para apenas números
+      var resultadoSimplificado = {
+        success: true,
+        kpis: {
+          financeiros: {
+            totalPedidos: resultado.kpis.financeiros.totalPedidos || 0,
+            valorTotalPedidos: resultado.kpis.financeiros.valorTotalPedidos || 0,
+            valorTotal: resultado.kpis.financeiros.valorTotal || 0,
+            ticketMedio: resultado.kpis.financeiros.ticketMedio || 0,
+            pedidosPapelaria: resultado.kpis.financeiros.pedidosPapelaria || 0,
+            valorPapelaria: resultado.kpis.financeiros.valorPapelaria || 0,
+            pedidosLimpeza: resultado.kpis.financeiros.pedidosLimpeza || 0,
+            valorLimpeza: resultado.kpis.financeiros.valorLimpeza || 0,
+            taxaVariacao: resultado.kpis.financeiros.taxaVariacao || 0,
+            previsaoGastos: resultado.kpis.financeiros.previsaoGastos || 0,
+            custoPerCapita: resultado.kpis.financeiros.custoPerCapita || 0,
+            gastoPorTipo: resultado.kpis.financeiros.gastoPorTipo || []
+          },
+          logisticos: {
+            pedidosSolicitados: resultado.kpis.logisticos.pedidosSolicitados || 0,
+            pedidosEmCompra: resultado.kpis.logisticos.pedidosEmCompra || 0,
+            pedidosFinalizados: resultado.kpis.logisticos.pedidosFinalizados || 0,
+            pedidosCancelados: resultado.kpis.logisticos.pedidosCancelados || 0,
+            taxaFinalizacao: resultado.kpis.logisticos.taxaFinalizacao || 0,
+            taxaCancelamento: resultado.kpis.logisticos.taxaCancelamento || 0,
+            tempoMedioAprovacao: resultado.kpis.logisticos.tempoMedioAprovacao || 0,
+            leadTimeTotal: resultado.kpis.logisticos.leadTimeTotal || 0,
+            backlog: resultado.kpis.logisticos.backlog || 0
+          },
+          estoque: {
+            totalProdutos: resultado.kpis.estoque.totalProdutos || 0,
+            produtosAbaixoMinimo: resultado.kpis.estoque.produtosAbaixoMinimo || 0,
+            produtosPontoPedido: resultado.kpis.estoque.produtosPontoPedido || 0,
+            valorTotalEstoque: resultado.kpis.estoque.valorTotalEstoque || 0,
+            valorTotal: resultado.kpis.estoque.valorTotal || 0,
+            taxaRuptura: resultado.kpis.estoque.taxaRuptura || 0,
+            giroEstoque: resultado.kpis.estoque.giroEstoque || 0
+          },
+          fornecedores: {
+            totalFornecedores: resultado.kpis.fornecedores.totalFornecedores || 0,
+            fornecedoresAtivos: resultado.kpis.fornecedores.fornecedoresAtivos || 0,
+            fornecedoresInativos: resultado.kpis.fornecedores.fornecedoresInativos || 0,
+            fornecedoresPapelaria: resultado.kpis.fornecedores.fornecedoresPapelaria || 0,
+            fornecedoresLimpeza: resultado.kpis.fornecedores.fornecedoresLimpeza || 0,
+            fornecedoresAmbos: resultado.kpis.fornecedores.fornecedoresAmbos || 0,
+            totalNotasFiscais: resultado.kpis.fornecedores.totalNotasFiscais || 0
+          }
+        }
+      };
 
-      const tamanhoDepois = JSON.stringify(resultadoSerializado).length;
-      Logger.log('📦 Tamanho após serialização: ' + tamanhoDepois + ' bytes');
-      Logger.log('✅ Dashboard serializado com sucesso');
+      const tamanhoDepois = JSON.stringify(resultadoSimplificado).length;
+      Logger.log('📦 Tamanho após simplificação: ' + tamanhoDepois + ' bytes');
+      Logger.log('✅ Dashboard simplificado e pronto para envio');
 
-      return resultadoSerializado;
+      return resultadoSimplificado;
     } catch (serializacaoErro) {
       Logger.log('❌ Erro ao serializar dashboard: ' + serializacaoErro.message);
       // Tentar retornar versão simplificada
