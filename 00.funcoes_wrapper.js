@@ -458,9 +458,20 @@ function __getDashboardAvancado(filtros) {
     Logger.log('🔄 __getDashboardAvancado chamado com filtros: ' + JSON.stringify(filtros));
     var resultado = getDashboardAvancado(filtros);
     Logger.log('📤 __getDashboardAvancado retornando: ' + (resultado ? 'objeto válido' : 'NULL'));
-    var resultadoSerializado = serializarParaFrontend(resultado);
-    Logger.log('✅ Objeto serializado com sucesso');
-    return resultadoSerializado;
+
+    // v15.0: Não usar serializarParaFrontend - causa null em objetos grandes
+    // Retornar diretamente (Google Apps Script serializa automaticamente)
+    if (resultado && resultado.success) {
+      Logger.log('✅ Retornando dashboard diretamente sem serialização customizada');
+      return resultado;
+    }
+
+    Logger.log('⚠️ Resultado não tem success=true, retornando erro');
+    return resultado || {
+      success: false,
+      error: 'Resultado vazio',
+      kpis: { financeiros: {}, logisticos: {}, estoque: {} }
+    };
   } catch (e) {
     Logger.log('❌ Erro em __getDashboardAvancado: ' + e.message);
     Logger.log('Stack: ' + e.stack);
