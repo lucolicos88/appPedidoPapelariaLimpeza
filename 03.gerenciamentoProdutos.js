@@ -940,6 +940,7 @@ function listarProdutosAgrupadosPorNeo() {
         precoUnitario: produto.precoUnitario,
         estoqueMinimo: produto.estoqueMinimo,
         pontoPedido: produto.pontoPedido,
+        imagemURL: produto.imagemURL,  // v16.0: Incluir URL da imagem
         ativo: produto.ativo,
         dataCadastro: produto.dataCadastro
       });
@@ -948,12 +949,18 @@ function listarProdutosAgrupadosPorNeo() {
     // Converter para array
     const lista = Object.values(agrupados);
 
-    // Ordenar por código NEO
+    // v16.0: Ordenar por código NEO (com proteção para valores null/undefined)
     lista.sort((a, b) => {
-      if (a.codigoNeo && b.codigoNeo) {
-        return a.codigoNeo.localeCompare(b.codigoNeo);
-      }
-      return 0;
+      // Converter para string explicitamente
+      const codigoA = String(a.codigoNeo || '');
+      const codigoB = String(b.codigoNeo || '');
+
+      // Produtos sem código NEO vão para o final
+      if (!codigoA && codigoB) return 1;
+      if (codigoA && !codigoB) return -1;
+      if (!codigoA && !codigoB) return 0;
+
+      return codigoA.localeCompare(codigoB);
     });
 
     Logger.log(`✅ ${lista.length} produtos agrupados, ${resultado.produtos.length} fornecedores total`);
