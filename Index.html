@@ -5270,9 +5270,15 @@ function loadProdutos() {
 
         if (produtoResponse && produtoResponse.success) {
           // Armazenar dados para autocomplete
-          window.codigosNeoDisponiveis = codigos || [];
-          window.descricoesNeoDisponiveis = descricoes || [];
-          window.fornecedoresDisponiveis = fornecedoresResponse.fornecedores || [];
+          window.codigosNeoDisponiveis = Array.isArray(codigos) ? codigos : [];
+          window.descricoesNeoDisponiveis = Array.isArray(descricoes) ? descricoes : [];
+          window.fornecedoresDisponiveis = fornecedoresResponse && Array.isArray(fornecedoresResponse.fornecedores) ? fornecedoresResponse.fornecedores : [];
+
+          console.log('Autocomplete data loaded:', {
+            codigos: window.codigosNeoDisponiveis.length,
+            descricoes: window.descricoesNeoDisponiveis.length,
+            fornecedores: window.fornecedoresDisponiveis.length
+          });
 
           // Preencher formulário
           preencherFormEditarProduto(produtoResponse.produto);
@@ -5303,15 +5309,17 @@ function loadProdutos() {
       // Preencher select de fornecedores
       const selectFornecedor = document.getElementById('editProdutoFornecedorId');
       selectFornecedor.innerHTML = '<option value="">Selecione...</option>';
-      (window.fornecedoresDisponiveis || []).forEach(forn => {
-        const option = document.createElement('option');
-        option.value = forn.id;
-        option.textContent = forn.nome;
-        if (forn.id === produto.fornecedorId) {
-          option.selected = true;
-        }
-        selectFornecedor.appendChild(option);
-      });
+      if (Array.isArray(window.fornecedoresDisponiveis)) {
+        window.fornecedoresDisponiveis.forEach(forn => {
+          const option = document.createElement('option');
+          option.value = forn.id;
+          option.textContent = forn.nome;
+          if (forn.id === produto.fornecedorId) {
+            option.selected = true;
+          }
+          selectFornecedor.appendChild(option);
+        });
+      }
 
       // SEÇÃO 2: Dados Neoformula
       document.getElementById('editProdutoCodigoNeo').value = produto.codigoNeoformula || '';
@@ -5430,11 +5438,22 @@ function loadProdutos() {
      */
     window.filtrarCodigosNeo = function(termo) {
       const lista = document.getElementById('listaCodigosNeo');
+      if (!lista) return;
+
       const termoLower = (termo || '').toLowerCase();
 
-      const codigosFiltrados = (window.codigosNeoDisponiveis || []).filter(item =>
-        item.codigo.toLowerCase().includes(termoLower) ||
-        item.descricao.toLowerCase().includes(termoLower)
+      // Verificação robusta se é array
+      if (!Array.isArray(window.codigosNeoDisponiveis)) {
+        console.warn('codigosNeoDisponiveis não é um array:', typeof window.codigosNeoDisponiveis);
+        lista.innerHTML = '<div style="padding: 10px; color: #999; font-size: 12px;">Carregando códigos...</div>';
+        lista.style.display = 'block';
+        return;
+      }
+
+      const codigosFiltrados = window.codigosNeoDisponiveis.filter(item =>
+        item && item.codigo && item.descricao &&
+        (item.codigo.toLowerCase().includes(termoLower) ||
+         item.descricao.toLowerCase().includes(termoLower))
       );
 
       if (codigosFiltrados.length === 0) {
@@ -5482,11 +5501,22 @@ function loadProdutos() {
      */
     window.filtrarDescricoesNeo = function(termo) {
       const lista = document.getElementById('listaDescricoesNeo');
+      if (!lista) return;
+
       const termoLower = (termo || '').toLowerCase();
 
-      const descricoesFiltradas = (window.descricoesNeoDisponiveis || []).filter(item =>
-        item.descricao.toLowerCase().includes(termoLower) ||
-        item.codigo.toLowerCase().includes(termoLower)
+      // Verificação robusta se é array
+      if (!Array.isArray(window.descricoesNeoDisponiveis)) {
+        console.warn('descricoesNeoDisponiveis não é um array:', typeof window.descricoesNeoDisponiveis);
+        lista.innerHTML = '<div style="padding: 10px; color: #999; font-size: 12px;">Carregando descrições...</div>';
+        lista.style.display = 'block';
+        return;
+      }
+
+      const descricoesFiltradas = window.descricoesNeoDisponiveis.filter(item =>
+        item && item.descricao && item.codigo &&
+        (item.descricao.toLowerCase().includes(termoLower) ||
+         item.codigo.toLowerCase().includes(termoLower))
       );
 
       if (descricoesFiltradas.length === 0) {
