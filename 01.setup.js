@@ -953,10 +953,30 @@ function obterConfiguracao(chave) {
  */
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
+
+  // v16.0: Submenu de Testes
+  const menuTestes = ui.createMenu('🧪 Testes')
+    .addItem('▶️ EXECUTAR TODOS OS TESTES', 'executarTodosTestes')
+    .addSeparator()
+    .addItem('✅ Teste 01: Dashboard KPIs', 'teste01_DashboardCompleto')
+    .addItem('🛒 Teste 02: Catálogo de Produtos', 'teste02_CatalogoCompleto')
+    .addItem('🏢 Teste 03: Múltiplos Fornecedores', 'teste03_AgrupamentoNeo')
+    .addItem('🔒 Teste 04: Estoque Reservado', 'teste04_EstoqueReservadoCompleto')
+    .addItem('📝 Teste 05: Validação de Pedidos', 'teste05_ValidacaoPedido')
+    .addItem('📊 Teste 08: Movimentações', 'teste08_MovimentacoesCompleto')
+    .addItem('⚡ Teste 09: Performance e Cache', 'teste09_PerformanceCompleto')
+    .addItem('🔒 Teste 10: Validações e Segurança', 'teste10_ValidacoesCompleto')
+    .addSeparator()
+    .addItem('🔍 Ver Logs do Último Teste', 'mostrarLogsUltimoTeste')
+    .addItem('🗑️ Limpar Cache (Reset)', 'limparTodosOsCaches');
+
+  // Menu principal
   ui.createMenu('📦 Sistema de Pedidos')
     .addItem('⚙️ Configurar Planilha', 'setupPlanilha')
     .addItem('📁 Criar Estrutura de Pastas', 'criarEstruturaPastas')
     .addItem('🖼️ Corrigir URLs de Imagens', 'corrigirURLsImagensMenu')
+    .addSeparator()
+    .addSubMenu(menuTestes)
     .addSeparator()
     .addItem('🔍 Verificar Status', 'verificarStatus')
     .addItem('🔄 Recarregar Sistema', 'recarregarSistema')
