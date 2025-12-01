@@ -10,6 +10,25 @@
  */
 
 // ============================================================================
+// SISTEMA DE LOGS EM MEMÓRIA
+// ============================================================================
+
+var LOGS_TESTE = [];
+
+function limparLogsTeste() {
+  LOGS_TESTE = [];
+}
+
+function logTeste(mensagem) {
+  LOGS_TESTE.push(mensagem);
+  Logger.log(mensagem);
+}
+
+function obterLogsTeste() {
+  return LOGS_TESTE.join('\n');
+}
+
+// ============================================================================
 // MENU DE TESTES
 // ============================================================================
 
@@ -46,21 +65,39 @@ function adicionarMenuTestes() {
  */
 function mostrarLogsUltimoTeste() {
   const ui = SpreadsheetApp.getUi();
+  const logs = obterLogsTeste();
 
-  // Google Apps Script não tem Logger.getLog()
-  // Vamos mostrar instrução de como ver logs
-  ui.alert(
-    '📋 Ver Logs dos Testes',
-    'Para ver os logs detalhados dos testes:\n\n' +
-    '1. Vá em: Extensões > Apps Script\n' +
-    '2. Clique em "Execuções" (ícone de relógio) na barra lateral\n' +
-    '3. Clique na execução mais recente\n' +
-    '4. Veja os logs completos com timestamps\n\n' +
-    'OU\n\n' +
-    '1. No Apps Script, execute a função de teste desejada\n' +
-    '2. Clique em "Ver" > "Logs" (ou Ctrl+Enter)',
-    ui.ButtonSet.OK
-  );
+  if (!logs || logs.trim() === '') {
+    ui.alert(
+      '📋 Logs',
+      'Nenhum log disponível.\n\n' +
+      'Execute um teste primeiro (EXECUTAR TODOS OS TESTES ou um teste individual).\n\n' +
+      'Alternativamente, veja logs detalhados em:\n' +
+      'Extensões > Apps Script > Execuções',
+      ui.ButtonSet.OK
+    );
+  } else {
+    // Criar HTML para melhor visualização
+    const html = HtmlService.createHtmlOutput(
+      '<style>' +
+      'body { font-family: "Courier New", monospace; font-size: 12px; padding: 10px; background: #1e1e1e; color: #d4d4d4; }' +
+      'pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; }' +
+      '.success { color: #4ec9b0; }' +
+      '.error { color: #f48771; }' +
+      '.warning { color: #dcdcaa; }' +
+      '.info { color: #9cdcfe; }' +
+      '</style>' +
+      '<pre>' + logs.replace(/✅/g, '<span class="success">✅</span>')
+                     .replace(/❌/g, '<span class="error">❌</span>')
+                     .replace(/⚠️/g, '<span class="warning">⚠️</span>')
+                     .replace(/📊|📦|🔍|💰|🚚|🏢/g, '<span class="info">$&</span>') +
+      '</pre>'
+    )
+    .setWidth(900)
+    .setHeight(700);
+
+    ui.showModelessDialog(html, '📋 Logs do Último Teste - v16.0');
+  }
 }
 
 /**
@@ -112,12 +149,15 @@ function executarTodosTestes() {
     return;
   }
 
-  Logger.log('');
-  Logger.log('='.repeat(80));
-  Logger.log('🧪 EXECUTANDO TODOS OS TESTES - v16.0');
-  Logger.log('='.repeat(80));
-  Logger.log('Início: ' + new Date().toLocaleString('pt-BR'));
-  Logger.log('');
+  // Limpar logs anteriores
+  limparLogsTeste();
+
+  logTeste('');
+  logTeste('='.repeat(80));
+  logTeste('🧪 EXECUTANDO TODOS OS TESTES - v16.0');
+  logTeste('='.repeat(80));
+  logTeste('Início: ' + new Date().toLocaleString('pt-BR'));
+  logTeste('');
 
   const resultados = [];
   const inicio = new Date();
@@ -144,17 +184,17 @@ function executarTodosTestes() {
   // Executar cada teste
   for (let i = 0; i < testes.length; i++) {
     const teste = testes[i];
-    Logger.log('');
-    Logger.log(`[${i + 1}/${testes.length}] Executando: ${teste.nome}`);
-    Logger.log('-'.repeat(80));
+    logTeste('');
+    logTeste(`[${i + 1}/${testes.length}] Executando: ${teste.nome}`);
+    logTeste('-'.repeat(80));
 
     try {
       teste.funcao();
       resultados.push({ nome: teste.nome, status: '✅ PASSOU' });
-      Logger.log(`✅ ${teste.nome} - PASSOU`);
+      logTeste(`✅ ${teste.nome} - PASSOU`);
     } catch (error) {
       resultados.push({ nome: teste.nome, status: '❌ FALHOU', erro: error.message });
-      Logger.log(`❌ ${teste.nome} - FALHOU: ${error.message}`);
+      logTeste(`❌ ${teste.nome} - FALHOU: ${error.message}`);
     }
   }
 
@@ -162,28 +202,28 @@ function executarTodosTestes() {
   const tempoTotal = ((fim - inicio) / 1000).toFixed(2);
 
   // Resumo
-  Logger.log('');
-  Logger.log('='.repeat(80));
-  Logger.log('📊 RESUMO DOS TESTES');
-  Logger.log('='.repeat(80));
+  logTeste('');
+  logTeste('='.repeat(80));
+  logTeste('📊 RESUMO DOS TESTES');
+  logTeste('='.repeat(80));
 
   const passaram = resultados.filter(r => r.status.includes('PASSOU')).length;
   const falharam = resultados.filter(r => r.status.includes('FALHOU')).length;
 
   resultados.forEach((r, idx) => {
-    Logger.log(`${idx + 1}. ${r.status} - ${r.nome}`);
+    logTeste(`${idx + 1}. ${r.status} - ${r.nome}`);
     if (r.erro) {
-      Logger.log(`   Erro: ${r.erro}`);
+      logTeste(`   Erro: ${r.erro}`);
     }
   });
 
-  Logger.log('');
-  Logger.log(`✅ Passaram: ${passaram}/${testes.length}`);
-  Logger.log(`❌ Falharam: ${falharam}/${testes.length}`);
-  Logger.log(`⏱️ Tempo total: ${tempoTotal}s`);
-  Logger.log('');
-  Logger.log('Fim: ' + new Date().toLocaleString('pt-BR'));
-  Logger.log('='.repeat(80));
+  logTeste('');
+  logTeste(`✅ Passaram: ${passaram}/${testes.length}`);
+  logTeste(`❌ Falharam: ${falharam}/${testes.length}`);
+  logTeste(`⏱️ Tempo total: ${tempoTotal}s`);
+  logTeste('');
+  logTeste('Fim: ' + new Date().toLocaleString('pt-BR'));
+  logTeste('='.repeat(80));
 
   // Mostrar resultado em dialog
   ui.alert(
@@ -362,23 +402,26 @@ function teste02_Imagens() {
   Logger.log('=== TESTE 02.3: Imagens de Produtos ===');
 
   const resultado = __obterCatalogoProdutosComEstoque();
-  const produtos = resultado.produtos;
+
+  // v16.0: resultado.produtos é array de produtos individuais, não agrupados
+  if (!resultado.produtos || resultado.produtos.length === 0) {
+    Logger.log('⚠️ AVISO: Nenhum produto disponível para testar');
+    return;
+  }
 
   let comImagem = 0;
   let semImagem = 0;
 
-  produtos.forEach(p => {
-    p.fornecedores.forEach(f => {
-      if (f.imagemURL && f.imagemURL !== '') {
-        comImagem++;
-      } else {
-        semImagem++;
-      }
-    });
+  resultado.produtos.forEach(p => {
+    if (p.imagemURL && p.imagemURL !== '') {
+      comImagem++;
+    } else {
+      semImagem++;
+    }
   });
 
-  Logger.log(`\n🖼️ Fornecedores com imagem: ${comImagem}`);
-  Logger.log(`📷 Fornecedores sem imagem: ${semImagem}`);
+  Logger.log(`\n🖼️ Produtos com imagem: ${comImagem}`);
+  Logger.log(`📷 Produtos sem imagem: ${semImagem}`);
 
   if (comImagem > 0) {
     Logger.log('✅ PASSOU: Sistema de imagens funcionando');
@@ -395,22 +438,38 @@ function teste03_AgrupamentoNeo() {
   Logger.log('=== TESTE 03: Agrupamento por Código NEO ===');
 
   const resultado = __obterCatalogoProdutosComEstoque();
-  const produtos = resultado.produtos;
 
-  const produtosMultiplos = produtos.filter(p => p.fornecedores.length > 1);
+  if (!resultado.produtos || resultado.produtos.length === 0) {
+    Logger.log('⚠️ AVISO: Nenhum produto disponível para testar');
+    return;
+  }
 
-  Logger.log(`\n🏢 Produtos com múltiplos fornecedores: ${produtosMultiplos.length}`);
+  // v16.0: Agrupar produtos por código NEO manualmente para o teste
+  const agrupados = {};
+  resultado.produtos.forEach(p => {
+    const codigoNeo = p.codigoNeoformula || p.codigo || 'sem-neo';
+    if (!agrupados[codigoNeo]) {
+      agrupados[codigoNeo] = [];
+    }
+    agrupados[codigoNeo].push(p);
+  });
 
-  if (produtosMultiplos.length > 0) {
+  // Contar produtos com múltiplos fornecedores (mesmo código NEO)
+  let produtosMultiplos = 0;
+  Object.entries(agrupados).forEach(([codigoNeo, produtos]) => {
+    if (produtos.length > 1) {
+      produtosMultiplos++;
+      Logger.log(`\n📋 Código NEO ${codigoNeo}: ${produtos.length} fornecedores`);
+      produtos.forEach(p => {
+        Logger.log(`  - ${p.descricaoFornecedor}: R$ ${(p.precoUnitario || 0).toFixed(2)}`);
+      });
+    }
+  });
+
+  Logger.log(`\n🏢 Produtos com múltiplos fornecedores: ${produtosMultiplos}`);
+
+  if (produtosMultiplos > 0) {
     Logger.log('✅ PASSOU: Sistema de múltiplos fornecedores funcional');
-
-    const exemplo = produtosMultiplos[0];
-    Logger.log(`\n📋 Exemplo: ${exemplo.nome}`);
-    Logger.log(`Código NEO: ${exemplo.codigoNeo}`);
-    Logger.log(`Fornecedores (${exemplo.fornecedores.length}):`);
-    exemplo.fornecedores.forEach(f => {
-      Logger.log(`  - ${f.fornecedorNome}: R$ ${f.preco.toFixed(2)}`);
-    });
   } else {
     Logger.log('⚠️ Nenhum produto com múltiplos fornecedores encontrado');
     Logger.log('   (Normal se não houver produtos duplicados com mesmo código NEO)');
