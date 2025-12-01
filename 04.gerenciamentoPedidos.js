@@ -535,12 +535,18 @@ function atualizarStatusPedido(pedidoId, novoStatus) {
 
           // v16.0: Baixar estoque reservado automaticamente
           Logger.log(`📤 v16.0: Baixando estoque do pedido ${dados[i][1]}`);
+          Logger.log(`🔍 DEBUG: Status sendo alterado para: "${novoStatus}"`);
+          Logger.log(`🔍 DEBUG: CONFIG.STATUS_PEDIDO.FINALIZADO: "${CONFIG.STATUS_PEDIDO.FINALIZADO}"`);
 
           // Extrair produtos do pedido
-          const produtosStr = String(dados[i][6] || ''); // Produtos IDs
-          const quantidadesStr = String(dados[i][7] || ''); // Quantidades
+          const produtosStr = String(dados[i][CONFIG.COLUNAS_PEDIDOS.PRODUTOS - 1] || '');
+          const quantidadesStr = String(dados[i][CONFIG.COLUNAS_PEDIDOS.QUANTIDADES - 1] || '');
+          Logger.log(`🔍 DEBUG: produtosStr: "${produtosStr}"`);
+          Logger.log(`🔍 DEBUG: quantidadesStr: "${quantidadesStr}"`);
+
           const produtosArray = produtosStr.split('; ').filter(p => p.trim() !== '');
           const quantidadesArray = quantidadesStr.split('; ').filter(q => q.trim() !== '');
+          Logger.log(`🔍 DEBUG: produtosArray.length: ${produtosArray.length}`);
 
           if (produtosArray.length > 0) {
             const produtosParaBaixar = [];
@@ -551,22 +557,33 @@ function atualizarStatusPedido(pedidoId, novoStatus) {
               });
             }
 
+            Logger.log(`🔍 DEBUG: Chamando baixarEstoquePedido com ${produtosParaBaixar.length} produtos`);
             const resultadoBaixa = baixarEstoquePedido(pedidoId, produtosParaBaixar);
+            Logger.log(`🔍 DEBUG: Resultado baixa: ${JSON.stringify(resultadoBaixa)}`);
+
             if (!resultadoBaixa.success) {
               Logger.log(`⚠️ Falha ao baixar estoque: ${resultadoBaixa.error}`);
             } else {
               Logger.log(`✅ Estoque baixado: ${resultadoBaixa.message}`);
             }
+          } else {
+            Logger.log(`⚠️ DEBUG: Nenhum produto encontrado para baixar!`);
           }
         } else if (novoStatus === CONFIG.STATUS_PEDIDO.CANCELADO) {
           // v16.0: Liberar estoque reservado automaticamente ao cancelar
           Logger.log(`🔓 v16.0: Liberando estoque do pedido ${dados[i][1]}`);
+          Logger.log(`🔍 DEBUG: Status sendo alterado para: "${novoStatus}"`);
+          Logger.log(`🔍 DEBUG: CONFIG.STATUS_PEDIDO.CANCELADO: "${CONFIG.STATUS_PEDIDO.CANCELADO}"`);
 
           // Extrair produtos do pedido
-          const produtosStr = String(dados[i][6] || ''); // Produtos IDs
-          const quantidadesStr = String(dados[i][7] || ''); // Quantidades
+          const produtosStr = String(dados[i][CONFIG.COLUNAS_PEDIDOS.PRODUTOS - 1] || '');
+          const quantidadesStr = String(dados[i][CONFIG.COLUNAS_PEDIDOS.QUANTIDADES - 1] || '');
+          Logger.log(`🔍 DEBUG: produtosStr: "${produtosStr}"`);
+          Logger.log(`🔍 DEBUG: quantidadesStr: "${quantidadesStr}"`);
+
           const produtosArray = produtosStr.split('; ').filter(p => p.trim() !== '');
           const quantidadesArray = quantidadesStr.split('; ').filter(q => q.trim() !== '');
+          Logger.log(`🔍 DEBUG: produtosArray.length: ${produtosArray.length}`);
 
           if (produtosArray.length > 0) {
             const produtosParaLiberar = [];
@@ -577,12 +594,17 @@ function atualizarStatusPedido(pedidoId, novoStatus) {
               });
             }
 
+            Logger.log(`🔍 DEBUG: Chamando liberarEstoquePedido com ${produtosParaLiberar.length} produtos`);
             const resultadoLiberacao = liberarEstoquePedido(pedidoId, produtosParaLiberar);
+            Logger.log(`🔍 DEBUG: Resultado liberação: ${JSON.stringify(resultadoLiberacao)}`);
+
             if (!resultadoLiberacao.success) {
               Logger.log(`⚠️ Falha ao liberar estoque: ${resultadoLiberacao.error}`);
             } else {
               Logger.log(`✅ Estoque liberado: ${resultadoLiberacao.message}`);
             }
+          } else {
+            Logger.log(`⚠️ DEBUG: Nenhum produto encontrado para liberar!`);
           }
         }
 

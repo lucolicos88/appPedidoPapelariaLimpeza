@@ -1144,6 +1144,8 @@ function __atualizarPedido(dadosPedido) {
         }
 
         if (dadosPedido.status) {
+          const statusAnterior = dados[i][CONFIG.COLUNAS_PEDIDOS.STATUS - 1];
+          const numeroPedido = dados[i][CONFIG.COLUNAS_PEDIDOS.NUMERO_PEDIDO - 1];
           abaPedidos.getRange(i + 1, CONFIG.COLUNAS_PEDIDOS.STATUS).setValue(dadosPedido.status);
 
           // Atualizar data de compra se status = "Em Compra"
@@ -1154,6 +1156,45 @@ function __atualizarPedido(dadosPedido) {
           // Atualizar data de finalização se status = "Concluído"
           if (dadosPedido.status === 'Concluído' && !dados[i][CONFIG.COLUNAS_PEDIDOS.DATA_FINALIZACAO - 1]) {
             abaPedidos.getRange(i + 1, CONFIG.COLUNAS_PEDIDOS.DATA_FINALIZACAO).setValue(new Date());
+          }
+
+          // v16.0: Gerenciar estoque reservado conforme mudança de status
+          const pedidoId = dados[i][CONFIG.COLUNAS_PEDIDOS.ID - 1];
+          const produtosStr = String(dados[i][CONFIG.COLUNAS_PEDIDOS.PRODUTOS - 1] || '');
+          const quantidadesStr = String(dados[i][CONFIG.COLUNAS_PEDIDOS.QUANTIDADES - 1] || '');
+          const produtosArray = produtosStr.split('; ').filter(p => p.trim() !== '');
+          const quantidadesArray = quantidadesStr.split('; ').filter(q => q.trim() !== '');
+
+          if (produtosArray.length > 0 && statusAnterior !== dadosPedido.status) {
+            const produtosEstoque = [];
+            for (let j = 0; j < produtosArray.length; j++) {
+              produtosEstoque.push({
+                produtoId: produtosArray[j].trim(),
+                quantidade: parseFloat(quantidadesArray[j]) || 0
+              });
+            }
+
+            // Se mudou para Cancelado, liberar estoque
+            if (dadosPedido.status === CONFIG.STATUS_PEDIDO.CANCELADO) {
+              Logger.log(`🔓 v16.0: Liberando estoque do pedido ${numeroPedido}`);
+              const resultado = liberarEstoquePedido(pedidoId, produtosEstoque);
+              if (!resultado.success) {
+                Logger.log(`⚠️ Falha ao liberar estoque: ${resultado.error}`);
+              } else {
+                Logger.log(`✅ Estoque liberado: ${resultado.message}`);
+              }
+            }
+
+            // Se mudou para Concluído, baixar estoque
+            if (dadosPedido.status === CONFIG.STATUS_PEDIDO.FINALIZADO) {
+              Logger.log(`📤 v16.0: Baixando estoque do pedido ${numeroPedido}`);
+              const resultado = baixarEstoquePedido(pedidoId, produtosEstoque);
+              if (!resultado.success) {
+                Logger.log(`⚠️ Falha ao baixar estoque: ${resultado.error}`);
+              } else {
+                Logger.log(`✅ Estoque baixado: ${resultado.message}`);
+              }
+            }
           }
         }
 
