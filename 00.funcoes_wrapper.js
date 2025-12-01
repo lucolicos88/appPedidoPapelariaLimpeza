@@ -1162,16 +1162,40 @@ function __atualizarPedido(dadosPedido) {
           const pedidoId = dados[i][CONFIG.COLUNAS_PEDIDOS.ID - 1];
           const produtosStr = String(dados[i][CONFIG.COLUNAS_PEDIDOS.PRODUTOS - 1] || '');
           const quantidadesStr = String(dados[i][CONFIG.COLUNAS_PEDIDOS.QUANTIDADES - 1] || '');
-          const produtosArray = produtosStr.split('; ').filter(p => p.trim() !== '');
+          const produtosNomesArray = produtosStr.split('; ').filter(p => p.trim() !== '');
           const quantidadesArray = quantidadesStr.split('; ').filter(q => q.trim() !== '');
 
-          if (produtosArray.length > 0 && statusAnterior !== dadosPedido.status) {
+          if (produtosNomesArray.length > 0 && statusAnterior !== dadosPedido.status) {
             const produtosEstoque = [];
-            for (let j = 0; j < produtosArray.length; j++) {
-              produtosEstoque.push({
-                produtoId: produtosArray[j].trim(),
-                quantidade: parseFloat(quantidadesArray[j]) || 0
-              });
+
+            // v16.0: Buscar IDs dos produtos por nome
+            const abaProdutos = ss.getSheetByName(CONFIG.ABAS.PRODUCTS);
+            const dadosProdutos = abaProdutos ? abaProdutos.getDataRange().getValues() : [];
+
+            for (let j = 0; j < produtosNomesArray.length; j++) {
+              const produtoNome = produtosNomesArray[j].trim();
+
+              // Buscar ID do produto pelo nome na aba Produtos
+              let produtoId = null;
+              for (let k = 1; k < dadosProdutos.length; k++) {
+                const descricaoFornecedor = String(dadosProdutos[k][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_FORNECEDOR - 1] || '');
+                const descricaoNeo = String(dadosProdutos[k][CONFIG.COLUNAS_PRODUTOS.DESCRICAO_NEOFORMULA - 1] || '');
+
+                // Comparar com descrição fornecedor ou NEO
+                if (descricaoFornecedor === produtoNome || descricaoNeo === produtoNome) {
+                  produtoId = dadosProdutos[k][CONFIG.COLUNAS_PRODUTOS.ID - 1];
+                  break;
+                }
+              }
+
+              if (produtoId) {
+                produtosEstoque.push({
+                  produtoId: produtoId,
+                  quantidade: parseFloat(quantidadesArray[j]) || 0
+                });
+              } else {
+                Logger.log(`⚠️ Produto "${produtoNome}" não encontrado na aba Produtos`);
+              }
             }
 
             // Se mudou para Cancelado, liberar estoque
