@@ -46,22 +46,21 @@ function adicionarMenuTestes() {
  */
 function mostrarLogsUltimoTeste() {
   const ui = SpreadsheetApp.getUi();
-  const logs = Logger.getLog();
 
-  if (!logs || logs.trim() === '') {
-    ui.alert('📋 Logs', 'Nenhum log disponível. Execute um teste primeiro.', ui.ButtonSet.OK);
-  } else {
-    // Criar HTML para melhor visualização
-    const html = HtmlService.createHtmlOutput(
-      '<pre style="font-family: monospace; font-size: 12px; white-space: pre-wrap;">' +
-      logs +
-      '</pre>'
-    )
-    .setWidth(800)
-    .setHeight(600);
-
-    ui.showModelessDialog(html, '📋 Logs do Último Teste');
-  }
+  // Google Apps Script não tem Logger.getLog()
+  // Vamos mostrar instrução de como ver logs
+  ui.alert(
+    '📋 Ver Logs dos Testes',
+    'Para ver os logs detalhados dos testes:\n\n' +
+    '1. Vá em: Extensões > Apps Script\n' +
+    '2. Clique em "Execuções" (ícone de relógio) na barra lateral\n' +
+    '3. Clique na execução mais recente\n' +
+    '4. Veja os logs completos com timestamps\n\n' +
+    'OU\n\n' +
+    '1. No Apps Script, execute a função de teste desejada\n' +
+    '2. Clique em "Ver" > "Logs" (ou Ctrl+Enter)',
+    ui.ButtonSet.OK
+  );
 }
 
 /**
@@ -221,14 +220,15 @@ function teste01_DashboardCompleto() {
 function teste01_DashboardFinanceiro() {
   Logger.log('=== TESTE 01.1: KPIs Financeiros ===');
 
-  const resultado = getDashboardData();
+  // v16.0: Usar função wrapper correta
+  const resultado = __getDashboardAvancado();
 
   if (!resultado.success) {
     Logger.log('❌ FALHA: ' + resultado.error);
     throw new Error('Dashboard não carregou');
   }
 
-  const kpis = resultado.data.kpis;
+  const kpis = resultado.kpis.financeiros;
 
   Logger.log('\n📊 Total de Pedidos: ' + (kpis.totalPedidos || 0));
   Logger.log('💰 Valor Total: R$ ' + (kpis.valorTotal || 0).toFixed(2));
@@ -249,8 +249,8 @@ function teste01_DashboardFinanceiro() {
 function teste01_DashboardLogistico() {
   Logger.log('=== TESTE 01.2: KPIs Logísticos ===');
 
-  const resultado = getDashboardData();
-  const kpis = resultado.data.kpis;
+  const resultado = __getDashboardAvancado();
+  const kpis = resultado.kpis.logisticos;
 
   Logger.log('\n⏱️ Tempo Médio de Processamento: ' + (kpis.tempoMedioProcessamento || 0) + ' dias');
   Logger.log('📈 Taxa de Conclusão: ' + (kpis.taxaConclusao || 0) + '%');
@@ -273,8 +273,8 @@ function teste01_DashboardLogistico() {
 function teste01_DashboardEstoque() {
   Logger.log('=== TESTE 01.3: KPIs de Estoque ===');
 
-  const resultado = getDashboardData();
-  const kpis = resultado.data.kpis;
+  const resultado = __getDashboardAvancado();
+  const kpis = resultado.kpis.estoque;
 
   Logger.log('\n📦 Produtos em Estoque: ' + (kpis.produtosEmEstoque || 0));
   Logger.log('⚠️ Produtos Abaixo do Mínimo: ' + (kpis.produtosAbaixoMinimo || 0));
@@ -318,7 +318,8 @@ function teste02_CatalogoCompleto() {
 function teste02_CatalogoCarrega() {
   Logger.log('=== TESTE 02.1: Catálogo de Produtos ===');
 
-  const resultado = obterProdutosParaCatalogo();
+  // v16.0: Usar função wrapper correta
+  const resultado = __obterCatalogoProdutosComEstoque();
 
   if (!resultado.success) {
     Logger.log('❌ FALHA: ' + resultado.error);
@@ -342,7 +343,7 @@ function teste02_CatalogoCarrega() {
 function teste02_ProdutosSemNeo() {
   Logger.log('=== TESTE 02.2: Produtos Sem Código NEO ===');
 
-  const resultado = obterProdutosParaCatalogo();
+  const resultado = __obterCatalogoProdutosComEstoque();
   const produtos = resultado.produtos;
 
   const produtosSemNeo = produtos.filter(p => !p.codigoNeo || p.codigoNeo === '');
@@ -360,7 +361,7 @@ function teste02_ProdutosSemNeo() {
 function teste02_Imagens() {
   Logger.log('=== TESTE 02.3: Imagens de Produtos ===');
 
-  const resultado = obterProdutosParaCatalogo();
+  const resultado = __obterCatalogoProdutosComEstoque();
   const produtos = resultado.produtos;
 
   let comImagem = 0;
@@ -393,7 +394,7 @@ function teste02_Imagens() {
 function teste03_AgrupamentoNeo() {
   Logger.log('=== TESTE 03: Agrupamento por Código NEO ===');
 
-  const resultado = obterProdutosParaCatalogo();
+  const resultado = __obterCatalogoProdutosComEstoque();
   const produtos = resultado.produtos;
 
   const produtosMultiplos = produtos.filter(p => p.fornecedores.length > 1);
@@ -459,15 +460,16 @@ function teste04_EstruturaEstoque() {
 
   const headers = abaEstoque.getRange(1, 1, 1, 8).getValues()[0];
 
+  // v16.0: Estrutura correta conforme CONFIG.COLUNAS_ESTOQUE
   const colunasEsperadas = [
-    'Produto ID',
-    'Quantidade Atual',
-    'Estoque Mínimo',
-    'Ponto de Pedido',
-    'Última Atualização',
-    'Quantidade Reservada',
-    'Estoque Disponível',
-    'Última Movimentação'
+    'ID',                      // A
+    'Produto ID',              // B
+    'Produto Nome',            // C
+    'Quantidade Atual',        // D
+    'Quantidade Reservada',    // E
+    'Estoque Disponível',      // F
+    'Última Atualização',      // G
+    'Responsável'              // H
   ];
 
   Logger.log('\n📋 Colunas encontradas:');
@@ -710,7 +712,7 @@ function teste10_ValidacaoDatas() {
     dataFim: '2025-01-01'
   };
 
-  const r1 = getDashboardData(filtro1);
+  const r1 = __getDashboardAvancado(filtro1);
   Logger.log('Data início > fim: ' + (r1.success ? '❌ DEVERIA BLOQUEAR' : '✅ BLOQUEOU'));
 
   // Intervalo muito grande
@@ -719,7 +721,7 @@ function teste10_ValidacaoDatas() {
     dataFim: '2025-12-31'
   };
 
-  const r2 = getDashboardData(filtro2);
+  const r2 = __getDashboardAvancado(filtro2);
   Logger.log('Intervalo > 2 anos: ' + (r2.success ? '❌ DEVERIA BLOQUEAR' : '✅ BLOQUEOU'));
 
   Logger.log('\n✅ PASSOU: Validações de data funcionando');
