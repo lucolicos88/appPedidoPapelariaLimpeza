@@ -242,6 +242,7 @@ function executarTodosTestes() {
 // ============================================================================
 
 function teste01_DashboardCompleto() {
+  limparLogsTeste();
   logTeste('=== TESTE 01: DASHBOARD COMPLETO ===\n');
   teste01_DashboardFinanceiro();
   logTeste('');
@@ -340,6 +341,7 @@ function teste01_DashboardEstoque() {
 // ============================================================================
 
 function teste02_CatalogoCompleto() {
+  limparLogsTeste();
   logTeste('=== TESTE 02: CATÁLOGO COMPLETO ===\n');
   teste02_CatalogoCarrega();
   logTeste('');
@@ -435,6 +437,7 @@ function teste02_Imagens() {
 // ============================================================================
 
 function teste03_AgrupamentoNeo() {
+  limparLogsTeste();
   logTeste('=== TESTE 03: Agrupamento por Código NEO ===');
 
   const resultado = __obterCatalogoProdutosComEstoque();
@@ -487,6 +490,7 @@ function teste03_AgrupamentoNeo() {
 // ============================================================================
 
 function teste04_EstoqueReservadoCompleto() {
+  limparLogsTeste();
   logTeste('=== TESTE 04: ESTOQUE RESERVADO COMPLETO ===\n');
   teste04_EstruturaEstoque();
   logTeste('\n✅ TESTE 04 COMPLETO\n');
@@ -552,6 +556,7 @@ function teste04_EstruturaEstoque() {
 // ============================================================================
 
 function teste05_ValidacaoPedido() {
+  limparLogsTeste();
   logTeste('=== TESTE 05: Validação de Pedido ===');
 
   // Teste 1: Tipo inválido
@@ -592,6 +597,7 @@ function teste05_ValidacaoPedido() {
 // ============================================================================
 
 function teste08_MovimentacoesCompleto() {
+  limparLogsTeste();
   logTeste('=== TESTE 08: MOVIMENTAÇÕES COMPLETO ===\n');
   teste08_TiposMovimentacao();
   logTeste('');
@@ -681,6 +687,7 @@ function teste08_RastreabilidadePedido() {
 // ============================================================================
 
 function teste09_PerformanceCompleto() {
+  limparLogsTeste();
   logTeste('=== TESTE 09: PERFORMANCE COMPLETO ===\n');
   teste09_CacheUsuarios();
   logTeste('');
@@ -751,6 +758,7 @@ function teste09_CacheProdutos() {
 // ============================================================================
 
 function teste10_ValidacoesCompleto() {
+  limparLogsTeste();
   logTeste('=== TESTE 10: VALIDAÇÕES E SEGURANÇA ===\n');
   teste10_ValidacaoDatas();
   logTeste('\n✅ TESTE 10 COMPLETO\n');
